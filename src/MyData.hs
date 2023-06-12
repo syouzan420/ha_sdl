@@ -17,9 +17,6 @@ data WMode = T | Y deriving (Eq,Show) -- writing mode
 
 -- tex: edit text
 -- tps: text position
--- gps: position (x,y) on graphic pixels
--- wmd: writing mode (Tate, Yoko)
--- fsz: font size
 data State = State{tex :: !Text, tps :: !CInt, atr :: !Attr}
 
 -- gps: position (x,y) on graphic pixels
