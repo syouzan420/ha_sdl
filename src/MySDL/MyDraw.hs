@@ -24,7 +24,7 @@ textsDraw re fonts atrSt texSt = do
   case uncons texSt of
     Nothing -> return ()
     Just (ch,tailTx) -> do 
-      let (natr,(tx,xs)) = if ch=='\'' then changeAtr atrSt tailTx else (atrSt,T.break (=='\'') texSt)
+      let (natr,(tx,xs)) = if ch=='\"' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
           (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt) = natr
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
@@ -50,15 +50,17 @@ makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) t
                         qtw = htw `div` 2
                         ihf = cn > 31 && cn < 127
                         irt = ch `elem` "＝ー「」（）"
+                        inl = ch == '\n'
+                        ins = ch `elem` "\n"
                         ihft = wm==T && ihf
                         delta 
                           | wm==T = if ihf then V2 0 htw else V2 0 tw
                           | ihf = V2 htw 0 
                           | otherwise = V2 tw 0
-                        psd@(V2 nx ny) = ps + delta 
+                        psd@(V2 nx ny) = if ins then ps else ps + delta 
                         npos
-                          | wm==T = if ny > wh - mb then V2 ox mt - V2 nw 0 else psd 
-                          | nx  > ww - mr = V2 ml oy + V2 0 nw
+                          | wm==T = if ny > wh - mb || inl then V2 ox mt - V2 nw 0 else psd 
+                          | nx  > ww - mr || inl = V2 ml oy + V2 0 nw
                           | otherwise = psd
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
                           :makePList attr{gps=npos} xs

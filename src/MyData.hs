@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,State(..),Attr(..),WMode(..),title,windowSize,initState,fontFiles,imageFiles
-              ,fontSize,fontColor,backColor,delayTime) 
+              ,fontSize,fontColor,backColor,delayTime,initYokoPos,initTatePos) 
   where
 
 import Data.Text (Text)
@@ -39,10 +39,10 @@ margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "日本語はOKですか12345？ それと 英語は横に表示されるのですか？ いやはや 興味深い結果になりますよねーあ", tps = 0, atr = initAttr}
+initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるようにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?", tps = 0, atr = initAttr}
 
 initAttr :: Attr
-initAttr = Attr{gps = V2 100 15, wmd = T, fsz = 24, fco = fontColor
+initAttr = Attr{gps = initTatePos, wmd = T, fsz = 24, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins}
 
 fontFiles :: [FilePath]
@@ -53,6 +53,12 @@ imageFiles = map (\s -> "images/"++s++".png") ["onigiri","nori"]
 
 fontSize :: PointSize
 fontSize = 24 
+
+initYokoPos :: V2 CInt
+initYokoPos = V2 20 30
+
+initTatePos :: V2 CInt
+initTatePos = V2 420 30 
 
 initLetterWidth, initLineWidth :: CInt
 initLetterWidth = 26; initLineWidth = 30
