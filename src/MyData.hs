@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,State(..),Attr(..),WMode(..),title,windowSize,initState,fontFiles,imageFiles
-              ,fontSize,fontColor,backColor,delayTime,initYokoPos,initTatePos) 
+module MyData (Pos,Color,Modif(..),State(..),Attr(..),WMode(..),title,windowSize,initState,fontFiles
+              ,imageFiles,fontSize,fontColor,backColor,delayTime,initYokoPos,initTatePos) 
   where
 
 import Data.Text (Text)
@@ -13,6 +13,7 @@ import Data.Word (Word8,Word32)
 type Pos = V2 CInt
 type PointSize = Int
 type Color = V4 Word8
+data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 
 -- tex: edit text
