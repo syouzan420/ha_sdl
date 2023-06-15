@@ -6,7 +6,7 @@ import MySDL.MyInput (myInput)
 inputEvent :: State -> IO (State,Bool)
 inputEvent st = do
   (kc,md) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
-  let isQuit = kc==27 
+  let isQuit = kc==27   -- ESC Key
       isTglDir = kc==116 && md==Ctr -- toggle direction (Tate, Yoko)
       attr = atr st
       wm = wmd attr

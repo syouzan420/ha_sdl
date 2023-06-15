@@ -17,8 +17,10 @@ data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 
 -- tex: edit text
+-- atr: text attribute
 -- tps: text position
-data State = State{tex :: !Text, tps :: !CInt, atr :: !Attr}
+-- ifm: view formatted text or not
+data State = State{tex :: !Text, atr :: !Attr, tps :: !CInt, ifm :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
 -- wmd: writing mode (Tate, Yoko)
@@ -40,7 +42,8 @@ margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるようにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?", tps = 0, atr = initAttr}
+initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるようにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?"
+                  , atr = initAttr, tps=0, ifm=False}
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, wmd = T, fsz = 24, fco = fontColor

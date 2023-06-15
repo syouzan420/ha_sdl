@@ -14,21 +14,24 @@ import Data.Text (Text,uncons)
 import MyData (State(..),Attr(..),WMode(..),Pos,Color,fontSize,backColor)
 
 myDraw :: Renderer -> [Font] -> [Texture] -> State -> IO () 
-myDraw re fonts itexs (State texSt tpsSt atrSt) = do
+myDraw re fonts itexs (State texSt atrSt tpsSt ifmSt) = do
   initDraw re
-  textsDraw re fonts atrSt texSt 
+  textsDraw re fonts 0 ifmSt tpsSt atrSt texSt 
   present re
 
-textsDraw :: Renderer -> [Font] -> Attr -> Text -> IO ()
-textsDraw re fonts atrSt texSt = do
+textsDraw :: Renderer -> [Font] -> Int -> Bool -> CInt -> Attr -> Text -> IO ()
+textsDraw re fonts ind ifmSt tpsSt atrSt texSt = do
   case uncons texSt of
     Nothing -> return ()
     Just (ch,tailTx) -> do 
-      let (natr,(tx,xs)) = if ch=='\"' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
+      let (natr,(tx,xs)) 
+            | ifmSt = if ch=='\"' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
+            | otherwise = (atrSt,(texSt,T.empty))
           (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt) = natr
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
           pList = makePList natr tx
+          indInc = T.length tailTx - T.length xs + 1
       fontS <- blended (fonts!!1) fcoAt tx 
       fontT <- createTextureFromSurface re fontS
       freeSurface fontS
@@ -39,7 +42,7 @@ textsDraw re fonts atrSt texSt = do
                         (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
         return (ps+V2 sz 0)
              ) (V2 0 0) pList
-      textsDraw re fonts (Attr (snd$last pList) wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt) xs
+      textsDraw re fonts (ind+indInc) ifmSt tpsSt natr{gps=snd$last pList} xs
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) tx = 
