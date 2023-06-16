@@ -5,6 +5,7 @@ import MySDL.MyLoad (myLoad)
 import MySDL.MyLoop (myLoop)
 import MySDL.MyInit (withMyInit)
 import MySDL.MyInitVideo (withMyVideo)
+import MySDL.MyDraw (myDraw)
 import MyData (initState)
 
 appMain :: IO ()
@@ -14,4 +15,5 @@ appMain =
     withMyVideo sur $
       \(renderer,itexs) -> do
         state <- newIORef initState
+        myDraw renderer fonts itexs initState 
         myLoop state renderer fonts itexs

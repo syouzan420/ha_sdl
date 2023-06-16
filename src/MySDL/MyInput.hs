@@ -1,7 +1,7 @@
 module MySDL.MyInput (myInput) where
 
 import SDL.Event (EventPayload(KeyboardEvent,TextInputEvent),eventPayload,keyboardEventKeyMotion
-                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents
+                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents,pollEvent
                  ,TextInputEventData(textInputEventText))
 import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),Keycode(unwrapKeycode),KeyModifier(..)
                           ,getModState)
@@ -13,8 +13,8 @@ import Control.Monad(when)
 import Data.Maybe(fromMaybe)
 import Data.List(find)
 import MyData(Modif(..))
-
-myInput :: IO (Int32,Modif)
+  
+myInput :: IO (Keycode,Modif)
 myInput = do
   events <- pollEvents
   mds <- getModState
@@ -38,9 +38,10 @@ myInput = do
         | otherwise = Non 
   when (res/=0) $ print res >> print mdres 
   if itx==T.empty then return () else TI.putStrLn itx
-  return (res,mdres) 
+  return (kc,mdres) 
+ 
 
-    {--
+  {--    
 myInput :: IO (Int32,Modif)
 myInput = do
   event <- pollEvent
@@ -68,4 +69,5 @@ myInput = do
   when (res/=0) $ print res >> print mdres 
   if itx==T.empty then return () else TI.putStrLn itx
   return (res,mdres) 
-  --}
+  
+--}

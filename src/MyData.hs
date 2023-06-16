@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,Modif(..),State(..),Attr(..),WMode(..),title,windowSize,initState,fontFiles
-              ,imageFiles,fontSize,fontColor,backColor,delayTime,initYokoPos,initTatePos) 
+module MyData (Pos,Color,Modif(..),State(..),Attr(..),WMode(..),title,windowSize,initState
+              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,delayTime
+              ,initYokoPos,initTatePos) 
   where
 
 import Data.Text (Text)
@@ -19,8 +20,11 @@ data WMode = T | Y deriving (Eq,Show) -- writing mode
 -- tex: edit text
 -- atr: text attribute
 -- tps: text position
+-- ccr: cursor count
 -- ifm: view formatted text or not
-data State = State{tex :: !Text, atr :: !Attr, tps :: !CInt, ifm :: !Bool}
+-- icr: cursor appear
+data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int
+                  ,ifm :: !Bool, icr :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
 -- wmd: writing mode (Tate, Yoko)
@@ -42,8 +46,8 @@ margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるようにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?"
-                  , atr = initAttr, tps=0, ifm=False}
+initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?"
+                  , atr = initAttr, tps=0, crc=0, ifm=False, icr=False}
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, wmd = T, fsz = 24, fco = fontColor
@@ -72,6 +76,9 @@ backColor = V4 182 100 255 255
 
 fontColor :: Color 
 fontColor = V4 255 255 204 255
+
+cursorColor :: Color
+cursorColor = V4 255 255 102 255
 
 delayTime :: Word32
 delayTime = 50
