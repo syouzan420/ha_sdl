@@ -17,6 +17,9 @@ type Index = Int
 type IsFormat = Bool
 type IsCursor = Bool
 type TextPos = Int
+type Line = Int
+type Letter = Int
+type Location = (Line,Letter)
 
 myDraw :: Renderer -> [Font] -> [Texture] -> State -> IO () 
 myDraw re fonts itexs (State texSt atrSt tpsSt _ ifmSt icrSt) = do
@@ -53,7 +56,7 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
           lPos = snd$last pList
       fontS <- blended (fonts!!1) fcoAt tx 
       fontT <- createTextureFromSurface re fontS
-      freeSurface fontS
+--      freeSurface fontS
       when (tpsSt==0 && icrSt) $ cursorDraw re gpsAt wmdAt fs
       foldM_ (\ ps ((b,r),pd) -> do
         let sz = if b then ofs `div` 2 else ofs
@@ -64,6 +67,36 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
              ) (V2 0 0) pList
       when (iCur && icrSt) $ cursorDraw re lPos wmdAt fs 
       textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos} xs
+
+indexToLoc :: Attr -> Text -> Index -> Location
+indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
+
+indexToLoc' :: Attr -> Text -> Location -> Location
+indexToLoc' attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) tx (ln,lt) =
+  case uncons tx of
+    Nothing -> (ln,lt) 
+    Just (ch,xs) -> let cn = fromEnum ch
+                        htw = tw `div` 2
+                        qtw = htw `div` 2
+                        ihf = cn > 31 && cn < 127
+                        irt = ch `elem` "＝ー「」（）"
+                        inl = ch == '\n'
+                        ins = ch `elem` "\n"
+                        ihft = wm==T && ihf
+                        delta 
+                          | wm==T = if ihf then V2 0 htw else V2 0 tw
+                          | ihf = V2 htw 0 
+                          | otherwise = V2 tw 0
+                        psd@(V2 nx ny) = if ins then ps else ps + delta 
+                        npos
+                          | wm==T = if ny > wh - mb || inl then V2 ox mt - V2 nw 0 else psd 
+                          | nx  > ww - mr || inl = V2 ml oy + V2 0 nw
+                          | otherwise = psd
+                        (nln,nlt)
+                          | ny > wh - mb || inl = (ln+1,0)
+                          | otherwise = (ln,lt+1)
+                     in indexToLoc' attr{gps=npos} xs (nln,nlt)
+
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) tx = 
