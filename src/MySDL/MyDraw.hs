@@ -99,6 +99,35 @@ indexToLoc' attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb))
 
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
+makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg) tx = 
+  case uncons tx of
+    Nothing -> [((False,False),ps)]
+    Just (ch,xs) -> let ((ihf,irt),npos) = nextPos ch xs tw wm ps ws mg 
+                        qtw = tw `div` 4
+                        ihft = wm==T && ihf
+                     in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
+                          :makePList atrSt{gps=npos} xs
+
+nextPos :: Char -> Text -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Pos
+nextPos ch xs tw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) = 
+    let cn = fromEnum ch
+        htw = tw `div` 2
+        ihf = cn > 31 && cn < 127
+        irt = ch `elem` "＝ー「」（）"
+        inl = ch == '\n'
+        ins = ch `elem` "\n"
+        delta 
+           | wm==T = if ihf then V2 0 htw else V2 0 tw
+           | ihf = V2 htw 0 
+           | otherwise = V2 tw 0
+        psd@(V2 nx ny) = if ins then ps else ps + delta 
+        npos
+           | wm==T = if ny > wh - mb || inl then V2 ox mt - V2 nw 0 else psd 
+           | nx  > ww - mr || inl = V2 ml oy + V2 0 nw
+           | otherwise = psd
+     in ((ihf,irt),npos)
+       {--
+makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
@@ -121,6 +150,8 @@ makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) t
                           | otherwise = psd
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
                           :makePList attr{gps=npos} xs
+
+--}
 
 changeAtr :: Attr -> Text -> (Attr, (Text, Text))
 changeAtr ast tx = (ast , (tx, T.empty))
