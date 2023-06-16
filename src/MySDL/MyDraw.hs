@@ -102,14 +102,14 @@ makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
-    Just (ch,xs) -> let ((ihf,irt),npos) = nextPos ch xs tw wm ps ws mg 
+    Just (ch,xs) -> let ((ihf,irt),npos) = nextPos ch xs tw nw wm ps ws mg 
                         qtw = tw `div` 4
                         ihft = wm==T && ihf
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
                           :makePList atrSt{gps=npos} xs
 
-nextPos :: Char -> Text -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Pos
-nextPos ch xs tw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) = 
+nextPos :: Char -> Text -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> ((Bool,Bool),Pos)
+nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) = 
     let cn = fromEnum ch
         htw = tw `div` 2
         ihf = cn > 31 && cn < 127
