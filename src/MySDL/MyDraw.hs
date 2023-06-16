@@ -72,15 +72,10 @@ indexToLoc :: Attr -> Text -> Index -> Location
 indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
 
 indexToLoc' :: Attr -> Text -> Location -> Location
-indexToLoc' attr@(Attr ps wm _ _ tw nw ws mg) tx (ln,lt) =
+indexToLoc' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb)) tx lc =
   case uncons tx of
-    Nothing -> (ln,lt) 
-    Just (ch,xs) -> let ((ihf,irt),npos) = nextPos ch xs tw nw wm ps ws mg 
-                        qtw = tw `div` 4
-                        ihft = wm==T && ihf
-                        (nln,nlt)
-                          | ny > wh - mb || inl = (ln+1,0)
-                          | otherwise = (ln,lt+1)
+    Nothing -> lc 
+    Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
                      in indexToLoc' attr{gps=npos} xs (nln,nlt)
 
 
@@ -88,14 +83,15 @@ makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
-    Just (ch,xs) -> let ((ihf,irt),npos) = nextPos ch xs tw nw wm ps ws mg 
+    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch xs tw nw wm ps ws mg (0,0) 
                         qtw = tw `div` 4
                         ihft = wm==T && ihf
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
                           :makePList atrSt{gps=npos} xs
 
-nextPos :: Char -> Text -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> ((Bool,Bool),Pos)
-nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) = 
+nextPos :: Char -> Text -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Location 
+                                                            -> ((Bool,Bool),(Pos,Location))
+nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) = 
     let cn = fromEnum ch
         htw = tw `div` 2
         ihf = cn > 31 && cn < 127
@@ -111,7 +107,10 @@ nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) =
            | wm==T = if ny > wh - mb || inl then V2 ox mt - V2 nw 0 else psd 
            | nx  > ww - mr || inl = V2 ml oy + V2 0 nw
            | otherwise = psd
-     in ((ihf,irt),npos)
+        (nln,nlt)
+           | ny > wh - mb || inl = (ln+1,0)
+           | otherwise = (ln,lt+1)
+     in ((ihf,irt),(npos,(nln,nlt)))
        {--
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList attr@(Attr ps@(V2 ox oy) wm fs fc tw nw (V2 ww wh) (V4 mr mt ml mb)) tx = 
