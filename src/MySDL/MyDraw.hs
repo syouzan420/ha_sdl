@@ -12,7 +12,7 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (Text,uncons)
 import MyData (State(..),Attr(..),WMode(..),Pos,Color,fontSize,cursorColor,backColor)
-import MyAction (makePList)
+import MyAction (makePList,changeAtr)
 
 type Index = Int
 type IsFormat = Bool
@@ -69,9 +69,6 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
       when (iCur && icrSt) $ cursorDraw re lPos wmdAt fs 
       textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos} xs
 
-
-changeAtr :: Attr -> Text -> (Attr, (Text, Text))
-changeAtr ast tx = (ast , (tx, T.empty))
 
 initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do

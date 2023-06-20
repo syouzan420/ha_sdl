@@ -1,4 +1,4 @@
-module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine) where
+module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine,changeAtr) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
@@ -87,3 +87,10 @@ nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) =
            | ny > wh - mb || inl = (ln+1,0)
            | otherwise = (ln,lt+1)
      in ((ihf,irt),(npos,(nln,nlt)))
+
+changeAtr :: Attr -> Text -> (Attr, (Text, Text))
+changeAtr attr tx = 
+  let (com,rtx) = T.break (==' ') tx
+   in (attr , (tx, T.empty))
+
+
