@@ -42,14 +42,14 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
     Nothing -> return ()
     Just (ch,tailTx) -> do 
       let (natr,(ptx,pxs)) 
-            | ifmSt = if ch=='\"' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
+            | ifmSt = if ch==';' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
           lnTex = T.length texSt 
           preInc = lnTex - T.length pxs + 1
           iCur = tpsSt > ind && tpsSt < ind + preInc
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
-          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt) = natr
+          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt) = natr
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
           pList = makePList natr tx
