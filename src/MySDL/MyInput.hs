@@ -14,7 +14,7 @@ import Data.Maybe(fromMaybe)
 import Data.List(find)
 import MyData(Modif(..))
   
-myInput :: IO (Keycode,Modif)
+myInput :: IO (Keycode,Modif,T.Text)
 myInput = do
   events <- pollEvents
   mds <- getModState
@@ -38,7 +38,7 @@ myInput = do
         | otherwise = Non 
   when (res/=0) $ print res >> print mdres 
   if itx==T.empty then return () else TI.putStrLn itx
-  return (kc,mdres) 
+  return (kc,mdres,itx) 
  
 
   {--    

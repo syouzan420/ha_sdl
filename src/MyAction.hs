@@ -36,7 +36,7 @@ indexToLoc :: Attr -> Text -> Index -> Location
 indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
 
 indexToLoc' :: Attr -> Text -> Location -> Location
-indexToLoc' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _) tx lc =
+indexToLoc' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _) tx lc =
   case uncons tx of
     Nothing -> lc 
     Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
@@ -46,7 +46,7 @@ locToIndex :: Attr -> Text -> Location -> Index
 locToIndex atrSt texSt tlc = locToIndex' atrSt texSt tlc (0,0) 0 
 
 locToIndex' :: Attr -> Text -> Location -> Location -> Index -> Index
-locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _) tx tlc@(tln,tlt) lc@(ln,lt) ind
+locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
   | lc==tlc = ind 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
@@ -57,7 +57,7 @@ locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _) tx tlc@(
 
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
-makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg _) tx = 
+makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg _ _) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
     Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch xs tw nw wm ps ws mg (0,0) 
@@ -90,7 +90,7 @@ nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) =
      in ((ihf,irt),(npos,(nln,nlt)))
 
 changeAtr :: Attr -> Text -> (Attr, (Text, Text))
-changeAtr attr@(Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt) tx = 
+changeAtr attr@(Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt iosAt) tx = 
   let (com,rtx) = T.break (==' ') tx
       natr = case com of
                "rb" -> attr

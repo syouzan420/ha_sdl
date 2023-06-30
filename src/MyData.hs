@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),title,windowSize,initState
+module MyData (Pos,Color,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),title,windowSize,initState
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,delayTime
               ,initYokoPos,initTatePos) 
   where
@@ -16,6 +16,7 @@ type PointSize = Int
 type Color = V4 Word8
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
+data EMode = Nor | Ins deriving (Eq,Show) -- edit mode
 
 -- tex: edit text
 -- atr: text attribute
@@ -24,7 +25,7 @@ data WMode = T | Y deriving (Eq,Show) -- writing mode
 -- rbi: for rubi
 -- ifm: view formatted text or not
 -- icr: cursor appear
-data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int
+data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int, emd :: !EMode
                   ,ifm :: !Bool, icr :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
@@ -36,7 +37,7 @@ data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int
 -- wsz: window size (width,height)
 data Attr = Attr{gps :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,rbi :: Rubi}
+                ,rbi :: Rubi, ios :: Bool}
 
 -- rps: rubi position
 -- rwi: width for rubi
@@ -55,13 +56,14 @@ margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
-                  , atr = initAttr, tps=0, crc=0, ifm=False, icr=False}
+initState = State {tex = "", atr = initAttr, tps=0, crc=0, emd=Nor, ifm=False, icr=False}
+
+initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,rbi = initRubi}
+               ,rbi = initRubi, ios = False}
 
 initRubi :: Rubi
 initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, rsz = rubiSize, irb = False, iwr = False}

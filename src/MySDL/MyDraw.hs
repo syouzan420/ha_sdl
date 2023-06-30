@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MySDL.MyDraw (myDraw,initDraw) where
 
 import SDL.Video (Renderer, Texture)
@@ -23,7 +24,7 @@ type Letter = Int
 type Location = (Line,Letter)
 
 myDraw :: Renderer -> [Font] -> [Texture] -> State -> IO () 
-myDraw re fonts itexs (State texSt atrSt tpsSt _ ifmSt icrSt) = do
+myDraw re fonts itexs (State texSt atrSt tpsSt _ _ ifmSt icrSt) = do
   initDraw re
   textsDraw re fonts 0 ifmSt icrSt tpsSt atrSt texSt 
   present re
@@ -49,16 +50,22 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
           iCur = tpsSt > ind && tpsSt < ind + preInc
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
-          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt) = natr
+          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt iosAt) = natr
           (Rubi rpgRb rwdRb rszRb irbRb iwrRb) = rbiAt
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
+          fnum = if iosAt then 2 else 1
           pList = makePList natr tx
           indInc = lnTex - T.length xs + 1
           lPos = snd$last pList
           nirb = not (irbRb && iwrRb) && irbRb
           niwr = (irbRb && not iwrRb) || iwrRb
-      fontS <- blended (fonts!!1) fcoAt tx 
+          rpText = T.replace "\n" "  " tx
+      fontS <- case fnum of
+                 1 -> blended (fonts!!fnum) fcoAt tx 
+                 2 -> blended (fonts!!fnum) fcoAt rpText
+                 _ -> blended (fonts!!1) fcoAt tx
+        
       fontT <- createTextureFromSurface re fontS
 --      freeSurface fontS
       when (tpsSt==0 && icrSt) $ cursorDraw re gpsAt wmdAt fs
