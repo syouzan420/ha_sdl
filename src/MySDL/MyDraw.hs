@@ -11,7 +11,7 @@ import Control.Monad (foldM_,when)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (Text,uncons)
-import MyData (State(..),Attr(..),WMode(..),Pos,Color,fontSize,cursorColor,backColor)
+import MyData (State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,fontSize,cursorColor,backColor)
 import MyAction (makePList,changeAtr)
 
 type Index = Int
@@ -50,11 +50,14 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
           (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt) = natr
+          (Rubi rpgRb rwdRb rszRb irbRb iwrRb) = rbiAt
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
           pList = makePList natr tx
           indInc = lnTex - T.length xs + 1
           lPos = snd$last pList
+          nirb = not (irbRb && iwrRb) && irbRb
+          niwr = (irbRb && not iwrRb) || iwrRb
       fontS <- blended (fonts!!1) fcoAt tx 
       fontT <- createTextureFromSurface re fontS
 --      freeSurface fontS
@@ -68,7 +71,6 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
              ) (V2 0 0) pList
       when (iCur && icrSt) $ cursorDraw re lPos wmdAt fs 
       textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos} xs
-
 
 initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do

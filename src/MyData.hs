@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,Modif(..),State(..),Attr(..),WMode(..),title,windowSize,initState
+module MyData (Pos,Color,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),title,windowSize,initState
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,delayTime
               ,initYokoPos,initTatePos) 
   where
@@ -41,8 +41,9 @@ data Attr = Attr{gps :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
 -- rps: rubi position
 -- rwi: width for rubi
 -- rsz: rubi font size
--- irb: is making rubi?
-data Rubi = Rubi{rps :: Pos, rwd :: CInt, rsz :: PointSize, irb :: Bool}
+-- irb: is rubi mode?
+-- iwr: is writing rubi?
+data Rubi = Rubi{rps :: Pos, rwd :: CInt, rsz :: PointSize, irb :: Bool, iwr :: Bool}
 
 title :: T.Text
 title = "HA"
@@ -63,7 +64,7 @@ initAttr = Attr{gps = initTatePos, wmd = T, fsz = fontSize, fco = fontColor
                ,rbi = initRubi}
 
 initRubi :: Rubi
-initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, rsz = rubiSize, irb = False}
+initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, rsz = rubiSize, irb = False, iwr = False}
 
 fontFiles :: [FilePath]
 fontFiles = map ("font/"++) ["monaco.ttf","marugo.TTC","oshide.otf"]
