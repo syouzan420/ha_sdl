@@ -17,13 +17,14 @@ inputEvent st = do
       isNor = emdSt==Nor
       isIns = emdSt==Ins
       isRet = kc==KeycodeReturn
-      isUp = kc==KeycodeK && isNor 
-      isDown = kc==KeycodeJ && isNor
-      isLeft = kc==KeycodeH && isNor
-      isRight = kc==KeycodeL && isNor
+      isUp = (kc==KeycodeK && isNor) || kc==KeycodeUp
+      isDown = (kc==KeycodeJ && isNor) || kc==KeycodeDown
+      isLeft = (kc==KeycodeH && isNor) || kc==KeycodeLeft
+      isRight = (kc==KeycodeL && isNor) || kc==KeycodeRight
       isToIns = kc==KeycodeI && isNor
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
+      isBS = kc==KeycodeBackspace
       texSt = tex st
       atrSt = atr st
       tpsSt = tps st
@@ -43,12 +44,14 @@ inputEvent st = do
         | isLeft = if wm==Y then if tpsSt==0 then 0 else tpsSt-1 else tpsNextLine
         | isRight = if wm==Y then if tpsSt==tLen then tLen else tpsSt+1 else tpsPreLine
         | isIns && nit/=T.empty = tpsSt + T.length nit 
+        | isBS = if tpsSt>0 then tpsSt-1 else tpsSt
         | otherwise = tpsSt
       nemd
         | isToIns = Ins 
         | isToNor = Nor 
         | otherwise = emdSt
       ntex
+        | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
         | isIns = T.take tpsSt texSt <> nit <> T.drop tpsSt texSt 
         | otherwise = texSt
       nst = st{tex=ntex,atr=natr,tps=ntps,emd=nemd}
