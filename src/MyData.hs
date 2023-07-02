@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),title,windowSize,initState
-              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,delayTime
+              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
               ,initYokoPos,initTatePos) 
   where
 
@@ -35,16 +35,20 @@ data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int, emd :: 
 -- ltw: letter width (文字送り)
 -- lnw: line width (行送り)
 -- wsz: window size (width,height)
+-- mgn: margins (right, top, left, bottom)
+-- rbi: for rubi
+-- cnm: command name
+-- cid: command index
 data Attr = Attr{gps :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,rbi :: Rubi, ios :: Bool}
+                ,rbi :: Rubi, cnm :: Text, cid :: Int, ios :: Bool} deriving (Eq,Show)
 
 -- rps: rubi position
 -- rwi: width for rubi
--- rsz: rubi font size
--- irb: is rubi mode?
--- iwr: is writing rubi?
-data Rubi = Rubi{rps :: Pos, rwd :: CInt, rsz :: PointSize, irb :: Bool, iwr :: Bool}
+-- tsz: tempral font size
+-- tlw: temporal letter width
+-- spr: separation from the main font
+data Rubi = Rubi{rps :: Pos, rwd :: CInt, tsz :: PointSize, tlw :: CInt, spr :: CInt} deriving (Eq,Show)
 
 title :: T.Text
 title = "HA"
@@ -63,10 +67,11 @@ initText = "これはテストです\n日本語がちゃんと表示されてゐ
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,rbi = initRubi, ios = False}
+               ,rbi = initRubi, cnm = "", cid = 0, ios = False}
 
 initRubi :: Rubi
-initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, rsz = rubiSize, irb = False, iwr = False}
+initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, tsz = rubiSize, tlw = initLetterWidth
+               ,spr = 0}
 
 fontFiles :: [FilePath]
 fontFiles = map ("font/"++) ["monaco.ttf","marugo.TTC","oshide.otf"]
@@ -78,7 +83,7 @@ fontSize :: PointSize
 fontSize = 24 
 
 rubiSize :: PointSize
-rubiSize = 8
+rubiSize = 10 
 
 initYokoPos :: V2 CInt
 initYokoPos = V2 20 30
@@ -87,7 +92,7 @@ initTatePos :: V2 CInt
 initTatePos = V2 420 30 
 
 initLetterWidth, initLineWidth :: CInt
-initLetterWidth = 26; initLineWidth = 30
+initLetterWidth = 26; initLineWidth = 36
 
 backColor :: Color
 backColor = V4 182 100 255 255

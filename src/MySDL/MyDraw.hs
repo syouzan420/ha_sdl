@@ -11,9 +11,10 @@ import Control.Monad.IO.Class (MonadIO)
 import Control.Monad (foldM_,when)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
+import qualified Data.Text.IO as TI
 import Data.Text (Text,uncons)
 import MyData (State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,fontSize,cursorColor,backColor)
-import MyAction (makePList,changeAtr)
+import MyAction (makePList,changeAtr,exeAttrCom)
 
 type Index = Int
 type IsFormat = Bool
@@ -43,40 +44,40 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
     Nothing -> return ()
     Just (ch,tailTx) -> do 
       let (natr,(ptx,pxs)) 
-            | ifmSt = if ch==';' then changeAtr atrSt tailTx else (atrSt,T.break (=='\"') texSt)
+            | ifmSt = if ch==';' then exeAttrCom$changeAtr atrSt tailTx else
+                        if cnm atrSt/=T.empty then exeAttrCom (atrSt,texSt)
+                                         else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
-          lnTex = T.length texSt 
+      let lnTex = T.length texSt 
           preInc = lnTex - T.length pxs + 1
-          iCur = tpsSt > ind && tpsSt < ind + preInc
+          iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
-          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt iosAt) = natr
-          (Rubi rpgRb rwdRb rszRb irbRb iwrRb) = rbiAt
+          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
           fnum = if iosAt then 2 else 1
           pList = makePList natr tx
           indInc = lnTex - T.length xs + 1
           lPos = snd$last pList
-          nirb = not (irbRb && iwrRb) && irbRb
-          niwr = (irbRb && not iwrRb) || iwrRb
           rpText = T.replace "\n" "  " tx
-      fontS <- case fnum of
+      when (tx/=T.empty) $ do
+        fontS <- case fnum of
                  1 -> blended (fonts!!fnum) fcoAt tx 
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
         
-      fontT <- createTextureFromSurface re fontS
+        fontT <- createTextureFromSurface re fontS
 --      freeSurface fontS
-      when (tpsSt==0 && icrSt) $ cursorDraw re gpsAt wmdAt fs
-      foldM_ (\ ps ((b,r),pd) -> do
-        let sz = if b then ofs `div` 2 else ofs
-        copyEx re fontT (Just (Rectangle (P ps) (V2 sz ofs)))
-                        (Just (Rectangle (P pd) (V2 (if b then fs `div` 2 else fs) fs)))
-                        (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
-        return (ps+V2 sz 0)
-             ) (V2 0 0) pList
-      when (iCur && icrSt) $ cursorDraw re lPos wmdAt fs 
+        when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re gpsAt wmdAt fs
+        foldM_ (\ ps ((b,r),pd) -> do
+          let sz = if b then ofs `div` 2 else ofs
+          copyEx re fontT (Just (Rectangle (P ps) (V2 sz ofs)))
+                          (Just (Rectangle (P pd) (V2 (if b then fs `div` 2 else fs) fs)))
+                          (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
+          return (ps+V2 sz 0)
+              ) (V2 0 0) pList
+      when (iCur && icrSt && not ifmSt) $ cursorDraw re lPos wmdAt fs 
       textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos} xs
 
 initDraw :: MonadIO m => Renderer -> m ()

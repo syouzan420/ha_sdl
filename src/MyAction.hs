@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine,changeAtr) where
+module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine
+                ,changeAtr,exeAttrCom) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (Point(P),V2(..),V4(..))
-import MyData (State(..),Attr(..),WMode(..),Pos)
+import MyData (State(..),Attr(..),Rubi(..),WMode(..),Pos,rubiSize)
 
 type Index = Int
 type Line = Int
@@ -36,7 +37,7 @@ indexToLoc :: Attr -> Text -> Index -> Location
 indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
 
 indexToLoc' :: Attr -> Text -> Location -> Location
-indexToLoc' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _) tx lc =
+indexToLoc' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _ _ _) tx lc =
   case uncons tx of
     Nothing -> lc 
     Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
@@ -46,7 +47,7 @@ locToIndex :: Attr -> Text -> Location -> Index
 locToIndex atrSt texSt tlc = locToIndex' atrSt texSt tlc (0,0) 0 
 
 locToIndex' :: Attr -> Text -> Location -> Location -> Index -> Index
-locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
+locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _ _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
   | lc==tlc = ind 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
@@ -57,7 +58,7 @@ locToIndex' attr@(Attr ps wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _) tx tlc
 
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
-makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg _ _) tx = 
+makePList atrSt@(Attr ps@(V2 ox oy) wm _ _ tw nw ws mg _ _ _ _) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
     Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch xs tw nw wm ps ws mg (0,0) 
@@ -89,12 +90,32 @@ nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) =
            | otherwise = (ln,lt+1)
      in ((ihf,irt),(npos,(nln,nlt)))
 
-changeAtr :: Attr -> Text -> (Attr, (Text, Text))
-changeAtr attr@(Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt iosAt) tx = 
-  let (com,rtx) = T.break (==' ') tx
-      natr = case com of
-               "rb" -> attr
-               _    -> attr
-   in (attr , (tx, T.empty))
+changeAtr :: Attr -> Text -> (Attr, Text)
+changeAtr attr tx = 
+  let (com,rtx) = if tx==T.empty then (T.empty,T.empty) else T.break (==' ') tx
+      ncid = case com of
+               "r" -> 2 
+               _    -> 0
+      natr = attr{cnm=com, cid=ncid}
+   in (natr , rtx)
 
-
+exeAttrCom :: (Attr,Text) -> (Attr, (Text, Text))
+exeAttrCom (attr@(Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt),tx) = 
+  let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
+      tailTx = T.tail tx
+      (ttx,rtx) = if cidAt>0 then T.break (==' ') tailTx  else T.break (==';') tailTx
+      tln = fromIntegral (T.length ttx)
+      natr = case cnmAt of
+               "r" -> case cidAt of
+                         2 -> attr{rbi=rbiAt{rps=gpsAt,rwd=ltwAt*tln}}
+                         1 -> let fs = fromIntegral fszAt
+                                  rbStartPos = if wmdAt==T then rpsRb + V2 (fs+sprRb) 0  
+                                                           else rpsRb - V2 0 sprRb
+                                  rbLetterWidth = rwdRb `div` tln 
+                               in attr{gps=rbStartPos,fsz=rubiSize,ltw=rbLetterWidth 
+                                      ,rbi=rbiAt{tsz=fszAt,tlw=ltwAt}} 
+                         0 -> attr{gps=rpsRb+(if wmdAt==T then V2 0 rwdRb else V2 rwdRb 0)
+                                  ,fsz=tszRb, ltw=tlwRb}
+               _    -> attr{cnm=""}
+      ncnm = if cidAt==0 then "" else cnmAt
+   in (natr{cnm=ncnm, cid=cidAt-1} , (ttx, rtx))

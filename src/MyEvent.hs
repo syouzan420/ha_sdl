@@ -24,10 +24,12 @@ inputEvent st = do
       isToIns = kc==KeycodeI && isNor
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
+      isTglFmt = kc==KeycodeF && md==Ctr
       isBS = kc==KeycodeBackspace
       texSt = tex st
       atrSt = atr st
       tpsSt = tps st
+      ifmSt = ifm st
       tLen = T.length texSt
       wm = wmd atrSt
       os = ios atrSt
@@ -39,6 +41,7 @@ inputEvent st = do
         | isTglOsd = if os then atrSt{ios=False} else atrSt{ios=True}
         | otherwise = atrSt
       ntps
+        | ifmSt = tpsSt
         | isUp = if wm==T then if tpsSt==0 then 0 else tpsSt-1 else tpsPreLine
         | isDown = if wm==T then if tpsSt==tLen then tLen else tpsSt+1 else tpsNextLine
         | isLeft = if wm==Y then if tpsSt==0 then 0 else tpsSt-1 else tpsNextLine
@@ -51,8 +54,12 @@ inputEvent st = do
         | isToNor = Nor 
         | otherwise = emdSt
       ntex
+        | ifmSt = texSt
         | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
         | isIns = T.take tpsSt texSt <> nit <> T.drop tpsSt texSt 
         | otherwise = texSt
-      nst = st{tex=ntex,atr=natr,tps=ntps,emd=nemd}
+      nifm
+        | isTglFmt = not ifmSt
+        | otherwise = ifmSt
+      nst = st{tex=ntex,atr=natr,tps=ntps,emd=nemd,ifm=nifm}
   return (nst,isKeyPressed,isQuit)
