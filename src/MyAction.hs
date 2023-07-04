@@ -92,9 +92,9 @@ nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) =
 
 changeAtr :: Attr -> Text -> (Attr, Text)
 changeAtr attr tx = 
-  let (com,rtx) = if tx==T.empty then (T.empty,T.empty) else T.break (==' ') tx
+  let (com,rtx) = T.break (==' ') tx
       ncid = case com of
-               "r" -> 2 
+               "rb" -> 2 
                _    -> 0
       natr = attr{cnm=com, cid=ncid}
    in (natr , rtx)
@@ -106,7 +106,7 @@ exeAttrCom (attr@(Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnm
       (ttx,rtx) = if cidAt>0 then T.break (==' ') tailTx  else T.break (==';') tailTx
       tln = fromIntegral (T.length ttx)
       natr = case cnmAt of
-               "r" -> case cidAt of
+               "rb" -> case cidAt of
                          2 -> attr{rbi=rbiAt{rps=gpsAt,rwd=ltwAt*tln}}
                          1 -> let fs = fromIntegral fszAt
                                   rbStartPos = if wmdAt==T then rpsRb + V2 (fs+sprRb) 0  

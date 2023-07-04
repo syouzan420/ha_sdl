@@ -46,7 +46,7 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
       let (natr,(ptx,pxs)) 
             | ifmSt = if ch==';' then exeAttrCom$changeAtr atrSt tailTx else
                         if cnm atrSt/=T.empty then exeAttrCom (atrSt,texSt)
-                                         else (atrSt,T.break (==';') texSt)
+                                              else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
       let lnTex = T.length texSt 
           preInc = lnTex - T.length pxs + 1
