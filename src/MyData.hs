@@ -39,7 +39,7 @@ data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int, emd :: 
 -- rbi: for rubi
 -- cnm: command name
 -- cid: command index
-data Attr = Attr{gps :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
+data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
                 ,rbi :: Rubi, cnm :: Text, cid :: Int, ios :: Bool} deriving (Eq,Show)
 
@@ -65,7 +65,7 @@ initState = State {tex = "", atr = initAttr, tps=0, crc=0, emd=Nor, ifm=False, i
 initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
 
 initAttr :: Attr
-initAttr = Attr{gps = initTatePos, wmd = T, fsz = fontSize, fco = fontColor
+initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
                ,rbi = initRubi, cnm = "", cid = 0, ios = False}
 

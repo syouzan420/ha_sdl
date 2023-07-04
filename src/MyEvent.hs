@@ -58,7 +58,6 @@ inputEvent st@(State texSt atrSt tpsSt _ emdSt ifmSt _) = do
         | ifmSt = texSt
         | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
         | isCom = textIns comName 
---        | isIns = T.take tpsSt texSt <> nit <> T.drop tpsSt texSt 
         | isIns = textIns nit 
         | otherwise = texSt
       nifm

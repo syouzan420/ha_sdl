@@ -9,7 +9,7 @@ import SDL.Time (delay)
 import MyAction (myAction,beforeDraw,afterDraw)
 import MySDL.MyDraw (myDraw)
 import Data.Text (Text)
-import MyData (State(..),delayTime)
+import MyData (State(..),Attr(..),delayTime)
 import MyEvent (inputEvent)
 
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
@@ -21,7 +21,7 @@ myLoop state re fonts itexs = do
       ncrc = if isUpdateTps then 0 else crc st'
       nst = beforeDraw st'{crc=ncrc,icr=nicr}
       isUpdateDraw = tex st /= tex nst || icr st /= icr nst || isUpdateTps || isKeyPressed
-  when isUpdateDraw $ myDraw re fonts itexs (beforeDraw nst) 
+  when isUpdateDraw $ myDraw re fonts itexs (beforeDraw nst)
   state $= afterDraw nst 
   delay delayTime
   unless isQuit (myLoop state re fonts itexs)

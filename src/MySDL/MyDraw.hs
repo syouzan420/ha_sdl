@@ -38,10 +38,10 @@ cursorDraw re (V2 x y) wm sz = do
   fillRect re (Just rect) 
 
 textsDraw :: Renderer -> [Font] -> Index -> IsFormat
-                      -> IsCursor -> TextPos -> Attr -> Text -> IO ()
+                      -> IsCursor -> TextPos -> Attr -> Text -> IO () 
 textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
   case uncons texSt of
-    Nothing -> return ()
+    Nothing -> return () 
     Just (ch,tailTx) -> do 
       let (natr,(ptx,pxs)) 
             | ifmSt = if ch==';' then exeAttrCom$changeAtr atrSt tailTx else
@@ -53,13 +53,20 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
-          (Attr gpsAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
+          (Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
           ofs = fromIntegral fontSize
           fs = fromIntegral fszAt
           fnum = if iosAt then 2 else 1
           pList = makePList natr tx
           indInc = lnTex - T.length xs + 1
-          lPos = snd$last pList
+          lPos@(V2 lpx lpy) = snd$last pList
+          (V2 sx sy) = scrAt
+          (V2 ww wh) = wszAt
+          (V4 mr mt ml mb) = mgnAt
+          nscr
+            | iCur && wmdAt == T && lpx+sx < ml = V2 (ml-lpx) sy 
+--            | iCur && wmdAt == T && lpx+sx > ww - mr = V2 ((ww-mr)-lpx) sy
+            | otherwise = scrAt
           rpText = T.replace "\n" "  " tx
       when (tx/=T.empty) $ do
         fontS <- case fnum of
@@ -69,16 +76,16 @@ textsDraw re fonts ind ifmSt icrSt tpsSt atrSt texSt = do
         
         fontT <- createTextureFromSurface re fontS
 --      freeSurface fontS
-        when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re gpsAt wmdAt fs
+        when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (gpsAt+nscr) wmdAt fs
         foldM_ (\ ps ((b,r),pd) -> do
           let sz = if b then ofs `div` 2 else ofs
           copyEx re fontT (Just (Rectangle (P ps) (V2 sz ofs)))
-                          (Just (Rectangle (P pd) (V2 (if b then fs `div` 2 else fs) fs)))
+                          (Just (Rectangle (P (pd+nscr)) (V2 (if b then fs `div` 2 else fs) fs)))
                           (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
           return (ps+V2 sz 0)
               ) (V2 0 0) pList
-      when (iCur && icrSt && not ifmSt) $ cursorDraw re lPos wmdAt fs 
-      textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos} xs
+      when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdAt fs 
+      textsDraw re fonts (ind+indInc) ifmSt icrSt tpsSt natr{gps=lPos,scr=nscr} xs
 
 initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do
