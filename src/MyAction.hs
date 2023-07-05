@@ -103,7 +103,7 @@ exeAttrCom :: (Attr,Text) -> (Attr, (Text, Text))
 exeAttrCom (attr@(Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt),tx) = 
   let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
-      (ttx,rtx) = if cidAt>0 then T.break (==' ') tailTx  else T.break (==';') tailTx
+      (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx
       tln = fromIntegral (T.length ttx)
       natr = case cnmAt of
                "rb" -> case cidAt of
@@ -119,3 +119,12 @@ exeAttrCom (attr@(Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbi
                _    -> attr{cnm=""}
       ncnm = if cidAt==0 then "" else cnmAt
    in (natr{cnm=ncnm, cid=cidAt-1} , (ttx, rtx))
+
+breakText :: Text -> (Text,Text)
+breakText tx = let (hd,tl) = T.break (=='\n') tx
+                   (hda,hdb) = if ' ' `T.elem` hd then T.break (==' ') hd else (hd,T.empty)
+                   tl2
+                     |tl==T.empty = tl 
+                     |T.head tl == '\n' = " "<>tl
+                     |otherwise = tl
+                in (hda,hdb<>tl2)
