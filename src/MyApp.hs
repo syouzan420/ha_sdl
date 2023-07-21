@@ -7,6 +7,7 @@ import MySDL.MyInit (withMyInit)
 import MySDL.MyInitVideo (withMyVideo)
 import MySDL.MyDraw (myDraw)
 import MyData (initState)
+import MyAction (makeTextData)
 
 appMain :: IO ()
 appMain =
@@ -15,5 +16,5 @@ appMain =
     withMyVideo sur $
       \(renderer,itexs) -> do
         state <- newIORef initState
-        myDraw renderer fonts itexs initState 
+        myDraw renderer fonts itexs (makeTextData initState) initState 
         myLoop state renderer fonts itexs

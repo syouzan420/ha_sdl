@@ -1,17 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine
-                ,changeAtr,exeAttrCom) where
+                ,changeAtr,exeAttrCom,makeTextData) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (Point(P),V2(..),V4(..))
-import MyData (State(..),Attr(..),Rubi(..),WMode(..),Pos,rubiSize)
+import MyData (State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize)
 
 type Index = Int
 type Line = Int
 type Letter = Int
+type TextPos = Int
 type Location = (Line,Letter)
+type IsFormat = Bool
 
 myAction :: State -> State
 myAction st = st
@@ -26,6 +28,40 @@ beforeDraw st =
 
 afterDraw :: State -> State
 afterDraw st = st
+
+makeTextData :: State -> [(Bool,Text,Attr,[PList])]
+makeTextData (State texSt atrSt tpsSt _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
+
+makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> [(Bool,Text,Attr,[PList])]
+makeTexts ind ifmSt tpsSt atrSt texSt = 
+  case uncons texSt of
+    Nothing -> [] 
+    Just (ch,tailTx) ->  
+      let (natr,(ptx,pxs)) 
+            | ifmSt = if ch==';' then exeAttrCom$changeAtr atrSt tailTx else
+                        if cnm atrSt/=T.empty then exeAttrCom (atrSt,texSt)
+                                              else (atrSt,T.break (==';') texSt)
+            | otherwise = (atrSt,(texSt,T.empty))
+          lnTex = T.length texSt 
+          preInc = lnTex - T.length pxs + 1
+          iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
+          (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
+          (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
+          (Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
+          fs = fromIntegral fszAt
+          pList = makePList natr tx
+          indInc = lnTex - T.length xs + 1
+          lPos@(V2 lpx lpy) = snd$last pList
+          (V2 sx sy) = scrAt
+          (V2 ww wh) = wszAt
+          (V4 mr mt ml mb) = mgnAt
+          nscr
+            | iCur && wmdAt == T && lpx+sx < ml = V2 (ml-lpx) sy 
+            | iCur && wmdAt == T && lpx+sx > ww - mr - fs*2  = V2 (ww-mr-fs*2-lpx) sy
+            | otherwise = scrAt
+      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt tpsSt natr{gps=lPos,scr=nscr} xs 
+
+
 
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =

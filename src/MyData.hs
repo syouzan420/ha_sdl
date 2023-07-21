@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),title,windowSize,initState
+module MyData (Pos,Color,PList,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),title,windowSize,initState
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
               ,initYokoPos,initTatePos) 
   where
@@ -14,9 +14,11 @@ import Data.Word (Word8,Word32)
 type Pos = V2 CInt
 type PointSize = Int
 type Color = V4 Word8
+type PList = ((Bool,Bool),Pos)
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 data EMode = Nor | Ins deriving (Eq,Show) -- edit mode
+
 
 -- tex: edit text
 -- atr: text attribute
