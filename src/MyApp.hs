@@ -6,8 +6,9 @@ import MySDL.MyLoop (myLoop)
 import MySDL.MyInit (withMyInit)
 import MySDL.MyInitVideo (withMyVideo)
 import MySDL.MyDraw (myDraw)
-import MyData (initState)
+import MyData (initState,textFileName,State(..))
 import MyAction (makeTextData)
+import MyFile (fileRead)
 
 appMain :: IO ()
 appMain =
@@ -15,6 +16,8 @@ appMain =
     (fonts,sur) <- myLoad
     withMyVideo sur $
       \(renderer,itexs) -> do
-        state <- newIORef initState
-        myDraw renderer fonts itexs (makeTextData initState) initState 
+        newText <- fileRead textFileName
+        let newState = initState{tex=newText} 
+        state <- newIORef newState
+        myDraw renderer fonts itexs (makeTextData newState) newState 
         myLoop state renderer fonts itexs

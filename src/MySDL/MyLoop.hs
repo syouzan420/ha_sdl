@@ -8,8 +8,9 @@ import SDL.Video.Renderer (Renderer,Texture)
 import SDL.Time (delay)
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Attr(..),delayTime)
+import MyData (State(..),Attr(..),delayTime,textFileName)
 import MyEvent (inputEvent)
+import MyFile (fileWrite)
 
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
 myLoop state re fonts itexs = do
@@ -27,4 +28,5 @@ myLoop state re fonts itexs = do
   when isUpdateDraw $ myDraw re fonts itexs textData (beforeDraw nst)
   state $= afterDraw nst{atr=(atr nst){scr=nscr}}
   delay delayTime
+  when isQuit $ fileWrite textFileName (tex nst)
   unless isQuit (myLoop state re fonts itexs)

@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),title,windowSize,initState
+module MyData (Pos,Color,PList,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+              ,title,windowSize,initState
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
-              ,initYokoPos,initTatePos) 
+              ,initYokoPos,initTatePos,textFileName) 
   where
 
 import Data.Text (Text)
@@ -55,8 +56,14 @@ data Rubi = Rubi{rps :: Pos, rwd :: CInt, tsz :: PointSize, tlw :: CInt, spr :: 
 title :: T.Text
 title = "HA"
 
+textFileName :: FilePath
+textFileName = "./ha.txt"
+
+winSizeX, winSizeY :: CInt
+winSizeX = 900; winSizeY = 600
+
 windowSize :: V2 CInt
-windowSize = V2 480 600
+windowSize = V2 winSizeX winSizeY 
 
 margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
@@ -91,7 +98,7 @@ initYokoPos :: V2 CInt
 initYokoPos = V2 20 30
 
 initTatePos :: V2 CInt
-initTatePos = V2 420 30 
+initTatePos = V2 (winSizeX-60) 30 
 
 initLetterWidth, initLineWidth :: CInt
 initLetterWidth = 26; initLineWidth = 36
