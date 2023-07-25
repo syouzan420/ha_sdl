@@ -57,7 +57,9 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
           (V4 mr mt ml mb) = mgnAt
           nscr
             | iCur && wmdAt == T && lpx+sx < ml = V2 (ml-lpx) sy 
-            | iCur && wmdAt == T && lpx+sx > ww - mr - fs*2  = V2 (ww-mr-fs*2-lpx) sy
+            | iCur && wmdAt == T && lpx+sx > ww - mr - fs  = V2 (ww-mr-fs*2-lpx) sy
+            | iCur && wmdAt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
+            | iCur && wmdAt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
       in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt tpsSt natr{gps=lPos,scr=nscr} xs 
 
@@ -146,7 +148,7 @@ exeAttrCom (attr@(Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbi
                          2 -> attr{rbi=rbiAt{rps=gpsAt,rwd=ltwAt*tln}}
                          1 -> let fs = fromIntegral fszAt
                                   rbStartPos = if wmdAt==T then rpsRb + V2 (fs+sprRb) 0  
-                                                           else rpsRb - V2 0 sprRb
+                                                           else rpsRb - V2 0 (fromIntegral rubiSize+sprRb)
                                   rbLetterWidth = rwdRb `div` tln 
                                in attr{gps=rbStartPos,fsz=rubiSize,ltw=rbLetterWidth 
                                       ,rbi=rbiAt{tsz=fszAt,tlw=ltwAt}} 

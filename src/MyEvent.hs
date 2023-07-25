@@ -2,6 +2,7 @@
 module MyEvent (inputEvent) where
 
 import MySDL.MyInput (myInput)
+import Linear.V2 (V2(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos)
 import MyAction (tpsForRelativeLine)
@@ -37,7 +38,8 @@ inputEvent st@(State texSt atrSt tpsSt _ emdSt ifmSt _) = do
       nit = if isIns && isRet then "\n" else it
       textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
       natr
-        | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y} else atrSt{gps=initTatePos,wmd=T} 
+        | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y,scr=V2 0 0} 
+                              else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
         | isTglOsd = if os then atrSt{ios=False} else atrSt{ios=True}
         | otherwise = atrSt
       ntps

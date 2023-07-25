@@ -6,12 +6,10 @@ import SDL (get, ($=))
 import SDL.Font (Font)
 import SDL.Video.Renderer (Renderer,Texture)
 import SDL.Time (delay)
-import MyAction (myAction,beforeDraw,afterDraw)
+import MyAction (beforeDraw,afterDraw,makeTextData)
 import MySDL.MyDraw (myDraw)
-import Data.Text (Text)
 import MyData (State(..),Attr(..),delayTime)
 import MyEvent (inputEvent)
-import MyAction (makeTextData)
 
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
 myLoop state re fonts itexs = do
@@ -27,7 +25,6 @@ myLoop state re fonts itexs = do
       natr = if null textData then atr nst else getAtr textData
       nscr = scr natr
   when isUpdateDraw $ myDraw re fonts itexs textData (beforeDraw nst)
---  state $= afterDraw nst
   state $= afterDraw nst{atr=(atr nst){scr=nscr}}
   delay delayTime
   unless isQuit (myLoop state re fonts itexs)
