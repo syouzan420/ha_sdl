@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
-              ,title,windowSize,initState
+module MyData (Pos,Color,PList,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+              ,title,windowSize,initState,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
-              ,initYokoPos,initTatePos,textFileName) 
+              ,initYokoPos,initTatePos,textFileName,colorPallet) 
   where
 
 import Data.Text (Text)
@@ -15,20 +15,28 @@ import Data.Word (Word8,Word32)
 type Pos = V2 CInt
 type PointSize = Int
 type Color = V4 Word8
+type Cnum = Int         -- color number
 type PList = ((Bool,Bool),Pos)
+type Dot = (Pos,Cnum)
+type Dots = [Dot]
+
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 data EMode = Nor | Ins deriving (Eq,Show) -- edit mode
 
 
+
 -- tex: edit text
+-- dts: dots drawing (pixel art)
 -- atr: text attribute
 -- tps: text position
--- ccr: cursor count
--- rbi: for rubi
+-- crc: cursor count
+-- emd: edit mode (normal or insert) 
+-- cpl: color pallet (color number)
 -- ifm: view formatted text or not
 -- icr: cursor appear
-data State = State{tex :: !Text, atr :: !Attr, tps :: !Int, crc :: !Int, emd :: !EMode
+data State = State{tex :: !Text, dts :: !Dots, atr :: !Attr, tps :: !Int
+                  ,crc :: !Int, emd :: !EMode, cpl :: !Cnum
                   ,ifm :: !Bool, icr :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
@@ -65,11 +73,15 @@ winSizeX = 900; winSizeY = 600
 windowSize :: V2 CInt
 windowSize = V2 winSizeX winSizeY 
 
+dotSize :: CInt
+dotSize = 5
+
 margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "", atr = initAttr, tps=0, crc=0, emd=Nor, ifm=False, icr=False}
+initState = State {tex = "", dts = [], atr = initAttr, tps=0, crc=0, emd=Nor, cpl=1
+                  ,ifm=False, icr=False}
 
 initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
 
@@ -114,3 +126,6 @@ cursorColor = V4 255 255 102 255
 
 delayTime :: Word32
 delayTime = 50
+
+colorPallet :: [Color]
+colorPallet = [backColor,fontColor,cursorColor,V4 153 153 255 255,V4 255 102 178 255]

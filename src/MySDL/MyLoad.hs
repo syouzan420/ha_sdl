@@ -3,8 +3,6 @@ module MySDL.MyLoad (myLoad) where
 
 import qualified SDL.Font as F
 import qualified SDL.Image as I
-import Data.Text (Text)
-import qualified Data.Text as T
 import SDL.Video.Renderer (Surface)
 import MyData (fontSize,fontFiles,imageFiles)
 

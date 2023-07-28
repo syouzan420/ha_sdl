@@ -1,10 +1,10 @@
 module MySDL.MyInitVideo (withMyVideo) where
 
-import SDL.Video (Window, createWindow, defaultWindow, windowInitialSize
+import SDL.Video (createWindow, defaultWindow, windowInitialSize
                  ,createRenderer,defaultRenderer,destroyWindow)
 import SDL.Video.Renderer (Surface,Renderer,Texture,createTextureFromSurface,present,freeSurface)
-import SDL.Input.Keyboard (startTextInput,stopTextInput)
-import SDL.Raw.Types (Rect(..))
+--import SDL.Input.Keyboard (startTextInput,stopTextInput)
+--import SDL.Raw.Types (Rect(..))
 import MySDL.MyDraw (initDraw)
 import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO)

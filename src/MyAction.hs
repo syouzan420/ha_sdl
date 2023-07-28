@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine
-                ,changeAtr,exeAttrCom,makeTextData) where
+                ,changeAtr,exeAttrCom,makeTextData,dotsToRect) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (Point(P),V2(..),V4(..))
-import MyData (State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize)
+import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize,dotSize)
 
 type Index = Int
 type Line = Int
@@ -14,6 +14,7 @@ type Letter = Int
 type TextPos = Int
 type Location = (Line,Letter)
 type IsFormat = Bool
+type Rect = V4 CInt
 
 myAction :: State -> State
 myAction st = st
@@ -30,7 +31,7 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> [(Bool,Text,Attr,[PList])]
-makeTextData (State texSt atrSt tpsSt _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
+makeTextData (State texSt _ atrSt tpsSt _ _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
 
 makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> [(Bool,Text,Attr,[PList])]
 makeTexts ind ifmSt tpsSt atrSt texSt = 
@@ -166,3 +167,8 @@ breakText tx = let (hd,tl) = T.break (=='\n') tx
                      |T.head tl == '\n' = " "<>tl
                      |otherwise = tl
                 in (hda,hdb<>tl2)
+
+dotsToRect :: Dots -> [Rect]
+dotsToRect dtl = let ds = dotSize
+                 in map (\(V2 x y,_) -> V4 (x*ds) (y*ds) ds ds) dtl 
+

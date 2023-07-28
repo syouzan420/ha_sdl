@@ -13,7 +13,7 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
 import Data.Text (Text,uncons)
-import MyData (State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos)
+import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet)
 import MyAction (makePList,changeAtr,exeAttrCom)
 
 type Index = Int
@@ -26,10 +26,18 @@ type Location = (Line,Letter)
 type TextData = [(Bool,Text,Attr,[PList])]
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> State -> IO () 
-myDraw re fonts itexs textData (State texSt atrSt tpsSt _ _ ifmSt icrSt) = do
+myDraw re fonts itexs textData (State texSt dtsSt atrSt tpsSt _ _ _ ifmSt icrSt) = do
   initDraw re
   textsDraw re fonts ifmSt icrSt tpsSt textData 
+  dotsDraw re dtsSt
   present re
+
+dotsDraw :: Renderer -> Dots -> IO () 
+dotsDraw re = mapM_ (\(V2 x y,cn) -> do
+  let ds = dotSize
+  rendererDrawColor re $= colorPallet!!cn 
+  fillRect re (Just (Rectangle (P (V2 (x*ds) (y*ds))) (V2 ds ds)))
+                    ) 
 
 cursorDraw :: Renderer -> Pos -> WMode -> CInt -> IO () 
 cursorDraw re (V2 x y) wm sz = do
@@ -71,3 +79,5 @@ initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do
   rendererDrawColor re $= backColor 
   clear re
+
+

@@ -4,14 +4,15 @@ module MyEvent (inputEvent) where
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import qualified Data.Text as T
-import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos)
+import MyData (Pos,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
 import MyAction (tpsForRelativeLine)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,Bool,Bool)
-inputEvent st@(State texSt atrSt tpsSt _ emdSt ifmSt _) = do
-  (kc,md,it) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
+inputEvent :: State -> IO (State,Bool,Bool,Bool)
+inputEvent st@(State texSt dtsSt atrSt tpsSt _ emdSt cplSt ifmSt _) = do
+  (kc,md,it,mps) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
+      isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
       isNor = emdSt==Nor
@@ -27,12 +28,16 @@ inputEvent st@(State texSt atrSt tpsSt _ emdSt ifmSt _) = do
       isTglFmt = kc==KeycodeF && md==Ctr
       isBS = kc==KeycodeBackspace
       isCom = md==Alt
+      isDrawClear = kc==KeycodeD && md==Ctr
+      isTglColor = kc==KeycodeC && md==Ctr
+
       comName = case kc of
                   KeycodeR -> ";rb "
                   _        -> T.empty
       tLen = T.length texSt
       wm = wmd atrSt
       os = ios atrSt
+      ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       nit = if isIns && isRet then "\n" else it
@@ -62,8 +67,17 @@ inputEvent st@(State texSt atrSt tpsSt _ emdSt ifmSt _) = do
         | isCom = textIns comName 
         | isIns = textIns nit 
         | otherwise = texSt
+      ndts 
+        | isDrawClear = []
+        | isMousePressed = dtsSt++[(toDotPos mps,cplSt)]  
+        | otherwise = dtsSt
       nifm
         | isTglFmt = not ifmSt
         | otherwise = ifmSt
-      nst = st{tex=ntex,atr=natr,tps=ntps,emd=nemd,ifm=nifm}
-  return (nst,isKeyPressed,isQuit)
+      nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm}
+  return (nst,isKeyPressed,isMousePressed,isQuit)
+
+toDotPos :: Pos -> Pos
+toDotPos (V2 px py) = let ds = dotSize
+                          nx = px `div` ds; ny = py `div` ds
+                       in V2 nx ny

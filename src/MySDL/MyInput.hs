@@ -4,7 +4,7 @@ module MySDL.MyInput (myInput) where
 import SDL.Event (EventPayload(KeyboardEvent,TextInputEvent,TextEditingEvent
                               ,MouseButtonEvent,MouseMotionEvent)
                  ,eventPayload,keyboardEventKeyMotion
-                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents,pollEvent
+                 ,InputMotion(Pressed),keyboardEventKeysym,pollEvents
                  ,TextInputEventData(textInputEventText),TextEditingEventData(textEditingEventText)
                  ,MouseButtonEventData(mouseButtonEventMotion,mouseButtonEventPos)
                  ,MouseMotionEventData(mouseMotionEventState,mouseMotionEventPos)
@@ -13,15 +13,14 @@ import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),KeyModifier(..)
                           ,getModState)
 import SDL.Input.Keyboard.Codes
 import SDL.Vect(Point(P),V2(..))
-import Data.Int(Int32)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
-import Control.Monad(when)
 import Data.Maybe(fromMaybe)
 import Data.List(find)
+import Foreign.C.Types(CInt)
 import MyData(Modif(..))
   
-myInput :: IO (Keycode,Modif,T.Text)
+myInput :: IO (Keycode,Modif,T.Text,V2 CInt)
 myInput = do
   events <- pollEvents
   mds <- getModState
@@ -56,6 +55,7 @@ myInput = do
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
   if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx)
-  if cPos==P (V2 (-1) (-1)) then return () else print cPos
-  return (kc,mdres,itx) 
+  let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
+  if mps==V2 (-1) (-1) then return () else print mps 
+  return (kc,mdres,itx,mps) 
  
