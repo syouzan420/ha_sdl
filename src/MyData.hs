@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+module MyData (Pos,Color,PList,Dot,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
               ,title,windowSize,initState,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
               ,initYokoPos,initTatePos,textFileName,colorPallet) 

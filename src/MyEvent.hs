@@ -4,13 +4,13 @@ module MyEvent (inputEvent) where
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import qualified Data.Text as T
-import MyData (Pos,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
+import MyData (Pos,Dot,Dots,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
 import MyAction (tpsForRelativeLine)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Bool,Bool,Bool)
 inputEvent st@(State texSt dtsSt atrSt tpsSt _ emdSt cplSt ifmSt _) = do
-  (kc,md,it,mps) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
+  (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
@@ -69,6 +69,7 @@ inputEvent st@(State texSt dtsSt atrSt tpsSt _ emdSt cplSt ifmSt _) = do
         | otherwise = texSt
       ndts 
         | isDrawClear = []
+        | isMousePressed && isc && not (null dtsSt) = dtsSt ++ addMidDots (last dtsSt) (toDotPos mps,cplSt) ++ [(toDotPos mps,cplSt)]
         | isMousePressed = dtsSt++[(toDotPos mps,cplSt)]  
         | otherwise = dtsSt
       nifm
@@ -81,3 +82,9 @@ toDotPos :: Pos -> Pos
 toDotPos (V2 px py) = let ds = dotSize
                           nx = px `div` ds; ny = py `div` ds
                        in V2 nx ny
+
+addMidDots :: Dot -> Dot -> Dots 
+addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) =
+  let f x = floor$fromIntegral (y1-y0)/fromIntegral (x1-x0)*(fromIntegral x-fromIntegral x0) + fromIntegral y0
+   in if x0==x1 then if y0==y1 then [] else map (\doty -> (V2 x0 doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
+                else map (\dotx -> (V2 dotx (f dotx),cn)) (if x1>x0 then [x0..x1] else [x1..x0])

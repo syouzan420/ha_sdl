@@ -20,7 +20,7 @@ import Data.List(find)
 import Foreign.C.Types(CInt)
 import MyData(Modif(..))
   
-myInput :: IO (Keycode,Modif,T.Text,V2 CInt)
+myInput :: IO (Keycode,Modif,T.Text,V2 CInt,Bool)
 myInput = do
   events <- pollEvents
   mds <- getModState
@@ -45,10 +45,16 @@ myInput = do
                           then mouseMotionEventPos mouseMotionEvent
                           else P (V2 (-1) (-1))
                      _ -> P (V2 (-1) (-1))
+      mmtn event = case eventPayload event of
+                     MouseMotionEvent mouseMotionEvent ->
+                       mouseMotionEventState mouseMotionEvent == [ButtonLeft]
+                     _ -> False 
+                     
                      
       (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
       itx = fromMaybe T.empty $ find (/=T.empty) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
+      ismc = fromMaybe False $ find id (map mmtn events)
       mdres
         | keyModifierLeftShift md || keyModifierRightShift md = Shf 
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
@@ -56,6 +62,6 @@ myInput = do
         | otherwise = Non 
   if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx)
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
-  if mps==V2 (-1) (-1) then return () else print mps 
-  return (kc,mdres,itx,mps) 
+  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
+  return (kc,mdres,itx,mps,ismc) 
  
