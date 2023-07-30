@@ -29,14 +29,15 @@ myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> State -> IO ()
 myDraw re fonts itexs textData (State texSt dtsSt atrSt tpsSt _ _ _ ifmSt icrSt) = do
   initDraw re
   textsDraw re fonts ifmSt icrSt tpsSt textData 
-  dotsDraw re dtsSt
+  let scrAt = scr atrSt
+  dotsDraw re scrAt dtsSt
   present re
 
-dotsDraw :: Renderer -> Dots -> IO () 
-dotsDraw re = mapM_ (\(V2 x y,cn) -> do
+dotsDraw :: Renderer -> Pos -> Dots -> IO () 
+dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do
   let ds = dotSize
   rendererDrawColor re $= colorPallet!!cn 
-  fillRect re (Just (Rectangle (P (V2 (x*ds) (y*ds))) (V2 ds ds)))
+  fillRect re (Just (Rectangle (P (V2 (x*ds+sx) (y*ds+sy))) (V2 ds ds)))
                     ) 
 
 cursorDraw :: Renderer -> Pos -> WMode -> CInt -> IO () 

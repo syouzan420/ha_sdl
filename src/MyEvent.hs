@@ -4,6 +4,7 @@ module MyEvent (inputEvent) where
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import qualified Data.Text as T
+import Data.List (nub)
 import MyData (Pos,Dot,Dots,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
 import MyAction (tpsForRelativeLine)
 import SDL.Input.Keyboard.Codes
@@ -84,7 +85,11 @@ toDotPos (V2 px py) = let ds = dotSize
                        in V2 nx ny
 
 addMidDots :: Dot -> Dot -> Dots 
-addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) =
-  let f x = floor$fromIntegral (y1-y0)/fromIntegral (x1-x0)*(fromIntegral x-fromIntegral x0) + fromIntegral y0
-   in if x0==x1 then if y0==y1 then [] else map (\doty -> (V2 x0 doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
-                else map (\dotx -> (V2 dotx (f dotx),cn)) (if x1>x0 then [x0..x1] else [x1..x0])
+addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) 
+  | x0==x1 && y0==y1 = []
+  | x0==x1 = map (\doty -> (V2 x0 doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
+  | y0==y1 = map (\dotx -> (V2 dotx y0,cn)) (if x1>x0 then [x0..x1] else [x1..x0])
+  | otherwise = nub$map (\dotx -> (V2 dotx (f dotx),cn)) (if x1>x0 then [x0..x1] else [x1..x0]) ++
+                    map (\doty -> (V2 (g doty) doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
+     where f x = floor$(fromIntegral (y1-y0) ::Double)/fromIntegral (x1-x0)*(fromIntegral x-fromIntegral x0) + fromIntegral y0
+           g y = floor$(fromIntegral (x1-x0) ::Double)/fromIntegral (y1-y0)*(fromIntegral y-fromIntegral y0) + fromIntegral x0

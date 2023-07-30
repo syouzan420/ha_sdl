@@ -4,7 +4,7 @@ module MySDL.MyInput (myInput) where
 import SDL.Event (EventPayload(KeyboardEvent,TextInputEvent,TextEditingEvent
                               ,MouseButtonEvent,MouseMotionEvent)
                  ,eventPayload,keyboardEventKeyMotion
-                 ,InputMotion(Pressed),keyboardEventKeysym,pollEvents
+                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents
                  ,TextInputEventData(textInputEventText),TextEditingEventData(textEditingEventText)
                  ,MouseButtonEventData(mouseButtonEventMotion,mouseButtonEventPos)
                  ,MouseMotionEventData(mouseMotionEventState,mouseMotionEventPos)
@@ -46,6 +46,8 @@ myInput = do
                           else P (V2 (-1) (-1))
                      _ -> P (V2 (-1) (-1))
       mmtn event = case eventPayload event of
+                     MouseButtonEvent mouseButtonEvent ->
+                       mouseButtonEventMotion mouseButtonEvent /= Pressed 
                      MouseMotionEvent mouseMotionEvent ->
                        mouseMotionEventState mouseMotionEvent == [ButtonLeft]
                      _ -> False 
@@ -54,7 +56,7 @@ myInput = do
       (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
       itx = fromMaybe T.empty $ find (/=T.empty) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
-      ismc = fromMaybe False $ find id (map mmtn events)
+      ismc = fromMaybe False $ Just (head (map mmtn events))
       mdres
         | keyModifierLeftShift md || keyModifierRightShift md = Shf 
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
