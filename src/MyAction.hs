@@ -6,7 +6,7 @@ import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (Point(P),V2(..),V4(..))
-import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize,dotSize)
+import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize,dotSize,windowSize)
 
 type Index = Int
 type Line = Int
@@ -15,6 +15,7 @@ type TextPos = Int
 type Location = (Line,Letter)
 type IsFormat = Bool
 type Rect = V4 CInt
+type Textdata = [(Bool,Text,Attr,[PList])]
 
 myAction :: State -> State
 myAction st = st
@@ -30,10 +31,33 @@ beforeDraw st =
 afterDraw :: State -> State
 afterDraw st = st
 
-makeTextData :: State -> [(Bool,Text,Attr,[PList])]
+makeTextData :: State -> Textdata 
 makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
 
-makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> [(Bool,Text,Attr,[PList])]
+trimTextData :: Attr -> Text -> TextPos -> Textdata -> Textdata
+trimTextData atrSt texSt tpsSt txdata =
+  let tpl = textPosList txdata
+      wmdAt = wmd atrSt
+      V2 wszx wszy = windowSize
+      V4 mr mt ml mb = mgn atrSt
+      lineWidth = lnw atrSt
+      (ln,lt) = indexToLoc atrSt texSt tpsSt 
+      lnNum = if wmdAt==T then (wszx-mr-ml) `div` lineWidth 
+                          else (wszy-mt-mb) `div` lineWidth
+      lnNumMin = max (ln-fromIntegral lnNum) 0
+      lnNumMax = ln+fromIntegral lnNum
+      minIndex = locToIndex atrSt texSt (lnNumMin,0)
+      maxIndex = locToIndex atrSt texSt (lnNumMax,0)
+      txdataLength = length txdata
+      trimNumInit = length$filter (<minIndex) tpl
+      trimNumTail = length$filter (>maxIndex) tpl
+   in drop trimNumInit $ take (txdataLength-trimNumTail) txdata
+
+
+textPosList :: Textdata -> [TextPos]
+textPosList txdata = undefined
+
+makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> Textdata 
 makeTexts ind ifmSt tpsSt atrSt texSt = 
   case uncons texSt of
     Nothing -> [] 
