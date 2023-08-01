@@ -13,10 +13,10 @@ import MyFile (fileRead)
 appMain :: IO ()
 appMain =
   withMyInit $ do
-    (fonts,sur,text,(fpos,tpos)) <- myLoad
+    (fonts,sur,text,(fpos,tpos),dots) <- myLoad
     withMyVideo sur $
       \(renderer,itexs) -> do
-        let newState = initState{tex=text,fps=fpos,tps=tpos} 
+        let newState = initState{tex=text,dts=dots,fps=fpos,tps=tpos} 
         state <- newIORef newState
         myDraw renderer fonts itexs (makeTextData newState) False newState 
         myLoop state renderer fonts itexs

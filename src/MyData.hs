@@ -2,7 +2,7 @@
 module MyData (Pos,Color,PList,Dot,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
               ,title,windowSize,initState,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
-              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos) 
+              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName) 
   where
 
 import Data.Text (Text)
@@ -67,6 +67,9 @@ title = "HA"
 
 textFileName :: FilePath
 textFileName = "./texts/ha"
+
+dotFileName :: FilePath
+dotFileName = "./dots/dot"
 
 textPosFile :: FilePath
 textPosFile = "./tpos.txt"

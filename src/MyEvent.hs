@@ -40,6 +40,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
       tLen = T.length texSt
       wm = wmd atrSt
       os = ios atrSt
+      scrAt = scr atrSt
       ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
@@ -72,8 +73,9 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
         | otherwise = texSt
       ndts 
         | isDrawClear = []
-        | isMousePressed && isc && not (null dtsSt) = dtsSt ++ addMidDots (last dtsSt) (toDotPos mps,cplSt) ++ [(toDotPos mps,cplSt)]
-        | isMousePressed = dtsSt++[(toDotPos mps,cplSt)]  
+        | isMousePressed && isc && not (null dtsSt) = 
+          dtsSt ++ addMidDots (last dtsSt) (toDotPos mps scrAt,cplSt) ++ [(toDotPos mps scrAt,cplSt)]
+        | isMousePressed = dtsSt++[(toDotPos mps scrAt,cplSt)]  
         | otherwise = dtsSt
       nifm
         | isTglFmt = not ifmSt
@@ -81,10 +83,10 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm}
   return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isQuit)
 
-toDotPos :: Pos -> Pos
-toDotPos (V2 px py) = let ds = dotSize
-                          nx = px `div` ds; ny = py `div` ds
-                       in V2 nx ny
+toDotPos :: Pos -> Pos -> Pos
+toDotPos (V2 px py) (V2 sx sy) = let ds = dotSize
+                                     nx = (px-sx) `div` ds; ny = (py-sy) `div` ds
+                                  in V2 nx ny
 
 addMidDots :: Dot -> Dot -> Dots 
 addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) 
