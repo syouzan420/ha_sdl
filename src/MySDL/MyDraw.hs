@@ -12,8 +12,8 @@ import Control.Monad (foldM_,when)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
-import Data.Text (Text,uncons)
-import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet)
+import Data.Text (Text,uncons,pack)
+import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
 import MyAction (makePList,changeAtr,exeAttrCom)
 
 type Index = Int
@@ -26,8 +26,9 @@ type Location = (Line,Letter)
 type TextData = [(Bool,Text,Attr,[PList])]
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> State -> IO () 
-myDraw re fonts itexs textData (State texSt dtsSt atrSt tpsSt _ _ _ ifmSt icrSt) = do
+myDraw re fonts itexs textData st@(State texSt dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
   initDraw re
+  statusDraw re (fonts!!1) st 
   textsDraw re fonts ifmSt icrSt tpsSt textData 
   let scrAt = scr atrSt
   dotsDraw re scrAt dtsSt
@@ -46,6 +47,25 @@ cursorDraw re (V2 x y) wm sz = do
                       else Rectangle (P (V2 (x-1) y)) (V2 2 sz)
   rendererDrawColor re $= cursorColor 
   fillRect re (Just rect) 
+
+statusDraw :: Renderer -> Font -> State -> IO ()
+statusDraw re font st = do
+  let fileNum = pack$show$fps st
+      textPos = pack$show$tps st
+      editMode = pack$show$emd st
+      position = pack$show$gps (atr st)
+      scroll = pack$show$scr (atr st)
+      statusText = "fNum:"<>fileNum<>" tPos:"<>textPos<>" eMode:"<>editMode<>" gPos:"<>position
+                <>" scr:"<>scroll
+      ofs = fromIntegral fontSize
+      lng = fromIntegral$T.length statusText
+  fontS <- blended font (colorPallet!!1) statusText 
+  fontT <- createTextureFromSurface re fontS
+  mapM_ (\i -> do
+     copy re fontT (Just (Rectangle (P (V2 (ofs*i) 0)) (V2 ofs ofs)))
+                   (Just (Rectangle (P (statusPos+V2 (12*i) 0)) (V2 12 12)))
+         ) [0::CInt,1..lng] 
+  
 
 textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> [(Bool,Text,Attr,[PList])] -> IO () 
 textsDraw _ _ _ _ _ [] = return ()

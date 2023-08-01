@@ -31,7 +31,7 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> [(Bool,Text,Attr,[PList])]
-makeTextData (State texSt _ atrSt tpsSt _ _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
+makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
 
 makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> [(Bool,Text,Attr,[PList])]
 makeTexts ind ifmSt tpsSt atrSt texSt = 

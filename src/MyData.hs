@@ -2,7 +2,7 @@
 module MyData (Pos,Color,PList,Dot,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
               ,title,windowSize,initState,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
-              ,initYokoPos,initTatePos,textFileName,colorPallet) 
+              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos) 
   where
 
 import Data.Text (Text)
@@ -29,13 +29,14 @@ data EMode = Nor | Ins deriving (Eq,Show) -- edit mode
 -- tex: edit text
 -- dts: dots drawing (pixel art)
 -- atr: text attribute
+-- fps: file position
 -- tps: text position
 -- crc: cursor count
 -- emd: edit mode (normal or insert) 
 -- cpl: color pallet (color number)
 -- ifm: view formatted text or not
 -- icr: cursor appear
-data State = State{tex :: !Text, dts :: !Dots, atr :: !Attr, tps :: !Int
+data State = State{tex :: !Text, dts :: !Dots, atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum
                   ,ifm :: !Bool, icr :: !Bool}
 
@@ -65,13 +66,19 @@ title :: T.Text
 title = "HA"
 
 textFileName :: FilePath
-textFileName = "./ha.txt"
+textFileName = "./texts/ha"
+
+textPosFile :: FilePath
+textPosFile = "./tpos.txt"
 
 winSizeX, winSizeY :: CInt
 winSizeX = 900; winSizeY = 600
 
 windowSize :: V2 CInt
 windowSize = V2 winSizeX winSizeY 
+
+statusPos :: V2 CInt
+statusPos = V2 5 5 
 
 dotSize :: CInt
 dotSize = 5
@@ -80,7 +87,7 @@ margins :: V4 CInt
 margins = V4 20 30 20 30 -- right top left bottom 
 
 initState :: State
-initState = State {tex = "", dts = [], atr = initAttr, tps=0, crc=0, emd=Nor, cpl=1
+initState = State {tex = "", dts = [], atr = initAttr, fps=0, tps=0, crc=0, emd=Nor, cpl=1
                   ,ifm=False, icr=False}
 
 initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"

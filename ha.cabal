@@ -44,6 +44,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , linear
     , sdl2
     , sdl2-image
@@ -61,6 +62,7 @@ executable ha-exe
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , ha
     , linear
     , sdl2
@@ -80,6 +82,7 @@ test-suite ha-test
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , directory
     , ha
     , linear
     , sdl2
