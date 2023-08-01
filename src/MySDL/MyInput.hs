@@ -52,7 +52,6 @@ myInput = do
                        mouseMotionEventState mouseMotionEvent == [ButtonLeft]
                      _ -> False 
                      
-                     
       (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
       itx = fromMaybe T.empty $ find (/=T.empty) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
@@ -65,5 +64,11 @@ myInput = do
   if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx)
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
   if mps==V2 (-1) (-1) then return () else print mps >> print ismc
-  return (kc,mdres,itx,mps,ismc) 
+  let kc' 
+       |kc==KeycodeUnknown && itx/=T.empty = case itx of
+                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
+                  "い" -> KeycodeI
+                  _ -> KeycodeUnknown
+       |otherwise = kc
+  return (kc',mdres,itx,mps,ismc) 
  

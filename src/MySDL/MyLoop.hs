@@ -8,6 +8,7 @@ import SDL.Video.Renderer (Renderer,Texture)
 import SDL.Time (delay)
 import qualified Data.Text as T
 import System.Directory (doesFileExist)
+import Linear.V2 (V2(..))
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MySDL.MyDraw (myDraw)
 import MyData (State(..),Attr(..),delayTime,textFileName,textPosFile)
@@ -30,7 +31,7 @@ myLoop state re fonts itexs = do
       textData = makeTextData nst
       getAtr d = let (_,_,gatr,_) = last d in gatr
       natr = if null textData then atr nst else getAtr textData
-      nscr = scr natr
+      nscr = if isNewFile || isLoadFile then V2 0 0 else scr natr
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps) <- if isNewFile then do
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)
