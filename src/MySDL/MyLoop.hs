@@ -22,14 +22,16 @@ myLoop state re fonts itexs = do
       nicr = (tps st /= tps st') || icr st'
       ncrc = if isUpdateTps then 0 else crc st'
       nst = beforeDraw st'{crc=ncrc,icr=nicr}
-      isUpdateDraw = tex st /= tex nst || icr st /= icr nst || isUpdateTps 
-                                       || isKeyPressed || isMousePressed
+      isUpdateText = tex st /= tex nst || icr st /= icr nst || isUpdateTps 
+                                       || isKeyPressed 
                                        || isNewFile || isLoadFile
+      isUpdateDraw = isMousePressed || isUpdateText
+      isOnlyMouse = isMousePressed && not isUpdateText
       textData = makeTextData nst
       getAtr d = let (_,_,gatr,_) = last d in gatr
       natr = if null textData then atr nst else getAtr textData
       nscr = scr natr
-  when isUpdateDraw $ myDraw re fonts itexs textData (beforeDraw nst)
+  when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps) <- if isNewFile then do
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)
     nextFileNum <- nextNewFileNum (fps nst + 1)

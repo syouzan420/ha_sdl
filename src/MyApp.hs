@@ -18,5 +18,5 @@ appMain =
       \(renderer,itexs) -> do
         let newState = initState{tex=text,fps=fpos,tps=tpos} 
         state <- newIORef newState
-        myDraw renderer fonts itexs (makeTextData newState) newState 
+        myDraw renderer fonts itexs (makeTextData newState) False newState 
         myLoop state renderer fonts itexs

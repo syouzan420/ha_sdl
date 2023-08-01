@@ -8,7 +8,7 @@ import SDL (($=))
 import SDL.Vect (Point(P),V2(..),V4(..))
 import SDL.Font (Font,blended)
 import Control.Monad.IO.Class (MonadIO)
-import Control.Monad (foldM_,when)
+import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
@@ -25,11 +25,11 @@ type Letter = Int
 type Location = (Line,Letter)
 type TextData = [(Bool,Text,Attr,[PList])]
 
-myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> State -> IO () 
-myDraw re fonts itexs textData st@(State texSt dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
+myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
+myDraw re fonts itexs textData isOnlyMouse st@(State texSt dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
   initDraw re
   statusDraw re (fonts!!1) st 
-  textsDraw re fonts ifmSt icrSt tpsSt textData 
+  unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData 
   let scrAt = scr atrSt
   dotsDraw re scrAt dtsSt
   present re

@@ -32,7 +32,8 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> Textdata 
-makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) = makeTexts 0 ifmSt tpsSt atrSt texSt
+makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) =
+  makeTexts 0 ifmSt tpsSt atrSt texSt
 
 trimTextData :: Attr -> Text -> TextPos -> Textdata -> Textdata
 trimTextData atrSt texSt tpsSt txdata =
@@ -53,9 +54,9 @@ trimTextData atrSt texSt tpsSt txdata =
       trimNumTail = length$filter (>maxIndex) tpl
    in drop trimNumInit $ take (txdataLength-trimNumTail) txdata
 
-
 textPosList :: Textdata -> [TextPos]
-textPosList txdata = undefined
+textPosList [] = []
+textPosList ((_,texSt,_,_):txds) = T.length texSt:textPosList txds 
 
 makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> Textdata 
 makeTexts ind ifmSt tpsSt atrSt texSt = 
@@ -87,8 +88,6 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
             | iCur && wmdAt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
       in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt tpsSt natr{gps=lPos,scr=nscr} xs 
-
-
 
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =
