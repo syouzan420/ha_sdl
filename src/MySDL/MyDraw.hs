@@ -78,7 +78,7 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,natr,pList):xs) = do
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
         fontT <- createTextureFromSurface re fontS
-        freeSurface fontS
+        --freeSurface fontS
         when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt fs
         foldM_ (\ ps ((b,r),pd) -> do
           let sz = if b then ofs `div` 2 else ofs

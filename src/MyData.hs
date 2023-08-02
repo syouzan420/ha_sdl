@@ -2,7 +2,8 @@
 module MyData (Pos,Color,PList,Dot,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
               ,title,windowSize,initState,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
-              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName) 
+              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
+              ,textLengthLimit) 
   where
 
 import Data.Text (Text)
@@ -139,3 +140,6 @@ delayTime = 50
 
 colorPallet :: [Color]
 colorPallet = [backColor,fontColor,cursorColor,V4 153 153 255 255,V4 255 102 178 255]
+
+textLengthLimit :: Int
+textLengthLimit = 100

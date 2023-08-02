@@ -6,7 +6,8 @@ import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (Point(P),V2(..),V4(..))
-import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos,rubiSize,dotSize,windowSize)
+import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos
+              ,rubiSize,dotSize,windowSize,textLengthLimit)
 
 type Index = Int
 type Line = Int
@@ -35,21 +36,6 @@ makeTextData :: State -> Textdata
 makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) =
   makeTexts 0 ifmSt tpsSt atrSt texSt
 
-trimText :: Attr -> Text -> TextPos -> Text
-trimText atrSt texSt tpsSt =
-  let wmdAt = wmd atrSt
-      V2 wszx wszy = windowSize
-      V4 mr mt ml mb = mgn atrSt
-      lineWidth = lnw atrSt
-      (ln,lt) = indexToLoc atrSt texSt tpsSt 
-      lnNum = if wmdAt==T then (wszx-mr-ml) `div` lineWidth 
-                          else (wszy-mt-mb) `div` lineWidth
-      lnNumMin = max (ln-fromIntegral lnNum-1) 0
-      lnNumMax = ln+fromIntegral lnNum+1
-      minIndex = locToIndex atrSt texSt (lnNumMin,0)
-      maxIndex = locToIndex atrSt texSt (lnNumMax,0)
-   in T.drop minIndex $ T.take maxIndex texSt
-
 makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> Textdata 
 makeTexts ind ifmSt tpsSt atrSt texSt = 
   case uncons texSt of
@@ -60,15 +46,17 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
                         if cnm atrSt/=T.empty then exeAttrCom (atrSt,texSt)
                                               else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
+          tll = textLengthLimit
+          (ptx2,pxs2) = if T.length ptx>tll then (T.take tll ptx,T.drop tll ptx<>pxs) else (ptx,pxs)
           lnTex = T.length texSt 
-          preInc = lnTex - T.length pxs + 1
+          preInc = lnTex - T.length pxs2 + 1
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
-          (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx else (ptx,T.empty) 
-          (tx,xs) = if iCur then (iptx,tptx<>pxs) else (ptx,pxs)
+          (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
+          (tx,xs) = if iCur then (iptx,tptx<>pxs2) else (ptx2,pxs2)
           (Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
           fs = fromIntegral fszAt
           pList = makePList natr tx
-          indInc = lnTex - T.length xs + 1
+          indInc = lnTex - T.length xs 
           lPos@(V2 lpx lpy) = snd$last pList
           (V2 sx sy) = scrAt
           (V2 ww wh) = wszAt
