@@ -35,28 +35,20 @@ makeTextData :: State -> Textdata
 makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _) =
   makeTexts 0 ifmSt tpsSt atrSt texSt
 
-trimTextData :: Attr -> Text -> TextPos -> Textdata -> Textdata
-trimTextData atrSt texSt tpsSt txdata =
-  let tpl = textPosList txdata
-      wmdAt = wmd atrSt
+trimText :: Attr -> Text -> TextPos -> Text
+trimText atrSt texSt tpsSt =
+  let wmdAt = wmd atrSt
       V2 wszx wszy = windowSize
       V4 mr mt ml mb = mgn atrSt
       lineWidth = lnw atrSt
       (ln,lt) = indexToLoc atrSt texSt tpsSt 
       lnNum = if wmdAt==T then (wszx-mr-ml) `div` lineWidth 
                           else (wszy-mt-mb) `div` lineWidth
-      lnNumMin = max (ln-fromIntegral lnNum) 0
-      lnNumMax = ln+fromIntegral lnNum
+      lnNumMin = max (ln-fromIntegral lnNum-1) 0
+      lnNumMax = ln+fromIntegral lnNum+1
       minIndex = locToIndex atrSt texSt (lnNumMin,0)
       maxIndex = locToIndex atrSt texSt (lnNumMax,0)
-      txdataLength = length txdata
-      trimNumInit = length$filter (<minIndex) tpl
-      trimNumTail = length$filter (>maxIndex) tpl
-   in drop trimNumInit $ take (txdataLength-trimNumTail) txdata
-
-textPosList :: Textdata -> [TextPos]
-textPosList [] = []
-textPosList ((_,texSt,_,_):txds) = T.length texSt:textPosList txds 
+   in T.drop minIndex $ T.take maxIndex texSt
 
 makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> Textdata 
 makeTexts ind ifmSt tpsSt atrSt texSt = 
@@ -114,7 +106,7 @@ locToIndex' attr@(Attr ps _ wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _ _ _) 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
       case uncons tx of
-        Nothing -> if tlt>lt then ind else (-1) 
+        Nothing -> if tlt>lt || tln>ln then ind else (-1) 
         Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
                          in locToIndex' attr{gps=npos} xs tlc (nln,nlt) (ind+1)
 

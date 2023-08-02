@@ -5,31 +5,25 @@ import SDL.Video (Renderer, Texture)
 import SDL.Video.Renderer (rendererDrawColor,clear,copy,copyEx,Rectangle(..),textureAlphaMod
                           ,present,createTextureFromSurface,freeSurface,fillRect)
 import SDL (($=))
-import SDL.Vect (Point(P),V2(..),V4(..))
+import SDL.Vect (Point(P),V2(..))
 import SDL.Font (Font,blended)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
-import qualified Data.Text.IO as TI
-import Data.Text (Text,uncons,pack)
-import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),Pos,Color,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
-import MyAction (makePList,changeAtr,exeAttrCom)
+import Data.Text (Text,pack)
+import MyData (Dots,State(..),Attr(..),WMode(..),Pos,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
 
-type Index = Int
 type IsFormat = Bool
 type IsCursor = Bool
 type TextPos = Int
-type Line = Int
-type Letter = Int
-type Location = (Line,Letter)
 type TextData = [(Bool,Text,Attr,[PList])]
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts itexs textData isOnlyMouse st@(State texSt dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
   initDraw re
   statusDraw re (fonts!!1) st 
-  unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData 
+  unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
   let scrAt = scr atrSt
   dotsDraw re scrAt dtsSt
   present re
@@ -67,10 +61,10 @@ statusDraw re font st = do
          ) [0::CInt,1..lng] 
   
 
-textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> [(Bool,Text,Attr,[PList])] -> IO () 
+textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> IO () 
 textsDraw _ _ _ _ _ [] = return ()
 textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,natr,pList):xs) = do
-  let (Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
+  let (Attr _ scrAt wmdAt fszAt fcoAt _ _ _ _ _ _ _ iosAt) = natr
       ofs = fromIntegral fontSize
       fs = fromIntegral fszAt
       fnum = if iosAt then 2 else 1
@@ -84,7 +78,7 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,natr,pList):xs) = do
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
         fontT <- createTextureFromSurface re fontS
---      freeSurface fontS
+        freeSurface fontS
         when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt fs
         foldM_ (\ ps ((b,r),pd) -> do
           let sz = if b then ofs `div` 2 else ofs
