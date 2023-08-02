@@ -5,9 +5,9 @@ module MyAction (myAction,beforeDraw,afterDraw,makePList,tpsForRelativeLine
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
-import SDL.Vect (Point(P),V2(..),V4(..))
+import SDL.Vect (V2(..),V4(..))
 import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos
-              ,rubiSize,dotSize,windowSize,textLengthLimit)
+              ,rubiSize,dotSize,textLengthLimit)
 
 type Index = Int
 type Line = Int
@@ -53,7 +53,7 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs2) else (ptx2,pxs2)
-          (Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt) = natr
+          (Attr _ scrAt wmdAt fszAt _ _ _ wszAt mgnAt _ _ _ _) = natr
           fs = fromIntegral fszAt
           pList = makePList natr tx
           indInc = lnTex - T.length xs 
@@ -79,23 +79,23 @@ indexToLoc :: Attr -> Text -> Index -> Location
 indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
 
 indexToLoc' :: Attr -> Text -> Location -> Location
-indexToLoc' attr@(Attr ps _ wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _ _ _) tx lc =
+indexToLoc' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _) tx lc =
   case uncons tx of
     Nothing -> lc 
-    Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
+    Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wm ps ws mg lc 
                      in indexToLoc' attr{gps=npos} xs (nln,nlt)
 
 locToIndex :: Attr -> Text -> Location -> Index
 locToIndex atrSt texSt tlc = locToIndex' atrSt texSt tlc (0,0) 0 
 
 locToIndex' :: Attr -> Text -> Location -> Location -> Index -> Index
-locToIndex' attr@(Attr ps _ wm _ _ tw nw ws@(V2 _ wh) mg@(V4 _ _ _ mb) _ _ _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
+locToIndex' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
   | lc==tlc = ind 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
       case uncons tx of
         Nothing -> if tlt>lt || tln>ln then ind else (-1) 
-        Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch xs tw nw wm ps ws mg lc 
+        Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wm ps ws mg lc 
                          in locToIndex' attr{gps=npos} xs tlc (nln,nlt) (ind+1)
 
 
@@ -103,15 +103,15 @@ makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList atrSt@(Attr ps@(V2 ox oy) _ wm _ _ tw nw ws mg _ _ _ _) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
-    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch xs tw nw wm ps ws mg (0,0) 
+    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wm ps ws mg (0,0) 
                         qtw = tw `div` 4
                         ihft = wm==T && ihf
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
                           :makePList atrSt{gps=npos} xs
 
-nextPos :: Char -> Text -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Location 
+nextPos :: Char -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Location 
                                                             -> ((Bool,Bool),(Pos,Location))
-nextPos ch xs tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) = 
+nextPos ch tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) = 
     let cn = fromEnum ch
         htw = tw `div` 2
         ihf = cn > 31 && cn < 127
@@ -142,7 +142,7 @@ changeAtr attr tx =
    in (natr , rtx)
 
 exeAttrCom :: (Attr,Text) -> (Attr, (Text, Text))
-exeAttrCom (attr@(Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbiAt cnmAt cidAt iosAt),tx) = 
+exeAttrCom (attr@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ rbiAt cnmAt cidAt _),tx) = 
   let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
       (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx
@@ -158,6 +158,7 @@ exeAttrCom (attr@(Attr gpsAt scrAt wmdAt fszAt fcoAt ltwAt lnwAt wszAt mgnAt rbi
                                       ,rbi=rbiAt{tsz=fszAt,tlw=ltwAt}} 
                          0 -> attr{gps=rpsRb+(if wmdAt==T then V2 0 rwdRb else V2 rwdRb 0)
                                   ,fsz=tszRb, ltw=tlwRb}
+                         _ -> attr
                _    -> attr{cnm=""}
       ncnm = if cidAt==0 then "" else cnmAt
    in (natr{cnm=ncnm, cid=cidAt-1} , (ttx, rtx))
