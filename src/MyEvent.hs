@@ -40,17 +40,24 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
       tLen = T.length texSt
       wm = wmd atrSt
       os = ios atrSt
+      lw = lnw atrSt
       scrAt = scr atrSt
       ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       nit = if isIns && isRet then "\n" else it
       textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+      nscr
+        | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
+        | ifmSt && wm==T && isRight = scrAt-V2 lw 0
+        | ifmSt && wm==Y && isUp = scrAt+V2 0 lw
+        | ifmSt && wm==Y && isDown = scrAt-V2 0 lw
+        | otherwise = scrAt
       natr
         | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y,scr=V2 0 0} 
                               else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
         | isTglOsd = if os then atrSt{ios=False} else atrSt{ios=True}
-        | otherwise = atrSt
+        | otherwise = atrSt{scr=nscr}
       ntps
         | ifmSt = tpsSt
         | isUp = if wm==T then if tpsSt==0 then 0 else tpsSt-1 else tpsPreLine
