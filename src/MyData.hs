@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,Dot,Dots,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
-              ,title,windowSize,initState,dotSize
+module MyData (Pos,Color,PList,Dot,Dots,Jump,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+              ,title,windowSize,initState,initAttr,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
               ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
-              ,textLengthLimit) 
+              ,textLengthLimit,jumpNameFile) 
   where
 
 import Data.Text (Text)
@@ -20,10 +20,11 @@ type Cnum = Int         -- color number
 type PList = ((Bool,Bool),Pos)
 type Dot = (Pos,Cnum)
 type Dots = [Dot]
+type Jump = ((Int,Text),(Int,Text)) -- ((FileNumber,FileName),(TextPosNumber,TextPosName))
 
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
-data EMode = Nor | Ins deriving (Eq,Show) -- edit mode
+data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
 
 
 
@@ -53,9 +54,11 @@ data State = State{tex :: !Text, dts :: !Dots, atr :: !Attr, fps :: !Int, tps ::
 -- rbi: for rubi
 -- cnm: command name
 -- cid: command index
+-- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,rbi :: Rubi, cnm :: Text, cid :: Int, ios :: Bool} deriving (Eq,Show)
+                ,rbi :: Rubi, jps :: [Jump], cnm :: Text, cid :: Int
+                ,ios :: Bool, ite :: Bool} deriving (Eq,Show)
 
 -- rps: rubi position
 -- rwi: width for rubi
@@ -76,6 +79,9 @@ dotFileName = "./dots/dot"
 textPosFile :: FilePath
 textPosFile = "./tpos.txt"
 
+jumpNameFile :: FilePath
+jumpNameFile = "./jpnm.txt"
+
 winSizeX, winSizeY :: CInt
 winSizeX = 900; winSizeY = 600
 
@@ -95,12 +101,12 @@ initState :: State
 initState = State {tex = "", dts = [], atr = initAttr, fps=0, tps=0, crc=0, emd=Nor, cpl=1
                   ,ifm=False, icr=False, isk=False}
 
-initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
+--initText = "これはテストです\n日本語がちゃんと表示されてゐるかな\n長い文章は画面の下とか右までいくと改行されるやうにつくってます\nそして（括弧）とか伸ばし棒「ー」など回転して表示されたり あと 英語なども標準では回転させてゐます\n例へばabcdeとか12345とかね\nIsn't that cool?\nルビのテスト：;rb 椎茸 しいたけ を食べたいな"
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,rbi = initRubi, cnm = "", cid = 0, ios = False}
+               ,rbi = initRubi, jps = [], cnm = "", cid = 0, ios = False, ite = False}
 
 initRubi :: Rubi
 initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, tsz = rubiSize, tlw = initLetterWidth

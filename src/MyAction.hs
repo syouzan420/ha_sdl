@@ -6,13 +6,14 @@ import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
 import SDL.Vect (V2(..),V4(..))
-import MyData (Dots,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos
+import MyData (Dots,Jump,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos
               ,rubiSize,dotSize,textLengthLimit)
 
 type Index = Int
 type Line = Int
 type Letter = Int
 type TextPos = Int
+type FilePos = Int
 type Location = (Line,Letter)
 type IsFormat = Bool
 type Rect = V4 CInt
@@ -33,17 +34,17 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> Textdata 
-makeTextData (State texSt _ atrSt _ tpsSt _ _ _ ifmSt _ _) =
-  makeTexts 0 ifmSt tpsSt atrSt texSt
+makeTextData (State texSt _ atrSt fpsSt tpsSt _ _ _ ifmSt _ _) =
+  makeTexts 0 ifmSt fpsSt tpsSt atrSt texSt
 
-makeTexts :: Index -> IsFormat -> TextPos -> Attr -> Text -> Textdata 
-makeTexts ind ifmSt tpsSt atrSt texSt = 
+makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> Textdata 
+makeTexts ind ifmSt fpsSt tpsSt atrSt texSt = 
   case uncons texSt of
     Nothing -> [] 
     Just (ch,tailTx) ->  
       let (natr,(ptx,pxs)) 
-            | ifmSt = if ch==';' then exeAttrCom$changeAtr atrSt tailTx else
-                        if cnm atrSt/=T.empty then exeAttrCom (atrSt,texSt)
+            | ifmSt = if ch==';' then exeAttrCom fpsSt tpsSt (changeAtr atrSt{ite=False} tailTx) else
+                        if cnm atrSt/=T.empty then exeAttrCom fpsSt tpsSt (atrSt{ite=False},texSt)
                                               else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
           tll = textLengthLimit
@@ -53,7 +54,7 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx,tptx<>pxs2) else (ptx2,pxs2)
-          (Attr _ scrAt wmdAt fszAt _ _ _ wszAt mgnAt _ _ _ _) = natr
+          (Attr _ scrAt wmdAt fszAt _ _ _ wszAt mgnAt _ _ _ _ _ _) = natr
           fs = fromIntegral fszAt
           pList = makePList natr tx
           indInc = lnTex - T.length xs 
@@ -67,7 +68,7 @@ makeTexts ind ifmSt tpsSt atrSt texSt =
             | iCur && wmdAt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
             | iCur && wmdAt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
-      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt tpsSt natr{gps=lPos,scr=nscr} xs 
+      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt fpsSt tpsSt natr{gps=lPos,scr=nscr} xs 
 
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =
@@ -79,7 +80,7 @@ indexToLoc :: Attr -> Text -> Index -> Location
 indexToLoc atrSt texSt ind = indexToLoc' atrSt (T.take ind texSt) (0,0)
 
 indexToLoc' :: Attr -> Text -> Location -> Location
-indexToLoc' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _) tx lc =
+indexToLoc' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _ _ _) tx lc =
   case uncons tx of
     Nothing -> lc 
     Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wm ps ws mg lc 
@@ -89,7 +90,7 @@ locToIndex :: Attr -> Text -> Location -> Index
 locToIndex atrSt texSt tlc = locToIndex' atrSt texSt tlc (0,0) 0 
 
 locToIndex' :: Attr -> Text -> Location -> Location -> Index -> Index
-locToIndex' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
+locToIndex' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _ _ _) tx tlc@(tln,tlt) lc@(ln,lt) ind
   | lc==tlc = ind 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
@@ -100,7 +101,7 @@ locToIndex' attr@(Attr ps _ wm _ _ tw nw ws mg _ _ _ _) tx tlc@(tln,tlt) lc@(ln,
 
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
-makePList atrSt@(Attr ps@(V2 ox oy) _ wm _ _ tw nw ws mg _ _ _ _) tx = 
+makePList atrSt@(Attr ps@(V2 ox oy) _ wm _ _ tw nw ws mg _ _ _ _ _ _) tx = 
   case uncons tx of
     Nothing -> [((False,False),ps)]
     Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wm ps ws mg (0,0) 
@@ -137,12 +138,13 @@ changeAtr attr tx =
   let (com,rtx) = T.break (==' ') tx
       ncid = case com of
                "rb" -> 2 
+               "jtg" -> 1
                _    -> 0
       natr = attr{cnm=com, cid=ncid}
    in (natr , rtx)
 
-exeAttrCom :: (Attr,Text) -> (Attr, (Text, Text))
-exeAttrCom (attr@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ rbiAt cnmAt cidAt _),tx) = 
+exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
+exeAttrCom fpsSt tpsSt (attr@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ rbiAt jpsAt cnmAt cidAt _ _),tx) = 
   let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
       (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx
@@ -159,9 +161,15 @@ exeAttrCom (attr@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ rbiAt cnmAt cidAt _),tx
                          0 -> attr{gps=rpsRb+(if wmdAt==T then V2 0 rwdRb else V2 rwdRb 0)
                                   ,fsz=tszRb, ltw=tlwRb}
                          _ -> attr
+               "jtg" -> case cidAt of
+                          1 -> let jd = textToJumpData fpsSt tpsSt ttx
+                                   dataExist = jd `elem` jpsAt
+                                   njps = if dataExist then jpsAt else jpsAt ++ [jd]
+                                in attr{jps=njps,ite=True}
+                          _ -> attr
                _    -> attr{cnm=""}
       ncnm = if cidAt==0 then "" else cnmAt
-   in (natr{cnm=ncnm, cid=cidAt-1} , (ttx, rtx))
+   in (natr{cnm=ncnm, cid=cidAt-1} , (if ite natr then "" else ttx, rtx))
 
 breakText :: Text -> (Text,Text)
 breakText tx = let (hd,tl) = T.break (=='\n') tx
@@ -176,3 +184,5 @@ dotsToRect :: Dots -> [Rect]
 dotsToRect dtl = let ds = dotSize
                  in map (\(V2 x y,_) -> V4 (x*ds) (y*ds) ds ds) dtl 
 
+textToJumpData :: FilePos -> TextPos -> Text -> Jump
+textToJumpData fpsSt tpsSt ttx = ((fpsSt,T.pack$show fpsSt),(tpsSt,ttx)) 

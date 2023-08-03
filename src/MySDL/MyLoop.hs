@@ -11,7 +11,7 @@ import System.Directory (doesFileExist)
 import Linear.V2 (V2(..))
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Attr(..),Dots,delayTime,textFileName,textPosFile,dotFileName)
+import MyData (State(..),Attr(..),Dots,Jump,delayTime,textFileName,textPosFile,dotFileName,jumpNameFile)
 import MyEvent (inputEvent)
 import MyFile (fileRead,fileWrite)
 import MySDL.MyLoad (textToDots)
@@ -33,6 +33,7 @@ myLoop state re fonts itexs = do
       getAtr d = let (_,_,gatr,_) = last d in gatr
       natr = if null textData then atr nst else getAtr textData
       nscr = if isNewFile || isLoadFile then V2 0 0 else scr natr
+      njps = jps natr
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps,ndts) <- if isNewFile then do
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)
@@ -52,12 +53,13 @@ myLoop state re fonts itexs = do
     return (loadText,loadFileNum,0,dots)
                                     else
     return (tex nst,fps nst,tps nst,dts nst)
-  state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr},fps=nfps,tps=ntps}
+  state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps},fps=nfps,tps=ntps}
   delay delayTime
   when isQuit $ do 
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)
     fileWrite (dotFileName++show (fps nst)++".txt") (dotsToText$dts nst)
     fileWrite textPosFile (T.pack$unwords [show (fps nst),show (tps nst)])
+    fileWrite jumpNameFile (jumpsToText njps)
   unless isQuit (myLoop state re fonts itexs)
 
 nextNewFileNum :: Int -> IO Int
@@ -74,3 +76,6 @@ loadExistFileNum i = do
 
 dotsToText :: Dots -> T.Text
 dotsToText dots = T.unwords$foldl (\acc (V2 x y,c) -> acc++[T.pack$show x,T.pack$show y,T.pack$show c]) [] dots
+
+jumpsToText :: [Jump] -> T.Text
+jumpsToText jmps = T.unwords$foldl (\acc ((fln,fnm),(tgp,tgn)) -> acc++[T.pack$show fln,fnm,T.pack$show tgp,tgn]) [] jmps
