@@ -3,10 +3,12 @@ module MyEvent (inputEvent) where
 
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
+import Linear.V4 (V4(..))
 import qualified Data.Text as T
-import Data.List (nub)
+import Data.List (nub,elemIndex)
+import Data.Maybe (fromMaybe)
 import MyData (Pos,Dot,Dots,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
-import MyAction (tpsForRelativeLine)
+import MyAction (tpsForRelativeLine,locToIndex)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool)
@@ -42,12 +44,19 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
       wm = wmd atrSt
       os = ios atrSt
       lw = lnw atrSt
-      scrAt = scr atrSt
+      fjpAt = fjp atrSt
+      V2 ww wh = wsz atrSt
+      V4 mr mt ml mb = mgn atrSt
+      scrAt@(V2 sx sy) = scr atrSt
       ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       nit = if isIns && isRet then "\n" else it
       textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+      centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
+                               else (wh-mt-mb) `div` lw `div` 2 + sy `div` lw
+      centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
+      nsjn = selectNearest centerIndex (map fst fjpAt)
       nscr
         | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
         | ifmSt && wm==T && isRight = scrAt-V2 lw 0
@@ -58,7 +67,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
         | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y,scr=V2 0 0} 
                               else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
         | isTglOsd = if os then atrSt{ios=False} else atrSt{ios=True}
-        | otherwise = atrSt{scr=nscr}
+        | otherwise = atrSt{scr=nscr,sjn=nsjn}
       ntps
         | ifmSt = tpsSt
         | isUp = if wm==T then if tpsSt==0 then 0 else tpsSt-1 else tpsPreLine
@@ -109,3 +118,7 @@ addMidDots (V2 x0 y0,cn) (V2 x1 y1,_)
                     map (\doty -> (V2 (g doty) doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
      where f x = floor$(fromIntegral (y1-y0) ::Double)/fromIntegral (x1-x0)*(fromIntegral x-fromIntegral x0) + fromIntegral y0
            g y = floor$(fromIntegral (x1-x0) ::Double)/fromIntegral (y1-y0)*(fromIntegral y-fromIntegral y0) + fromIntegral x0
+
+selectNearest :: Int -> [Int] -> Int
+selectNearest i ts = let devs = map (\t -> abs (i-t)) ts  
+                      in fromMaybe 0 $ elemIndex (minimum devs) devs

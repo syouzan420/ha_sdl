@@ -34,6 +34,8 @@ myLoop state re fonts itexs = do
       natr = if null textData then atr nst else getAtr textData
       nscr = if isNewFile || isLoadFile then V2 0 0 else scr natr
       njps = jps natr
+      nfjp = fjp natr
+      nsjn = sjn natr
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps,ndts) <- if isNewFile then do
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)
@@ -53,7 +55,7 @@ myLoop state re fonts itexs = do
     return (loadText,loadFileNum,0,dots)
                                     else
     return (tex nst,fps nst,tps nst,dts nst)
-  state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps},fps=nfps,tps=ntps}
+  state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps,fjp=nfjp,sjn=nsjn},fps=nfps,tps=ntps}
   delay delayTime
   when isQuit $ do 
     fileWrite (textFileName++show (fps nst)++".txt") (tex nst)

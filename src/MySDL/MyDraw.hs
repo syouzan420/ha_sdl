@@ -48,7 +48,9 @@ statusDraw re font st = do
       textPos = pack$show$tps st
       editMode = pack$show$emd st
       scroll = pack$show$scr (atr st)
+      fromJump = pack$show$fjp (atr st)
       statusText = "fNum:"<>fileNum<>" tPos:"<>textPos<>" eMode:"<>editMode <>" scr:"<>scroll
+                  <>" fjp:"<>fromJump
       ofs = fromIntegral fontSize
       lng = fromIntegral$T.length statusText
   fontS <- blended font (colorPallet!!1) statusText 
@@ -61,8 +63,8 @@ statusDraw re font st = do
 
 textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> IO () 
 textsDraw _ _ _ _ _ [] = return ()
-textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,natr,pList):xs) = do
-  let (Attr _ scrAt wmdAt fszAt fcoAt _ _ _ _ _ _ _ _ iosAt _) = natr
+textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
+  let (scrAt,wmdAt,fszAt,fcoAt,iosAt) = (scr nat,wmd nat,fsz nat,fco nat,ios nat)
       ofs = fromIntegral fontSize
       fs = fromIntegral fszAt
       fnum = if iosAt then 2 else 1

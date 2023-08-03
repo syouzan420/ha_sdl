@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,Dot,Dots,Jump,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+module MyData (Pos,Color,PList,Dot,Dots,Jump,FrJp,Modif(..),State(..),Attr(..)
+              ,Rubi(..),WMode(..),EMode(..)
               ,title,windowSize,initState,initAttr,dotSize
-              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,rubiSize,delayTime
+              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
+              ,rubiSize,delayTime
               ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
               ,textLengthLimit,jumpNameFile) 
   where
@@ -21,6 +23,7 @@ type PList = ((Bool,Bool),Pos)
 type Dot = (Pos,Cnum)
 type Dots = [Dot]
 type Jump = ((Int,Text),(Int,Text)) -- ((FileNumber,FileName),(TextPosNumber,TextPosName))
+type FrJp = (Int,(Int,Int)) -- (TextPosition, (FilePosNumber,TextPosNumber))
 
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
@@ -52,12 +55,16 @@ data State = State{tex :: !Text, dts :: !Dots, atr :: !Attr, fps :: !Int, tps ::
 -- wsz: window size (width,height)
 -- mgn: margins (right, top, left, bottom)
 -- rbi: for rubi
+-- jps: jumps (jump target list)
+-- fjp: jump from (jump source list)
+-- sjn: selected jump number
 -- cnm: command name
 -- cid: command index
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,rbi :: Rubi, jps :: [Jump], cnm :: Text, cid :: Int
+                ,dta :: [Text] ,rbi :: Rubi, jps :: [Jump], fjp :: [FrJp], sjn :: Int
+                ,cnm :: Text, cid :: Int
                 ,ios :: Bool, ite :: Bool} deriving (Eq,Show)
 
 -- rps: rubi position
@@ -106,7 +113,8 @@ initState = State {tex = "", dts = [], atr = initAttr, fps=0, tps=0, crc=0, emd=
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,rbi = initRubi, jps = [], cnm = "", cid = 0, ios = False, ite = False}
+               ,dta = [], rbi = initRubi, jps = [], fjp = [], sjn = -1, cnm = "", cid = 0
+               ,ios = False, ite = False}
 
 initRubi :: Rubi
 initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, tsz = rubiSize, tlw = initLetterWidth
@@ -141,6 +149,12 @@ fontColor = V4 255 255 204 255
 
 cursorColor :: Color
 cursorColor = V4 255 255 102 255
+
+linkColor :: Color
+linkColor = V4 102 178 255 255
+
+selectColor :: Color
+selectColor = V4 204 255 204 255
 
 delayTime :: Word32
 delayTime = 50

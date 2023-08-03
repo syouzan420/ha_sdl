@@ -39,8 +39,13 @@ loadText filename i = do
 
 textToDots :: [T.Text] -> Dots
 textToDots [] = []
+textToDots [_] = []
+textToDots [_,_] = []
 textToDots (x:y:c:xs) = (V2 (read$T.unpack x) (read$T.unpack y),read$T.unpack c):textToDots xs
 
 textToJumps :: [T.Text] -> [Jump]
 textToJumps [] = []
+textToJumps [_] = []
+textToJumps [_,_] = []
+textToJumps [_,_,_] = []
 textToJumps (fi:fnm:tgp:tgn:xs) = ((read$T.unpack fi,fnm),(read$T.unpack tgp,tgn)):textToJumps xs
