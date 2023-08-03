@@ -10,13 +10,14 @@ import MyAction (tpsForRelativeLine)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool)
-inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
+inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
       isNewFile = kc==KeycodeN && md==Ctr
       isLoadFile = kc==KeycodeL && md==Ctr
+      isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift && kc/=KeycodeUnknown && md==Shf
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
       isNor = emdSt==Nor
       isIns = emdSt==Ins
@@ -29,7 +30,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
-      isBS = kc==KeycodeBackspace
+      isBS = kc==KeycodeBackspace && not iskSt
       isCom = md==Alt
       isDrawClear = kc==KeycodeD && md==Ctr
       isTglColor = kc==KeycodeC && md==Ctr
@@ -87,7 +88,11 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _) = do
       nifm
         | isTglFmt = not ifmSt
         | otherwise = ifmSt
-      nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm}
+      nisk
+        | isSkkEdit = True
+        | iskSt && it/=T.empty = False 
+        | otherwise = iskSt
+      nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isQuit)
 
 toDotPos :: Pos -> Pos -> Pos

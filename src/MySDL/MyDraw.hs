@@ -20,7 +20,7 @@ type TextPos = Int
 type TextData = [(Bool,Text,Attr,[PList])]
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt) = do
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt _) = do
   initDraw re
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
@@ -47,10 +47,8 @@ statusDraw re font st = do
   let fileNum = pack$show$fps st
       textPos = pack$show$tps st
       editMode = pack$show$emd st
-      position = pack$show$gps (atr st)
       scroll = pack$show$scr (atr st)
-      statusText = "fNum:"<>fileNum<>" tPos:"<>textPos<>" eMode:"<>editMode<>" gPos:"<>position
-                <>" scr:"<>scroll
+      statusText = "fNum:"<>fileNum<>" tPos:"<>textPos<>" eMode:"<>editMode <>" scr:"<>scroll
       ofs = fromIntegral fontSize
       lng = fromIntegral$T.length statusText
   fontS <- blended font (colorPallet!!1) statusText 

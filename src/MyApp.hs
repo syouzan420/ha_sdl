@@ -8,7 +8,6 @@ import MySDL.MyInitVideo (withMyVideo)
 import MySDL.MyDraw (myDraw)
 import MyData (initState,State(..))
 import MyAction (makeTextData)
-import MyFile (fileRead)
 
 appMain :: IO ()
 appMain =

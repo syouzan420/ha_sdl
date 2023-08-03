@@ -2,10 +2,10 @@
 module MySDL.MyInput (myInput) where
 
 import SDL.Event (EventPayload(KeyboardEvent,TextInputEvent,TextEditingEvent
-                              ,MouseButtonEvent,MouseMotionEvent)
+                              ,MouseButtonEvent,MouseMotionEvent,KeymapChangedEvent)
                  ,eventPayload,keyboardEventKeyMotion
                  ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents
-                 ,TextInputEventData(textInputEventText),TextEditingEventData(textEditingEventText)
+                 ,TextInputEventData(textInputEventText),TextEditingEventData(textEditingEventLength,textEditingEventText)
                  ,MouseButtonEventData(mouseButtonEventMotion,mouseButtonEventPos)
                  ,MouseMotionEventData(mouseMotionEventState,mouseMotionEventPos)
                  ,MouseButton(ButtonLeft))
@@ -13,6 +13,7 @@ import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),KeyModifier(..)
                           ,getModState)
 import SDL.Input.Keyboard.Codes
 import SDL.Vect(Point(P),V2(..))
+import Control.Monad (when)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
 import Data.Maybe(fromMaybe)
@@ -25,16 +26,15 @@ myInput = do
   events <- pollEvents
   mds <- getModState
   let kcmd event  =  case eventPayload event of 
-                        KeyboardEvent keyboardEvent ->
-                          if keyboardEventKeyMotion keyboardEvent == Pressed
-                              then let kbeSim = keyboardEventKeysym keyboardEvent
-                                    in (keysymKeycode kbeSim,keysymModifier kbeSim)
-                              else (KeycodeUnknown,mds)
-                        _ -> (KeycodeUnknown,mds)
+                       KeyboardEvent keyboardEvent ->
+                         if keyboardEventKeyMotion keyboardEvent == Pressed
+                             then let kbeSim = keyboardEventKeysym keyboardEvent
+                                   in (keysymKeycode kbeSim,keysymModifier kbeSim)
+                             else (KeycodeUnknown,mds)
+                       _ -> (KeycodeUnknown,mds)
       getItx event = case eventPayload event of
-                        TextEditingEvent textEditingEvent -> textEditingEventText textEditingEvent
-                        TextInputEvent textInputEvent -> textInputEventText textInputEvent
-                        _ -> T.empty 
+                       TextInputEvent textInputEvent -> textInputEventText textInputEvent
+                       _ -> T.empty 
       mbtn event = case eventPayload event of
                      MouseButtonEvent mouseButtonEvent ->
                        if mouseButtonEventMotion mouseButtonEvent == Pressed
@@ -61,9 +61,11 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
-  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx)
+  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx) 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
   if mps==V2 (-1) (-1) then return () else print mps >> print ismc
+  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
+  when skkedit $ putStrLn "SkkEditStart"
   let kc' 
        |kc==KeycodeUnknown && itx/=T.empty = case itx of
                   "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
