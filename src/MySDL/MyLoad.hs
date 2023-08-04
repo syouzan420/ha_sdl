@@ -8,9 +8,9 @@ import qualified Data.Text as T
 import Linear.V2 (V2(..))
 import System.Directory (doesFileExist)
 import MyFile (fileRead)
-import MyData (Dots,Jump,fontSize,fontFiles,imageFiles,textFileName,textPosFile,dotFileName,jumpNameFile)
+import MyData (Dot,Jump,fontSize,fontFiles,imageFiles,textFileName,textPosFile,dotFileName,jumpNameFile)
 
-myLoad :: IO ([F.Font],[Surface],T.Text,(Int,Int),Dots,[Jump])
+myLoad :: IO ([F.Font],[Surface],T.Text,(Int,Int),[Dot],[Jump])
 myLoad = do
   fonts <- loadFonts fontSize fontFiles
   imageS <- loadImages imageFiles
@@ -37,7 +37,7 @@ loadText filename i = do
   if dfe then fileRead wfn
          else return T.empty 
 
-textToDots :: [T.Text] -> Dots
+textToDots :: [T.Text] -> [Dot]
 textToDots [] = []
 textToDots [_] = []
 textToDots [_,_] = []

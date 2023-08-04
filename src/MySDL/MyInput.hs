@@ -61,16 +61,16 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
-  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx) 
+--  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx) 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
-  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
+--  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
   let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
-  when skkedit $ putStrLn "SkkEditStart"
-  let kc' 
-       |kc==KeycodeUnknown && itx/=T.empty = case itx of
-                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
-                  "い" -> KeycodeI
-                  _ -> KeycodeUnknown
-       |otherwise = kc
-  return (kc',mdres,itx,mps,ismc) 
+--  when skkedit $ putStrLn "SkkEditStart"
+--  let kc' 
+--       |kc==KeycodeUnknown && itx/=T.empty = case itx of
+--                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
+--                  "い" -> KeycodeI
+--                  _ -> KeycodeUnknown
+--       |otherwise = kc
+  return (kc,mdres,itx,mps,ismc) 
  

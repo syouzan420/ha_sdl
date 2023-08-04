@@ -7,18 +7,19 @@ import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import Data.List (nub,elemIndex)
 import Data.Maybe (fromMaybe)
-import MyData (Pos,Dot,Dots,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
+import MyData (Pos,Dot,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
 import MyAction (tpsForRelativeLine,locToIndex)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool)
-inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
+inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool,Bool)
+inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
       isNewFile = kc==KeycodeN && md==Ctr
       isLoadFile = kc==KeycodeL && md==Ctr
+      isJump = ifmSt && isRet && sjn atrSt>=0
       isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift && kc/=KeycodeUnknown && md==Shf
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
       isNor = emdSt==Nor
@@ -28,6 +29,8 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
       isDown = (kc==KeycodeJ && isNor) || kc==KeycodeDown
       isLeft = (kc==KeycodeH && isNor) || kc==KeycodeLeft
       isRight = (kc==KeycodeL && isNor) || kc==KeycodeRight
+      isFarForward = kc==KeycodeF && md==Shf && isNor
+      isFarBack = kc==KeycodeB && md==Shf && isNor
       isToIns = kc==KeycodeI && isNor
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
@@ -47,14 +50,17 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
       fjpAt = fjp atrSt
       V2 ww wh = wsz atrSt
       V4 mr mt ml mb = mgn atrSt
+      seeLines = fromIntegral$if wm==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
       scrAt@(V2 sx sy) = scr atrSt
       ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
+      tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
+      tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
       nit = if isIns && isRet then "\n" else it
       textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
       centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
-                               else (wh-mt-mb) `div` lw `div` 2 + sy `div` lw
+                               else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
       nscr
@@ -70,6 +76,8 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
         | otherwise = atrSt{scr=nscr,sjn=nsjn}
       ntps
         | ifmSt = tpsSt
+        | isFarForward = tpsFarForward
+        | isFarBack = tpsFarBack
         | isUp = if wm==T then if tpsSt==0 then 0 else tpsSt-1 else tpsPreLine
         | isDown = if wm==T then if tpsSt==tLen then tLen else tpsSt+1 else tpsNextLine
         | isLeft = if wm==Y then if tpsSt==0 then 0 else tpsSt-1 else tpsNextLine
@@ -102,14 +110,14 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt) = do
         | iskSt && it/=T.empty = False 
         | otherwise = iskSt
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
-  return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isQuit)
+  return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isQuit)
 
 toDotPos :: Pos -> Pos -> Pos
 toDotPos (V2 px py) (V2 sx sy) = let ds = dotSize
                                      nx = (px-sx) `div` ds; ny = (py-sy) `div` ds
                                   in V2 nx ny
 
-addMidDots :: Dot -> Dot -> Dots 
+addMidDots :: Dot -> Dot -> [Dot] 
 addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) 
   | x0==x1 && y0==y1 = []
   | x0==x1 = map (\doty -> (V2 x0 doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])

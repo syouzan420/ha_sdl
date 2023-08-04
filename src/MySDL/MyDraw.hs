@@ -3,7 +3,7 @@ module MySDL.MyDraw (myDraw,initDraw) where
 
 import SDL.Video (Renderer, Texture)
 import SDL.Video.Renderer (rendererDrawColor,clear,copy,copyEx,Rectangle(..),textureAlphaMod
-                          ,present,createTextureFromSurface,freeSurface,fillRect)
+                          ,present,createTextureFromSurface,freeSurface,destroyTexture,fillRect)
 import SDL (($=))
 import SDL.Vect (Point(P),V2(..))
 import SDL.Font (Font,blended)
@@ -11,24 +11,21 @@ import Control.Monad.IO.Class (MonadIO)
 import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
-import Data.Text (Text,pack)
-import MyData (Dots,State(..),Attr(..),WMode(..),Pos,PList,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
+import Data.Text (pack)
+import MyData (IsFormat,Dot,State(..),Attr(..),WMode(..),Pos,TextPos,TextData,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
 
-type IsFormat = Bool
 type IsCursor = Bool
-type TextPos = Int
-type TextData = [(Bool,Text,Attr,[PList])]
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt _) = do
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt _ _) = do
   initDraw re
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
   let scrAt = scr atrSt
-  dotsDraw re scrAt dtsSt
+  when isOnlyMouse $ dotsDraw re scrAt dtsSt
   present re
 
-dotsDraw :: Renderer -> Pos -> Dots -> IO () 
+dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
 dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do
   let ds = dotSize
   rendererDrawColor re $= colorPallet!!cn 
@@ -55,6 +52,7 @@ statusDraw re font st = do
       lng = fromIntegral$T.length statusText
   fontS <- blended font (colorPallet!!1) statusText 
   fontT <- createTextureFromSurface re fontS
+  --freeSurface fontS
   mapM_ (\i -> do
      copy re fontT (Just (Rectangle (P (V2 (ofs*i) 0)) (V2 ofs ofs)))
                    (Just (Rectangle (P (statusPos+V2 (12*i) 0)) (V2 12 12)))
@@ -78,7 +76,6 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
         fontT <- createTextureFromSurface re fontS
-        --freeSurface fontS
         when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt fs
         foldM_ (\ ps ((b,r),pd) -> do
           let sz = if b then ofs `div` 2 else ofs
@@ -87,6 +84,8 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
                           (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
           return (ps+V2 sz 0)
               ) (V2 0 0) pList
+        destroyTexture fontT
+        freeSurface fontS
   when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdAt fs 
   textsDraw re fonts ifmSt icrSt tpsSt xs
 

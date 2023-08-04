@@ -8,18 +8,15 @@ import Foreign.C.Types (CInt)
 import SDL.Vect (V2(..),V4(..))
 import Data.Maybe(fromMaybe)
 import Data.List(elemIndex)
-import MyData (Dots,Jump,FrJp,State(..),Attr(..),Rubi(..),WMode(..),PList,Pos
-              ,rubiSize,dotSize,textLengthLimit,linkColor,selectColor,fontColor)
+import MyData (IsFormat,Pos,TextPos,TextData,Dot,Jump,FrJp,State(..),Attr(..),Rubi(..),WMode(..)
+              ,rubiSize,dotSize,textLengthLimit,linkColor,selectColor,fontColor,cursorTime)
 
 type Index = Int
 type Line = Int
 type Letter = Int
-type TextPos = Int
 type FilePos = Int
 type Location = (Line,Letter)
-type IsFormat = Bool
 type Rect = V4 CInt
-type Textdata = [(Bool,Text,Attr,[PList])]
 
 myAction :: State -> State
 myAction st = st
@@ -28,18 +25,18 @@ beforeDraw :: State -> State
 beforeDraw st = 
   let crcSt = crc st
       icrSt = icr st
-      ncrc = if crcSt<10 then crcSt+1 else 0
-      nicr = if crcSt<10 then icrSt else not icrSt
+      ncrc = if crcSt<cursorTime then crcSt+1 else 0
+      nicr = if crcSt<cursorTime then icrSt else not icrSt
    in st{crc=ncrc, icr=nicr}
 
 afterDraw :: State -> State
 afterDraw st = st
 
-makeTextData :: State -> Textdata 
-makeTextData (State texSt _ atrSt fpsSt tpsSt _ _ _ ifmSt _ _) =
+makeTextData :: State -> TextData 
+makeTextData (State texSt _ atrSt fpsSt tpsSt _ _ _ ifmSt _ _ _) =
   makeTexts 0 ifmSt fpsSt tpsSt atrSt texSt
 
-makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> Textdata 
+makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> TextData 
 makeTexts ind ifmSt fpsSt tpsSt atrSt texSt = 
   case uncons texSt of
     Nothing -> [] 
@@ -134,7 +131,8 @@ nextPos ch tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) =
            | nx  > ww - mr || inl = V2 ml oy + V2 0 nw
            | otherwise = psd
         (nln,nlt)
-           | ny > wh - mb || inl = (ln+1,0)
+           | wm==T && (ny > wh - mb || inl) = (ln+1,0)
+           | wm==Y && (nx > ww - mr || inl) = (ln+1,0)
            | otherwise = (ln,lt+1)
      in ((ihf,irt),(npos,(nln,nlt)))
 
@@ -204,7 +202,7 @@ breakText tx = let (hd,tl) = T.break (=='\n') tx
                      |otherwise = tl
                 in (hda,hdb<>tl2)
 
-dotsToRect :: Dots -> [Rect]
+dotsToRect :: [Dot] -> [Rect]
 dotsToRect dtl = let ds = dotSize
                  in map (\(V2 x y,_) -> V4 (x*ds) (y*ds) ds ds) dtl 
 
