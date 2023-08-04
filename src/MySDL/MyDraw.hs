@@ -22,7 +22,7 @@ myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifm
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
   let scrAt = scr atrSt
-  when isOnlyMouse $ dotsDraw re scrAt dtsSt
+  dotsDraw re scrAt dtsSt
   present re
 
 dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
