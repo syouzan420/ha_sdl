@@ -149,7 +149,7 @@ changeAtr attr tx =
 
 exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
 exeAttrCom fpsSt tpsSt 
-    (at@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ dtaAt rbiAt jpsAt fjpAt sjnAt cnmAt cidAt _ _),tx) = 
+ (at@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ dtaAt rbiAt jpsAt fjpAt jbkAt sjnAt cnmAt cidAt _ _),tx) = 
   let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
       (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx

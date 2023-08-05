@@ -11,7 +11,7 @@ import MyData (Pos,Dot,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYoko
 import MyAction (tpsForRelativeLine,locToIndex)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool,Bool)
+inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool,Bool,Bool)
 inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
@@ -20,6 +20,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       isNewFile = kc==KeycodeN && md==Ctr
       isLoadFile = kc==KeycodeL && md==Ctr
       isJump = ifmSt && isRet && sjn atrSt>=0
+      isJBak = ifmSt && isBS
       isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift && kc/=KeycodeUnknown && md==Shf
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
       isNor = emdSt==Nor
@@ -110,7 +111,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | iskSt && it/=T.empty = False 
         | otherwise = iskSt
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
-  return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isQuit)
+  return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit)
 
 toDotPos :: Pos -> Pos -> Pos
 toDotPos (V2 px py) (V2 sx sy) = let ds = dotSize

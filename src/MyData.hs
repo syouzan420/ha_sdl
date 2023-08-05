@@ -25,6 +25,7 @@ type TextData = [(Bool,Text,Attr,[PList])]
 type Dot = (Pos,Cnum)
 type Jump = ((Int,Text),(Int,Text)) -- ((FileNumber,FileName),(TextPosNumber,TextPosName))
 type FrJp = (Int,(Int,Int)) -- (TextPosition, (FilePosNumber,TextPosNumber))
+type JBak = (Int,Int) -- (FilePosNumber,TextPosNumber)
 type IsFormat = Bool
 
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
@@ -64,7 +65,7 @@ data State = State{tex :: !Text, dts :: ![Dot], atr :: !Attr, fps :: !Int, tps :
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,dta :: [Text] ,rbi :: Rubi, jps :: [Jump], fjp :: [FrJp], sjn :: Int
+                ,dta :: [Text] ,rbi :: Rubi, jps :: [Jump], fjp :: [FrJp], jbk :: [JBak], sjn :: Int
                 ,cnm :: Text, cid :: Int
                 ,ios :: Bool, ite :: Bool} deriving (Eq,Show)
 
@@ -139,7 +140,7 @@ initState = State {tex = "", dts = [], atr = initAttr, fps=0, tps=0, crc=0, emd=
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,dta = [], rbi = initRubi, jps = [], fjp = [], sjn = -1, cnm = "", cid = 0
+               ,dta = [], rbi = initRubi, jps = [], fjp = [], jbk = [], sjn = -1, cnm = "", cid = 0
                ,ios = False, ite = False}
 
 initRubi :: Rubi
