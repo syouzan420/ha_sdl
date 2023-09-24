@@ -35,30 +35,19 @@ myLoop state re fonts itexs = do
       (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps nst)
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps,ndts,niup,njbk) <- if isNewFile then do
-    fileWrite (textFileName++show fpsSt++".txt") (tex nst)
-    fileWrite (dotFileName++show fpsSt++".txt") (dotsToText$dts nst)
+    fileWriteR fpsSt nst
     nextFileNum <- nextNewFileNum (fpsSt + 1)
     return (T.empty,nextFileNum,0,[],True,jbkAt)
                            else if isLoadFile then do
-    fileWrite (textFileName++show fpsSt++".txt") (tex nst)
-    fileWrite (dotFileName++show fpsSt++".txt") (dotsToText$dts nst)
+    fileWriteR fpsSt nst
     loadFileNum <- loadExistFileNum (fpsSt + 1)
-    let nextFileName = textFileName++show loadFileNum++".txt"
-        nextDotFile = dotFileName++show loadFileNum++".txt"
-    loadText <- fileRead nextFileName  
-    loadDotText <- fileRead nextDotFile
-    let dots = textToDots (T.words loadDotText)
+    (loadText, dots) <- fileReadR loadFileNum
     return (loadText,loadFileNum,0,dots,True,jbkAt)
                            else if isJump then do
     let (loadFileNum,textPos) = snd$nfjp!!nsjn
-    fileWrite (textFileName++show fpsSt++".txt") (tex nst)
-    fileWrite (dotFileName++show fpsSt++".txt") (dotsToText$dts nst)
-    let nextFileName = textFileName++show loadFileNum++".txt"
-        nextDotFile = dotFileName++show loadFileNum++".txt"
-    loadText <- fileRead nextFileName  
-    loadDotText <- fileRead nextDotFile
-    let dots = textToDots (T.words loadDotText)
-        jb = jbkAt ++ [(fpsSt,tps nst)]
+    fileWriteR fpsSt nst
+    (loadText, dots) <- fileReadR loadFileNum
+    let jb = jbkAt ++ [(fpsSt,tps nst)]
     return (loadText,loadFileNum,textPos,dots,True,jb)
                            else if isJBak then do
     let canJBack = not (null jbkAt)
@@ -74,8 +63,7 @@ myLoop state re fonts itexs = do
   state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},fps=nfps,tps=ntps,iup=niup}
   delay delayTime
   when isQuit $ do 
-    fileWrite (textFileName++show fpsSt++".txt") (tex nst)
-    fileWrite (dotFileName++show fpsSt++".txt") (dotsToText$dts nst)
+    fileWriteR fpsSt nst
     fileWrite textPosFile (T.pack$unwords [show (fps nst),show (tps nst)])
     fileWrite jumpNameFile (jumpsToText njps)
   unless isQuit (myLoop state re fonts itexs)
@@ -97,3 +85,17 @@ dotsToText dots = T.unwords$foldl (\acc (V2 x y,c) -> acc++[T.pack$show x,T.pack
 
 jumpsToText :: [Jump] -> T.Text
 jumpsToText jmps = T.unwords$foldl (\acc ((fln,fnm),(tgp,tgn)) -> acc++[T.pack$show fln,fnm,T.pack$show tgp,tgn]) [] jmps
+
+fileWriteR :: Int -> State -> IO ()
+fileWriteR fp st = do
+    fileWrite (textFileName++show fp++".txt") (tex st)
+    fileWrite (dotFileName++show fp++".txt") (dotsToText$dts st)
+
+fileReadR :: Int -> IO (T.Text, [Dot])
+fileReadR lfn = do
+    let nextFileName = textFileName++show lfn++".txt"
+        nextDotFile = dotFileName++show lfn++".txt"
+    loadText <- fileRead nextFileName  
+    loadDotText <- fileRead nextDotFile
+    let dots = textToDots (T.words loadDotText)
+    return (loadText, dots)
