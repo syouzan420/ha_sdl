@@ -1,14 +1,14 @@
 {-#LANGUAGE OverloadedStrings #-}
-module MySDL.MyLoad (myLoad,textToDots) where
+module MySDL.MyLoad (myLoad) where
 
 import qualified SDL.Font as F
 import qualified SDL.Image as I
 import SDL.Video.Renderer (Surface)
 import qualified Data.Text as T 
-import Linear.V2 (V2(..))
 import System.Directory (doesFileExist)
 import MyFile (fileRead)
 import MyData (Dot,Jump,fontSize,fontFiles,imageFiles,textFileName,textPosFile,dotFileName,jumpNameFile)
+import MyLib (textToDots,textToJumps)
 
 myLoad :: IO ([F.Font],[Surface],T.Text,(Int,Int),[Dot],[Jump])
 myLoad = do
@@ -37,15 +37,3 @@ loadText filename i = do
   if dfe then fileRead wfn
          else return T.empty 
 
-textToDots :: [T.Text] -> [Dot]
-textToDots [] = []
-textToDots [_] = []
-textToDots [_,_] = []
-textToDots (x:y:c:xs) = (V2 (read$T.unpack x) (read$T.unpack y),read$T.unpack c):textToDots xs
-
-textToJumps :: [T.Text] -> [Jump]
-textToJumps [] = []
-textToJumps [_] = []
-textToJumps [_,_] = []
-textToJumps [_,_,_] = []
-textToJumps (fi:fnm:tgp:tgn:xs) = ((read$T.unpack fi,fnm),(read$T.unpack tgp,tgn)):textToJumps xs

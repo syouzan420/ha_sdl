@@ -5,10 +5,8 @@ import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Data.Text as T
-import Data.List (nub,elemIndex)
-import Data.Maybe (fromMaybe)
-import MyData (Pos,Dot,State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,dotSize,colorPallet)
-import MyAction (tpsForRelativeLine,locToIndex)
+import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,colorPallet)
+import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool,Bool,Bool)
@@ -113,21 +111,3 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit)
 
-toDotPos :: Pos -> Pos -> Pos
-toDotPos (V2 px py) (V2 sx sy) = let ds = dotSize
-                                     nx = (px-sx) `div` ds; ny = (py-sy) `div` ds
-                                  in V2 nx ny
-
-addMidDots :: Dot -> Dot -> [Dot] 
-addMidDots (V2 x0 y0,cn) (V2 x1 y1,_) 
-  | x0==x1 && y0==y1 = []
-  | x0==x1 = map (\doty -> (V2 x0 doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
-  | y0==y1 = map (\dotx -> (V2 dotx y0,cn)) (if x1>x0 then [x0..x1] else [x1..x0])
-  | otherwise = nub$map (\dotx -> (V2 dotx (f dotx),cn)) (if x1>x0 then [x0..x1] else [x1..x0]) ++
-                    map (\doty -> (V2 (g doty) doty,cn)) (if y1>y0 then [y0..y1] else [y1..y0])
-     where f x = floor$(fromIntegral (y1-y0) ::Double)/fromIntegral (x1-x0)*(fromIntegral x-fromIntegral x0) + fromIntegral y0
-           g y = floor$(fromIntegral (x1-x0) ::Double)/fromIntegral (y1-y0)*(fromIntegral y-fromIntegral y0) + fromIntegral x0
-
-selectNearest :: Int -> [Int] -> Int
-selectNearest i ts = let devs = map (\t -> abs (i-t)) ts  
-                      in fromMaybe 0 $ elemIndex (minimum devs) devs

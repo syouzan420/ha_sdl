@@ -9,12 +9,12 @@ import SDL.Time (delay)
 import qualified Data.Text as T
 import System.Directory (doesFileExist)
 import Linear.V2 (V2(..))
-import MyAction (beforeDraw,afterDraw,makeTextData)
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Attr(..),Dot,Jump,delayTime,textFileName,textPosFile,dotFileName,jumpNameFile)
+import MyData (State(..),Attr(..),Dot,delayTime,textFileName,textPosFile,dotFileName,jumpNameFile)
+import MyAction (beforeDraw,afterDraw,makeTextData)
+import MyLib (textToDots,dotsToText,jumpsToText)
 import MyEvent (inputEvent)
 import MyFile (fileRead,fileWrite)
-import MySDL.MyLoad (textToDots)
 
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
 myLoop state re fonts itexs = do
@@ -79,12 +79,6 @@ loadExistFileNum i = do
   let fileName = textFileName++show i++".txt"
   fileExist <- doesFileExist fileName
   if fileExist then return i else loadExistFileNum 0
-
-dotsToText :: [Dot] -> T.Text
-dotsToText dots = T.unwords$foldl (\acc (V2 x y,c) -> acc++[T.pack$show x,T.pack$show y,T.pack$show c]) [] dots
-
-jumpsToText :: [Jump] -> T.Text
-jumpsToText jmps = T.unwords$foldl (\acc ((fln,fnm),(tgp,tgn)) -> acc++[T.pack$show fln,fnm,T.pack$show tgp,tgn]) [] jmps
 
 fileWriteR :: Int -> State -> IO ()
 fileWriteR fp st = do

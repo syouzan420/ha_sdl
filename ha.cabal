@@ -30,6 +30,7 @@ library
       MyData
       MyEvent
       MyFile
+      MyLib
       MySDL.MyDraw
       MySDL.MyInit
       MySDL.MyInitVideo
