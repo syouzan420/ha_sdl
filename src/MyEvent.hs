@@ -9,7 +9,7 @@ import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,init
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,Bool,Bool,Bool,Bool,Bool,Bool,Bool)
+inputEvent :: State -> IO (State,[Bool])
 inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
@@ -109,5 +109,5 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | iskSt && it/=T.empty = False 
         | otherwise = iskSt
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
-  return (nst,isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit)
+  return (nst,[isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit])
 

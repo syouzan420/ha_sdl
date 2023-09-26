@@ -19,7 +19,7 @@ import MyFile (fileRead,fileWrite)
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
 myLoop state re fonts itexs = do
   st <- get state
-  (st',isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit) <- inputEvent st
+  (st',[isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit]) <- inputEvent st
   let isUpdateTps = tps st /= tps st'
       nicr = isUpdateTps || icr st'
       ncrc = if isUpdateTps then 0 else crc st'
