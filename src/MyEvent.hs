@@ -19,8 +19,10 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       isLoadFile = kc==KeycodeL && md==Ctr
       isJump = ifmSt && isRet && sjn atrSt>=0
       isJBak = ifmSt && isBS
+
       isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift && kc/=KeycodeUnknown && md==Shf
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
+
       isNor = emdSt==Nor
       isIns = emdSt==Ins
       isRet = kc==KeycodeReturn
@@ -30,11 +32,12 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       isRight = (kc==KeycodeL && isNor) || kc==KeycodeRight
       isFarForward = kc==KeycodeF && md==Shf && isNor
       isFarBack = kc==KeycodeB && md==Shf && isNor
+
       isToIns = kc==KeycodeI && isNor
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
-      isBS = kc==KeycodeBackspace && not iskSt
+      isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
       isCom = md==Alt
       isDrawClear = kc==KeycodeD && md==Ctr
       isTglColor = kc==KeycodeC && md==Ctr
