@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Jump,FrJp
-              ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..)
+              ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
               ,title,windowSize,initState,initAttr,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
               ,rubiSize,delayTime,cursorTime
@@ -31,6 +31,8 @@ type IsFormat = Bool
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
+data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, Show)
+-- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isJump | isJBack | isExeCode | isQuit
 
 -- tex: edit text
 -- dts: dots drawing (pixel art)

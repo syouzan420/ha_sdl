@@ -5,11 +5,11 @@ import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Data.Text as T
-import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),initYokoPos,initTatePos,colorPallet)
+import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,[Bool])
+inputEvent :: State -> IO (State,Input)
 inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
@@ -37,6 +37,9 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
+
+      isExeCode = kc==KeycodeE && md==Ctr
+
       isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
       isCom = md==Alt
       isDrawClear = kc==KeycodeD && md==Ctr
@@ -111,6 +114,16 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | isSkkEdit = True
         | iskSt && it/=T.empty = False 
         | otherwise = iskSt
+      ninp
+        | isNewFile = NFL
+        | isLoadFile = LFL
+        | isJump = JMP 
+        | isJBak = JBK
+        | isExeCode = EXE
+        | isQuit = QIT
+        | isKeyPressed = PKY
+        | isMousePressed = PMO
+        | otherwise = NON
       nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
-  return (nst,[isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isQuit])
+  return (nst,ninp)
 

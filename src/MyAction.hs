@@ -38,9 +38,9 @@ makeTexts ind ifmSt fpsSt tpsSt atrSt texSt =
     Nothing -> [] 
     Just (ch,tailTx) ->  
       let (natr,(ptx,pxs)) 
-            | ifmSt = if ch==';' then exeAttrCom fpsSt ind (changeAtr atrSt{ite=False} tailTx) else
-                        if cnm atrSt/=T.empty then exeAttrCom fpsSt ind (atrSt{ite=False},texSt)
-                                              else (atrSt,T.break (==';') texSt)
+            | ifmSt = if ch==';' then exeAttrCom fpsSt ind (changeAtr atrSt{ite=False} tailTx) 
+                 else if cnm atrSt/=T.empty then exeAttrCom fpsSt ind (atrSt{ite=False},texSt)
+                                            else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
           tll = textLengthLimit
           (ptx2,pxs2) = if T.length ptx>tll then (T.take tll ptx,T.drop tll ptx<>pxs) else (ptx,pxs)
