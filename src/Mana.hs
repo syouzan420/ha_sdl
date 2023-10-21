@@ -3,6 +3,8 @@ module Mana where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
+import Data.Tree (Tree(..), Forest(..))
+import MyTree (Elm(..),addElem)
   
 type Ta = String 
 data Yo = Kaz | Moz | Def | Var deriving (Eq, Show) 
@@ -11,10 +13,10 @@ data Mn = Mn Ta Yo
 instance Show Mn where
   show (Mn t y) = t++"("++show y++")" 
 
-makeManas :: T.Text -> [[Mn]]
+makeManas :: T.Text -> Forest Mn
 makeManas = makeManas' (0,0) [] . makeStrings 
 
-makeManas' :: (Int, Int) -> [[Mn]] -> [String] -> [[Mn]]
+makeManas' :: (Int, Int) -> Forest Mn -> [String] -> Forest Mn 
 makeManas' _ mns [] = mns 
 makeManas' (pl,pr) mns (x:xs) = 
   let you | isMoz x = Moz | isKaz x = Kaz | isDef x = Def | otherwise = Var
@@ -23,11 +25,7 @@ makeManas' (pl,pr) mns (x:xs) =
       tk = min mnl l 
       nl = if mnl < l then l - mnl else 0
       nr = if you /= Def && r > 0 then r - 1 else r
-      nmns
-        | you == Def && mnl < l = mns++[[Mn x Def]]
-        | you == Def = let (up,down) = splitAt (mnl-l) mns in up ++ [concat down ++ [Mn x Def]]
-        | r > 0 && not (null mns) = init mns ++ [last mns ++ [Mn x you]]
-        | otherwise = mns ++ [[Mn x you]]
+      nmns = addElem (El (Mn x you) l r) mns 
   in makeManas' (nl,nr) nmns xs  
 
 getLR :: String -> (Int, Int)
