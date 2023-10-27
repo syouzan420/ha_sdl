@@ -4,27 +4,84 @@ module Mana where
 import qualified Data.Text as T
 import Data.Char (isDigit)
 import Data.Tree (Tree(..), Forest(..))
+import Data.Maybe (fromMaybe)
 import MyTree (Elm(..),addElem)
   
 type Ta = String 
-data Yo = Kaz | Moz | Def | Var deriving (Eq, Show) 
+data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
 data Mn = Mn Ta Yo
 type LR = ([Int],[Int])
 
 instance Show Mn where
-  show (Mn t y) = t 
+  show (Mn t y) = t
+--    case y of Kaz -> "K"; Moz -> "M"; Io -> "I"; Def -> "D"; Spe -> "S"; Var -> "V"
+
+taiyouMn :: Mn -> (Ta,Yo)
+taiyouMn (Mn t y) = (t,y) 
+
+getManaFromTree :: Tree Mn -> Mn
+getManaFromTree (Node m _) = m
+
+getManaFromTree' :: Tree Mn -> Mn
+getManaFromTree' (Node m []) = m
+getManaFromTree' (Node m fm) = makeMana (Node m [] : fm) 
+
+searchFromDef :: Int -> String -> [(String,String)] -> (String,String) 
+searchFromDef _ _ [] = ("","") 
+searchFromDef l nm (df:xs) = 
+  if name==nm && length (words (fst df))==l then df else searchFromDef l nm xs
+    where name = getName (fst df)
+
+defForest :: Forest Mn -> (String,String) 
+defForest fm = let mnList = map getManaFromTree fm
+                   (taList,yoList) = unzip$map taiyouMn mnList
+                   isdef = Def `elem` yoList
+                   ind = if isdef then getIndex Def yoList else (-1)
+                   name = if isdef then taList!!ind else ""
+                   lmnl = length mnList
+                in if isdef then searchFromDef lmnl name nmlDef else ("","")
+
+evalDef :: Forest Mn -> Mn 
+evalDef fm = let (dp,dt) = defForest fm
+                 dpList = words dp
+                 dtList = words dt
+                 mnList = map getManaFromTree' fm
+                 (taList,yoList) = unzip$map taiyouMn mnList
+                 knv = zip dpList taList
+                 evs = map (\x -> fromMaybe x (lookup x knv)) dtList 
+                 yo = head$filter (/=Def) yoList
+              in Mn (preFunc evs) yo 
+
+makeMana :: Forest Mn -> Mn
+makeMana [] = Mn "" Moz
+makeMana [Node x []] = x
+makeMana (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
+  | y0==y1 = case y0 of
+      Kaz -> makeMana$Node (Mn (show (read t0 + read t1)) Kaz) []:xs
+      Moz -> makeMana$Node (Mn (t0 ++ t1) Moz) [] : xs
+  | t0 == ")" = makeMana$Node (Mn t1 y1) [] : xs
+  | t1 == ")" = makeMana$Node (Mn t0 y0) [] : xs
+  | otherwise = Mn "Error" Moz
+makeMana (Node mn [] : Node x y : xs)
+  | defForest nfm /= ("","") = makeMana (Node mn [] : Node (evalDef nfm) [] : xs)
+  | otherwise = makeMana (Node mn [] : Node (makeMana nfm) [] : xs)
+   where nfm = if fst (taiyouMn x) == "(" then y else Node x [] : y
+makeMana (Node x y : xs) 
+  | defForest nfm /= ("","") = makeMana (Node (evalDef nfm) [] : xs)
+  | otherwise = makeMana (Node (makeMana nfm) [] : xs)
+   where nfm = if fst (taiyouMn x) == "(" then y else Node x [] : y
 
 makeManas :: T.Text -> Forest Mn
 makeManas = makeManas' ([],[]) [] . makeStrings 
 
 getYo :: String -> Yo
-getYo x | isMoz x = Moz | isKaz x = Kaz | isDef x = Def | otherwise = Var
+getYo x | isDef x = Def | isMoz x = Moz | isKaz x = Kaz | isIo x = Io | isSpe x = Spe | otherwise = Var
 
-makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn 
+makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn
 makeManas' _ mns [] = mns 
 makeManas' (pl,pr) mns (x:xs) = 
   let you = getYo x 
-      (ls,rs) = if you == Def then getLR x (pl,pr) else (pl,pr)
+      (ls,rs) = if you == Def || you == Spe then getLR x (pl,pr) else (pl,pr)
       (l,ls')
         | null ls = (0,[])
         | otherwise = (head ls,tail ls)
@@ -39,14 +96,15 @@ makeManas' (pl,pr) mns (x:xs) =
         | x == "(" = (-1):ls'
         | otherwise = ls' 
       nr 
-        | you /= Def && r > 0 = if r - 1 == 0 then rs' else (r - 1):rs'
+        | you /= Def && you /= Spe && r > 0 = (r - 1):rs'
+        | r == 0 = rs'
         | r == (-1) = if x==")" then rs' else r:rs
         | otherwise = rs
       nmns = addElem (El (Mn x you) l r) mns 
   in makeManas' (nl,nr) nmns xs  
 
 getLR :: String -> LR -> LR
-getLR def (pl,pr) = let names = map (getName . fst) preDef 
+getLR def (pl,pr) = let names = map (getName . fst) preDef
                         ind = getIndex def names
                         defws = words$fst$preDef!!ind
                         wsLng = length defws
@@ -69,7 +127,15 @@ isKaz (h:tl) = (h=='+' || h=='-' || isDigit h) && all isDigit tl
 
 isDef :: String -> Bool
 isDef [] = False
-isDef str = str `elem` map (getName . fst) preDef
+isDef str = str `elem` map (getName . fst) nmlDef
+
+isSpe :: String -> Bool
+isSpe [] = False
+isSpe str = str `elem` speDef
+
+isIo :: String -> Bool
+isIo [] = False
+isIo str = str `elem` map (getName . fst . fst) ioDef
 
 makeStrings :: T.Text -> [String]
 makeStrings  = words . T.unpack . addSpaces
@@ -87,7 +153,16 @@ usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g"]
 
 preDef :: [(String,String)]
-preDef = [("a x b","a b pro"),("a * b","a b pro"),("(",""),(")","")]
+preDef = nmlDef ++ map (,"") speDef ++ map fst ioDef
+
+nmlDef :: [(String,String)]
+nmlDef = [("a x b","a b pro"),("a * b","a b pro")]
+
+ioDef :: [((String,String),String)]
+ioDef = [(("cls","cls"),"()")]
+
+speDef :: [String]
+speDef = ["(",")","="]
 
 preFunc :: [String] -> String 
 preFunc [] = "" 
