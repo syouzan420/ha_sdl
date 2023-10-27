@@ -15,15 +15,14 @@ showF tr = "[" ++ intercalate ", " (map showT tr) ++ "]"
 
 addElem :: Elm a -> Forest a -> Forest a 
 addElem (El mn _ _) [] = [Node mn []]
-addElem (El mn 0 0) fo = fo ++ [Node mn []]
 addElem (El mn l r) fo
-  | lng > l && l > 0 = let (h,(Node s sf):t) = splitAt (lng - l) fo
-                           newNode = Node s (t++addElem (El mn l r) sf)
-                        in h ++ [newNode]
-  | r > 0 = let (it,lt) = (init fo,last fo)
-                Node x subf = lt  -- last tree
-             in if null subf then it ++ [lt, Node mn []]
-                             else it ++ [Node x (addElem (El mn l r) subf)]
+  | lng > l && l /= 0 = let (h,(Node s sf):t) = splitAt (lng - abs l) fo
+                            newNode = Node s (t ++ addElem (El mn l r) sf)
+                         in h ++ [newNode]
+  | r /= 0 = let (it,lt) = (init fo,last fo)
+                 Node x subf = lt  -- last tree
+              in if null subf then it ++ [lt, Node mn []]
+                              else it ++ [Node x (addElem (El mn l r) subf)]
   | otherwise = fo ++ [Node mn []]
   where lng = length fo
 

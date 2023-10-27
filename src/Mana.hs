@@ -9,32 +9,49 @@ import MyTree (Elm(..),addElem)
 type Ta = String 
 data Yo = Kaz | Moz | Def | Var deriving (Eq, Show) 
 data Mn = Mn Ta Yo
+type LR = ([Int],[Int])
 
 instance Show Mn where
-  show (Mn t y) = t++"("++show y++")" 
+  show (Mn t y) = t 
 
 makeManas :: T.Text -> Forest Mn
-makeManas = makeManas' (0,0) [] . makeStrings 
+makeManas = makeManas' ([],[]) [] . makeStrings 
 
-makeManas' :: (Int, Int) -> Forest Mn -> [String] -> Forest Mn 
+getYo :: String -> Yo
+getYo x | isMoz x = Moz | isKaz x = Kaz | isDef x = Def | otherwise = Var
+
+makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn 
 makeManas' _ mns [] = mns 
 makeManas' (pl,pr) mns (x:xs) = 
-  let you | isMoz x = Moz | isKaz x = Kaz | isDef x = Def | otherwise = Var
-      (l,r) = if you == Def then getLR x else (pl,pr)
+  let you = getYo x 
+      (ls,rs) = if you == Def then getLR x (pl,pr) else (pl,pr)
+      (l,ls')
+        | null ls = (0,[])
+        | otherwise = (head ls,tail ls)
+      (r,rs') 
+        | x == "(" = (-1,rs)
+        | null rs = (0,[])
+        | otherwise = (head rs,tail rs)
       mnl = length mns
       tk = min mnl l 
-      nl = if mnl < l then l - mnl else 0
-      nr = if you /= Def && r > 0 then r - 1 else r
+      nl 
+        | mnl < l = (l - mnl):ls'
+        | x == "(" = (-1):ls'
+        | otherwise = ls' 
+      nr 
+        | you /= Def && r > 0 = if r - 1 == 0 then rs' else (r - 1):rs'
+        | r == (-1) = if x==")" then rs' else r:rs
+        | otherwise = rs
       nmns = addElem (El (Mn x you) l r) mns 
   in makeManas' (nl,nr) nmns xs  
 
-getLR :: String -> (Int, Int)
-getLR def = let names = map (getName . fst) preDef 
-                ind = getIndex def names
-                defws = words$fst$preDef!!ind
-                wsLng = length defws
-                nmInd = getIndex def defws
-             in (nmInd, wsLng - nmInd - 1) 
+getLR :: String -> LR -> LR
+getLR def (pl,pr) = let names = map (getName . fst) preDef 
+                        ind = getIndex def names
+                        defws = words$fst$preDef!!ind
+                        wsLng = length defws
+                        nmInd = getIndex def defws
+                    in (nmInd:pl, (wsLng - nmInd - 1):pr) 
 
 getIndex :: Eq a => a -> [a] -> Int
 getIndex _ [] = 0
@@ -53,7 +70,6 @@ isKaz (h:tl) = (h=='+' || h=='-' || isDigit h) && all isDigit tl
 isDef :: String -> Bool
 isDef [] = False
 isDef str = str `elem` map (getName . fst) preDef
-    
 
 makeStrings :: T.Text -> [String]
 makeStrings  = words . T.unpack . addSpaces
@@ -71,7 +87,7 @@ usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g"]
 
 preDef :: [(String,String)]
-preDef = [("a x b","a b pro"),("a * b","a b pro")]
+preDef = [("a x b","a b pro"),("a * b","a b pro"),("(",""),(")","")]
 
 preFunc :: [String] -> String 
 preFunc [] = "" 
