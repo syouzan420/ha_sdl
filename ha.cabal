@@ -38,6 +38,7 @@ library
       MySDL.MyInput
       MySDL.MyLoad
       MySDL.MyLoop
+      MyTree
   other-modules:
       Paths_ha
   hs-source-dirs:
@@ -46,6 +47,7 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , containers
     , directory
     , linear
     , sdl2
@@ -64,6 +66,7 @@ executable ha-exe
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , containers
     , directory
     , ha
     , linear
@@ -84,6 +87,7 @@ test-suite ha-test
   build-depends:
       base >=4.7 && <5
     , bytestring
+    , containers
     , directory
     , ha
     , linear

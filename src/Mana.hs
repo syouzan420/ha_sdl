@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 module Mana where
 
 import qualified Data.Text as T
@@ -13,8 +14,8 @@ data Mn = Mn Ta Yo
 type LR = ([Int],[Int])
 
 instance Show Mn where
-  show (Mn t y) = t
---    case y of Kaz -> "K"; Moz -> "M"; Io -> "I"; Def -> "D"; Spe -> "S"; Var -> "V"
+  show (Mn t y) = t 
+    -- case y of Kaz -> "K"; Moz -> "M"; Io -> "I"; Def -> "D"; Spe -> "S"; Var -> "V"
 
 taiyouMn :: Mn -> (Ta,Yo)
 taiyouMn (Mn t y) = (t,y) 
@@ -38,7 +39,6 @@ defForest fm = let mnList = map getManaFromTree fm
                    isdef = Def `elem` yoList
                    ind = if isdef then getIndex Def yoList else (-1)
                    name = if isdef then taList!!ind else ""
-                   lmnl = length mnList
                 in if isdef then searchFromDef name nmlDef else ("","")
 
 evalDef :: Forest Mn -> Mn 
@@ -52,7 +52,27 @@ evalDef fm = let (dp,dt) = defForest fm
                  yo = head$filter (/=Def) yoList
                  rsl = Mn (preFunc evs) yo
               in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
+                 
+makeMana :: Forest Mn -> Mn
+makeMana [] = Mn "" Moz
+makeMana [Node x []] = x
+makeMana (Node (Mn "(" _) y0 : Node (Mn ")" _) y1 : xs) = makeMana (Node (makeMana y0) y1 : xs)
+makeMana (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
+  | y0==y1 = case y0 of
+      Kaz -> makeMana$Node (Mn (show (read t0 + read t1)) Kaz) []:xs
+      Moz -> makeMana$Node (Mn (t0 ++ t1) Moz) [] : xs
+  | t0 == ")" = makeMana$Node (Mn t1 y1) [] : xs
+  | t1 == ")" = makeMana$Node (Mn t0 y0) [] : xs
+  | t0 == "(" = makeMana$Node (Mn t1 y1) [] : xs
+  | t1 == "(" = makeMana$Node (Mn t0 y0) [] : xs
+  | otherwise = Mn "Error" Spe 
+makeMana (Node mn [] : xs) = makeMana [Node mn [], Node (makeMana xs) []]
+makeMana (Node x y : xs) 
+  | defForest nfm /= ("","") = makeMana (Node (evalDef nfm) [] : xs)
+  | otherwise = makeMana (Node (makeMana nfm) [] : xs)
+   where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
 
+{--
 makeMana :: Forest Mn -> Mn
 makeMana [] = Mn "" Moz
 makeMana [Node x []] = x
@@ -72,6 +92,7 @@ makeMana (Node x y : xs)
   | defForest nfm /= ("","") = makeMana (Node (evalDef nfm) [] : xs)
   | otherwise = makeMana (Node (makeMana nfm) [] : xs)
    where nfm = if fst (taiyouMn x) == "(" then y else Node x [] : y
+--}
 
 makeManas :: T.Text -> Forest Mn
 makeManas = makeManas' ([],[]) [] . makeStrings 
