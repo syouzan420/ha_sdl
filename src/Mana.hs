@@ -24,12 +24,12 @@ getManaFromTree (Node m _) = m
 
 getManaFromTree' :: Tree Mn -> Mn
 getManaFromTree' (Node m []) = m
-getManaFromTree' (Node m fm) = makeMana (Node m [] : fm) 
+getManaFromTree' (Node m fm) = makeMana [Node m fm]
 
-searchFromDef :: Int -> String -> [(String,String)] -> (String,String) 
-searchFromDef _ _ [] = ("","") 
-searchFromDef l nm (df:xs) = 
-  if name==nm && length (words (fst df))==l then df else searchFromDef l nm xs
+searchFromDef :: String -> [(String,String)] -> (String,String) 
+searchFromDef _ [] = ("","") 
+searchFromDef nm (df:xs) = 
+  if name==nm then df else searchFromDef nm xs
     where name = getName (fst df)
 
 defForest :: Forest Mn -> (String,String) 
@@ -39,18 +39,19 @@ defForest fm = let mnList = map getManaFromTree fm
                    ind = if isdef then getIndex Def yoList else (-1)
                    name = if isdef then taList!!ind else ""
                    lmnl = length mnList
-                in if isdef then searchFromDef lmnl name nmlDef else ("","")
+                in if isdef then searchFromDef name nmlDef else ("","")
 
 evalDef :: Forest Mn -> Mn 
 evalDef fm = let (dp,dt) = defForest fm
-                 dpList = words dp
-                 dtList = words dt
+                 (dpList,dtList) = (words dp, words dt)
                  mnList = map getManaFromTree' fm
+                 rmFo = drop (length dpList) fm 
                  (taList,yoList) = unzip$map taiyouMn mnList
                  knv = zip dpList taList
                  evs = map (\x -> fromMaybe x (lookup x knv)) dtList 
                  yo = head$filter (/=Def) yoList
-              in Mn (preFunc evs) yo 
+                 rsl = Mn (preFunc evs) yo
+              in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
 
 makeMana :: Forest Mn -> Mn
 makeMana [] = Mn "" Moz
@@ -63,9 +64,10 @@ makeMana (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
   | t1 == ")" = makeMana$Node (Mn t0 y0) [] : xs
   | otherwise = Mn "Error" Moz
 makeMana (Node mn [] : Node x y : xs)
+  | fst (taiyouMn x) == ")" = makeMana (Node mn y : xs)
   | defForest nfm /= ("","") = makeMana (Node mn [] : Node (evalDef nfm) [] : xs)
   | otherwise = makeMana (Node mn [] : Node (makeMana nfm) [] : xs)
-   where nfm = if fst (taiyouMn x) == "(" then y else Node x [] : y
+   where nfm = if fst (taiyouMn x) == "(" then [Node (makeMana y) []] else Node x [] : y
 makeMana (Node x y : xs) 
   | defForest nfm /= ("","") = makeMana (Node (evalDef nfm) [] : xs)
   | otherwise = makeMana (Node (makeMana nfm) [] : xs)
