@@ -6,12 +6,12 @@ import qualified Data.Text as T
 import Data.Char (isDigit)
 import Data.Tree (Tree(..), Forest(..))
 import Data.Maybe (fromMaybe)
-import MyTree (Elm(..),addElem,showF)
+import MyTree (Elm(..),L,R(..),numR,addElem,showF)
   
 type Ta = String 
 data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
 data Mn = Mn Ta Yo
-type LR = ([Int],[Int])
+type LR = ([L],[R])
 
 instance Show Mn where
   show (Mn t y) = t 
@@ -112,8 +112,9 @@ makeManas' (pl,pr) mns (x:xs) =
         | null ls = (0,[])
         | otherwise = (head ls,tail ls)
       (r,rs') 
-        | x == ")" = if head rs==0 then (0,drop 2 rs) else (0,tail rs)
-        | null rs = (0,[])
+        | null rs = (Ri 0,[])
+        | x == ")" = let hr = numR$head rs
+                      in if head rs /= Rc && hr < 1 then (Ri (hr-1),tail rs) else (Ri 0,tail rs)
         | otherwise = (head rs,tail rs)
       mnl = length mns
       tk = min mnl l 
@@ -122,10 +123,17 @@ makeManas' (pl,pr) mns (x:xs) =
         | x == "(" = (-1):ls'
         | otherwise = if null ls' then ls' else if head ls'==(-1) then 0:ls' else ls'
       nr 
-        | you /= Def && you /= Spe && r > 0 = (r - 1):rs'
-        | x == "(" = if null rs then (-1):rs else if r==0 then (-1):rs' else (-1):rs
-        | r == 0 = rs'
-        | r == (-1) = r:rs'
+        | you /= Def && you /= Spe && numR r > 0 =
+            let nr = numR r - 1 
+             in if nr==0 then 
+                  if null rs' then Ri 0:rs' 
+                              else let hrs' = numR (head rs') 
+                                    in if head rs'/=Rc && hrs' < 1 then Ri (hrs'-1):tail rs' 
+                                                                   else Ri nr:rs'
+                         else Ri nr:rs'
+        | x == "(" = if null rs then Rc:rs else if numR r==0 then Rc:rs' else Rc:rs
+        | r /= Rc && numR r < 1 = rs'
+        | r == Rc = r:rs'
         | otherwise = rs
       nmns = addElem (El (Mn x you) l r) mns 
   in makeManas' (nl,nr) nmns xs  
@@ -136,7 +144,7 @@ getLR def (pl,pr) = let names = map (getName . fst) preDef
                         defws = words$fst$preDef!!ind
                         wsLng = length defws
                         nmInd = getIndex def defws
-                    in (nmInd:pl, (wsLng - nmInd - 1):pr) 
+                    in (nmInd:pl, Ri (wsLng - nmInd - 1):pr) 
 
 getIndex :: Eq a => a -> [a] -> Int
 getIndex _ [] = 0
@@ -165,7 +173,7 @@ isIo [] = False
 isIo str = str `elem` map (getName . fst . fst) ioDef
 
 makeStrings :: T.Text -> [String]
-makeStrings  = words . T.unpack . addSpaces . addZero
+makeStrings  = words . T.unpack . addSpaces 
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
