@@ -6,7 +6,7 @@ import qualified Data.Text as T
 import Data.Char (isDigit)
 import Data.Tree (Tree(..), Forest(..))
 import Data.Maybe (fromMaybe)
-import MyTree (Elm(..),addElem)
+import MyTree (Elm(..),addElem,showF)
   
 type Ta = String 
 data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
@@ -94,22 +94,25 @@ makeMana (Node x y : xs)
    where nfm = if fst (taiyouMn x) == "(" then y else Node x [] : y
 --}
 
-makeManas :: T.Text -> Forest Mn
+makeManas :: T.Text -> (Forest Mn,LR)
 makeManas = makeManas' ([],[]) [] . makeStrings 
 
 getYo :: String -> Yo
 getYo x | isDef x = Def | isMoz x = Moz | isKaz x = Kaz | isIo x = Io | isSpe x = Spe | otherwise = Var
 
-makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn
-makeManas' _ mns [] = mns 
+showT :: (Forest Mn,LR) -> IO () 
+showT (fr,lr) = putStrLn (showF fr ++ "\n" ++ show lr)
+
+makeManas' :: LR -> Forest Mn -> [String] -> (Forest Mn,LR)
+makeManas' lr mns [] = (mns, lr)
 makeManas' (pl,pr) mns (x:xs) = 
   let you = getYo x 
-      (ls,rs) = if you == Def || you == Spe then getLR x (pl,pr) else (pl,pr)
+      (ls,rs) = if you == Def || you == Io then getLR x (pl,pr) else (pl,pr)
       (l,ls')
         | null ls = (0,[])
         | otherwise = (head ls,tail ls)
       (r,rs') 
-        | x == "(" = (-1,rs)
+        | x == ")" = if head rs==0 then (0,drop 2 rs) else (0,tail rs)
         | null rs = (0,[])
         | otherwise = (head rs,tail rs)
       mnl = length mns
@@ -117,11 +120,12 @@ makeManas' (pl,pr) mns (x:xs) =
       nl 
         | mnl < l = (l - mnl):ls'
         | x == "(" = (-1):ls'
-        | otherwise = ls' 
+        | otherwise = if null ls' then ls' else if head ls'==(-1) then 0:ls' else ls'
       nr 
         | you /= Def && you /= Spe && r > 0 = (r - 1):rs'
+        | x == "(" = if null rs then (-1):rs else if r==0 then (-1):rs' else (-1):rs
         | r == 0 = rs'
-        | r == (-1) = if x==")" then rs' else r:rs
+        | r == (-1) = r:rs'
         | otherwise = rs
       nmns = addElem (El (Mn x you) l r) mns 
   in makeManas' (nl,nr) nmns xs  
@@ -161,11 +165,14 @@ isIo [] = False
 isIo str = str `elem` map (getName . fst . fst) ioDef
 
 makeStrings :: T.Text -> [String]
-makeStrings  = words . T.unpack . addSpaces
+makeStrings  = words . T.unpack . addSpaces . addZero
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
   foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map (T.pack . getName . fst) preDef)
+
+addZero :: T.Text -> T.Text
+addZero = T.replace ")" " 0)" 
 
 getName :: String -> String
 getName def = let ws = words def
