@@ -114,7 +114,9 @@ makeManas' (pl,pr) mns (x:xs) =
       (r,rs') 
         | null rs = (Ri 0,[])
         | x == ")" = let hr = numR$head rs
-                      in if head rs /= Rc && hr < 1 then (Ri (hr-1),tail rs) else (Ri 0,tail rs)
+                      in if head rs /= Rc && hr < 1 then 
+                          if head (tail rs) == Rc then (Ri (hr-1),tail$tail rs) else (Ri (hr-1),tail rs) 
+                                                    else (Ri 0,tail rs)
         | otherwise = (head rs,tail rs)
       mnl = length mns
       tk = min mnl l 

@@ -37,7 +37,7 @@ addElem (El mn l r) fo
                                  else it ++ [Node x (addElem (El mn l r) subf)]
   | otherwise = let (it,lt) = (init fo,last fo)
                     Node x subf = lt
-                 in if isLastLeaf (numR r) subf then fo ++ [Node mn []] 
+                 in if isLastLeaf (abs (numR r)) subf then fo ++ [Node mn []] 
                                                 else it ++ [Node x (addElem (El mn l r) subf)]
   where lng = length fo
 
