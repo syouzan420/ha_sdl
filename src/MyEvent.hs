@@ -7,6 +7,7 @@ import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
+import Mana (makeMana,makeManas)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
@@ -64,10 +65,13 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
       nit = if isIns && isRet then "\n" else it
       textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+      takeCurrentLine = last$T.lines$T.take tpsSt texSt
       centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
+      codeResult = if isExeCode then "\n"<>(T.pack.show.makeMana.makeManas) takeCurrentLine 
+                                else T.empty
       nscr
         | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
         | ifmSt && wm==T && isRight = scrAt-V2 lw 0
@@ -88,6 +92,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | isLeft = if wm==Y then if tpsSt==0 then 0 else tpsSt-1 else tpsNextLine
         | isRight = if wm==Y then if tpsSt==tLen then tLen else tpsSt+1 else tpsPreLine
         | isCom = tpsSt + T.length comName 
+        | isExeCode = tpsSt + T.length codeResult
         | isIns && nit/=T.empty = tpsSt + T.length nit 
         | isBS = if tpsSt>0 then tpsSt-1 else tpsSt
         | otherwise = tpsSt
@@ -99,6 +104,7 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | ifmSt = texSt
         | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
         | isCom = textIns comName 
+        | isExeCode = textIns codeResult 
         | isIns = textIns nit 
         | otherwise = texSt
       ndts 
