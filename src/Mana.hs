@@ -15,7 +15,8 @@ type LR = ([L],[R])
 
 instance Show Mn where
   show (Mn t y) = t 
-    -- case y of Kaz -> "K"; Moz -> "M"; Io -> "I"; Def -> "D"; Spe -> "S"; Var -> "V"
+--     ++ "-" ++
+--     case y of Kaz -> "K"; Moz -> "M"; Io -> "I"; Def -> "D"; Spe -> "S"; Var -> "V"
 
 taiyouMn :: Mn -> (Ta,Yo)
 taiyouMn (Mn t y) = (t,y) 
@@ -43,7 +44,7 @@ defForest fm = let mnList = map getManaFromTree fm
 
 evalDef :: Forest Mn -> Mn 
 evalDef fm = let (dp,dt) = defForest fm
-                 (dpList,dtList) = (words dp, words dt)
+                 (dpList,dtList) = (words dp, (words.T.unpack.addSpaces.T.pack) dt)
                  mnList = map getManaFromTree' fm
                  rmFo = drop (length dpList) fm 
                  (taList,yoList) = unzip$map taiyouMn mnList
@@ -103,7 +104,7 @@ makeManas' (pl,pr) mns (x:xs) =
         | x == "(" = (-1):ls'
         | otherwise = if null ls' then ls' else if head ls'==(-1) then 0:ls' else ls'
       nr 
-        | you /= Def && you /= Spe && mtR r 0 =
+        | you /= Def && you /= Io && you /= Spe && mtR r 0 =
             let nr = numR r - 1 
              in if nr/=0 then Ri nr:rs' else 
                   if null rs' then Ri 0:rs' 
@@ -151,14 +152,14 @@ isIo [] = False
 isIo str = str `elem` map (getName . fst . fst) ioDef
 
 makeStrings :: T.Text -> [String]
-makeStrings  = words . T.unpack . addSpaces 
+makeStrings  = words . T.unpack . addSpaces . forMath 
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
   foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map (T.pack . getName . fst) preDef)
 
-addZero :: T.Text -> T.Text
-addZero = T.replace ")" " 0)" 
+forMath :: T.Text -> T.Text
+forMath = T.replace "+" " " . T.replace "-" " -"
 
 getName :: String -> String
 getName def = let ws = words def
@@ -174,8 +175,11 @@ preDef = nmlDef ++ map (,"") speDef ++ map fst ioDef
 nmlDef :: [(String,String)]
 nmlDef = [("a x b","a b pro"),("a * b","a b pro")]
 
+othDef :: [(String,String)]
+othDef = [("a bon b","a bxa")]
+
 ioDef :: [((String,String),String)]
-ioDef = [(("cls","cls"),"()")]
+ioDef = [(("cls","()"),"cls")]
 
 speDef :: [String]
 speDef = ["(",")","="]
