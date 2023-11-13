@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
-module Mana where
+module Mana (makeMana, makeManas)  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
-import Data.Tree (Tree(..), Forest(..))
+import Data.Tree (Tree(..), Forest)
 import Data.Maybe (fromMaybe, isJust)
 import MyTree (Elm(..),L,R(..),numR,mtR,ltR,addElem,showF)
   
@@ -12,8 +11,9 @@ type Ta = String
 data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
 data Mn = Mn Ta Yo
 type LR = ([L],[R])
+type Definition = ((String,[Yo]),String)
 data Dtype = Prim | PrIo | User | UsIo | Non deriving (Eq, Show)
-data Df = Df Dtype String String deriving (Eq, Show)
+data Df = Df Dtype String [Yo] String deriving (Eq, Show)
 
 instance Show Mn where
   show (Mn t y) = t 
@@ -30,17 +30,17 @@ getManaFromTree' :: Tree Mn -> Mn
 getManaFromTree' (Node m []) = m
 getManaFromTree' (Node m fm) = makeMana [Node m fm]
 
-searchFromDef :: String -> [Dtype] -> [[(String,String)]] -> Maybe Df 
+searchFromDef :: String -> [Dtype] -> [[Definition]] -> Maybe Df 
 searchFromDef _ _ [] = Nothing 
 searchFromDef nm (x:xs) (y:ys) = let dt = searchFromDef' nm y
-                                     (dp,dc) = fromMaybe ("","") dt
-                                  in if dp=="" then searchFromDef nm xs ys else Just (Df x dp dc)
+                                     ((dp,dy),dc) = fromMaybe (("",[]),"") dt
+                                  in if dp=="" then searchFromDef nm xs ys else Just (Df x dp dy dc)
 
-searchFromDef' :: String -> [(String,String)] -> Maybe (String,String)
+searchFromDef' :: String -> [Definition] -> Maybe Definition
 searchFromDef' _ [] = Nothing 
 searchFromDef' nm (df:xs) =
   if name==nm then Just df else searchFromDef' nm xs
-    where name = getName (fst df)
+    where name = getName (fst (fst df))
 
 defForest :: Forest Mn -> Maybe Df 
 defForest fm = let mnList = map getManaFromTree fm
@@ -52,7 +52,7 @@ defForest fm = let mnList = map getManaFromTree fm
                             else Nothing 
 
 evalDef :: Forest Mn -> Mn 
-evalDef fm = let Df dt dp dc = fromMaybe (Df Non "" "") (defForest fm)
+evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                  dpList = words dp
                  dcList = if dt==Prim then words dc else (words.T.unpack.addSpaces.T.pack) dc
                  mnList = map getManaFromTree fm
@@ -93,7 +93,7 @@ showFLR :: (Forest Mn,LR) -> IO ()
 showFLR (fr,lr) = putStrLn (showF fr ++ "\n" ++ show lr)
 
 makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn
-makeManas' lr mns [] = mns
+makeManas' _ mns [] = mns
 makeManas' (pl,pr) mns (x:xs) = 
   let you = getYo x 
       (ls,rs) = if you == Def then getLR x (pl,pr) else (pl,pr)
@@ -108,18 +108,17 @@ makeManas' (pl,pr) mns (x:xs) =
                                      else (Ri 0, tail rs)
         | otherwise = (head rs,tail rs)
       mnl = length mns
-      tk = min mnl l 
       nl 
         | mnl < l = (l - mnl):ls'
         | x == "(" = (-1):ls'
         | otherwise = if null ls' then ls' else if head ls'==(-1) then 0:ls' else ls'
       nr 
         | you /= Def && you /= Spe && mtR r 0 =
-            let nr = numR r - 1 
-             in if nr/=0 then Ri nr:rs' else 
+            let ri = numR r - 1 
+             in if ri /= 0 then Ri ri:rs' else 
                   if null rs' then Ri 0:rs' 
-                              else let hr' = head rs' ; ir' = numR hr'
-                                    in if ltR hr' 1 then Ri (ir'-1):tail rs' else Ri nr:rs'
+                              else let hr' = head rs' ; ri' = numR hr'
+                                    in if ltR hr' 1 then Ri (ri'-1):tail rs' else Ri ri:rs'
         | x == "(" = if null rs then Rc:rs else if numR r==0 then Rc:rs' else Rc:rs
         | ltR r 1 = rs'
         | r == Rc = r:rs'
@@ -128,9 +127,9 @@ makeManas' (pl,pr) mns (x:xs) =
   in makeManas' (nl,nr) nmns xs  
 
 getLR :: String -> LR -> LR
-getLR def (pl,pr) = let names = map (getName . fst) preDef
+getLR def (pl,pr) = let names = map (getName . fst . fst) preDef
                         ind = getIndex def names
-                        defws = words$fst$preDef!!ind
+                        defws = words$fst$fst$preDef!!ind
                         wsLng = length defws
                         nmInd = getIndex def defws
                     in (nmInd:pl, Ri (wsLng - nmInd - 1):pr) 
@@ -151,7 +150,7 @@ isKaz (h:tl) = (h=='+' || h=='-' || isDigit h) && all isDigit tl
 
 isDef :: String -> Bool
 isDef [] = False
-isDef str = str `elem` map (getName . fst) preDef
+isDef str = str `elem` map (getName . fst . fst) preDef
 
 isSpe :: String -> Bool
 isSpe [] = False
@@ -166,7 +165,7 @@ makeStrings  = words . T.unpack . addSpaces . forMath
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
-  foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map (T.pack . getName . fst) nameDef)
+  foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map (T.pack . getName . fst . fst) nameDef)
 
 forMath :: T.Text -> T.Text
 forMath = T.replace "+" " " . T.replace "-" " -"
@@ -179,20 +178,20 @@ getName def = let ws = words def
 usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g"]
 
-preDef :: [(String,String)]
-preDef = primDef ++ map fst prioDef ++ userDef
+preDef :: [Definition]
+preDef = primDef ++ prioDef ++ userDef
 
-nameDef :: [(String,String)]
-nameDef = primDef ++ map (,"") speDef ++ map fst prioDef ++ userDef
+nameDef :: [Definition]
+nameDef = primDef ++ map (\x -> ((x,[Spe]),"")) speDef ++ prioDef ++ userDef
 
-primDef :: [(String,String)]
-primDef = [("a x b","a b pro"),("a * b","a b pro")]
+primDef :: [Definition]
+primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b pro")]
 
-userDef :: [(String,String)]
-userDef = [("a bon b","a bxa")]
+userDef :: [Definition]
+userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")]
 
-prioDef :: [((String,String),String)]
-prioDef = [(("cls","()"),"cls")]
+prioDef :: [Definition]
+prioDef = [(("cls",[Io]),"cls")]
 
 speDef :: [String]
 speDef = ["(",")","="]
@@ -201,7 +200,6 @@ preFunc :: [String] -> String
 preFunc [] = "" 
 preFunc ws = 
   case name of
-    "sum" -> show $ sum args 
     "pro" -> show $ product args 
     _     -> ""
   where name = last ws
