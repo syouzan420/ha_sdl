@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Mana (makeMana, makeManas)  where
+module Mana (makeMana, makeManas, Mn(..), Ta, Yo(..))  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
@@ -9,7 +9,7 @@ import MyTree (Elm(..),L,R(..),numR,mtR,ltR,addElem,showF)
   
 type Ta = String 
 data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
-data Mn = Mn Ta Yo
+data Mn = Mn Ta Yo deriving Eq
 type LR = ([L],[R])
 type Definition = ((String,[Yo]),String)
 data Dtype = Prim | PrIo | User | UsIo | Non deriving (Eq, Show)
