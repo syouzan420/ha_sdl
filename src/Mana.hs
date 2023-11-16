@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Mana (makeMana, makeManas, Mn(..), Ta, Yo(..))  where
+module Mana (makeMana, makeManas, Mn(..), Ta, Yo(..),Df(..),setDf)  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
 import Data.Tree (Tree(..), Forest)
 import Data.Maybe (fromMaybe, isJust)
 import MyTree (Elm(..),L,R(..),numR,mtR,ltR,addElem,showF)
+import General (getIndex)
   
 type Ta = String 
 data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
@@ -48,8 +49,11 @@ defForest fm = let mnList = map getManaFromTree fm
                    isdef = Def `elem` yoList
                    ind = if isdef then getIndex Def yoList else (-1)
                    name = if isdef then taList!!ind else ""
-                in if isdef then searchFromDef name [Prim,User] [primDef,userDef]
+                in if isdef then searchFromDef name [Prim,User] [primDef,userDef] 
                             else Nothing 
+
+setDf :: String -> Df
+setDf name = fromMaybe (Df Non "" [] "") (searchFromDef name [Prim,User] [primDef,userDef])
 
 evalDef :: Forest Mn -> Mn 
 evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
@@ -133,10 +137,6 @@ getLR def (pl,pr) = let names = map (getName . fst . fst) preDef
                         wsLng = length defws
                         nmInd = getIndex def defws
                     in (nmInd:pl, Ri (wsLng - nmInd - 1):pr) 
-
-getIndex :: Eq a => a -> [a] -> Int
-getIndex _ [] = 0
-getIndex t (x:xs) = if t==x then 0 else 1 + getIndex t xs
 
 isMoz :: String -> Bool
 isMoz [] = False

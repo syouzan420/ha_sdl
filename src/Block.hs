@@ -1,6 +1,8 @@
 module Block where
 
-import Mana (Mn(..),Ta,Yo(..))
+import Mana (Mn(..),Yo(..),Df(..),setDf)
+import General (getIndex, removeIndex, toGrid)
+import Data.Bifunctor (bimap)
 
 type Name = String
 type Value = String
@@ -52,9 +54,23 @@ isBeHand gr pos (Mn _ y) [] = let cell = getCell gr pos
 isBeHand _ _ _ _ = False
 
 canPutBlock :: BGrid -> GPos -> Block -> Bool 
-canPutBlock gr pos (mn,rps) = let gsize = getGridSize gr
-                                  iOnGrid = isOnGrid gsize pos rps
-                               in iOnGrid && (isOffMana gr pos rps || isBeHand gr pos mn rps)
+canPutBlock gr pos (_,rps) = let gsize = getGridSize gr
+                                 iOnGrid = isOnGrid gsize pos rps
+                              in iOnGrid && isOffMana gr pos rps
+
+blockToCells :: Block -> [BCell]
+blockToCells (mn@(Mn t y),_) 
+  | y==Def = let (Df _ dp dy _) = setDf t
+                 pList = words dp
+                 dind = getIndex t pList
+                 hyList = removeIndex dind dy
+              in Core mn:map (Hand . Mn "") hyList
+  | otherwise = [Core mn]
+
+handPositions :: GPos -> [RPos] -> [GPos]
+handPositions (p,q) = map (bimap (p +) (q +)) 
 
 putBlock :: BGrid -> GPos -> Block -> BGrid
-putBlock = undefined
+putBlock gr gpos b@(_,rps) = let cells = blockToCells b
+                                 poss = gpos:handPositions gpos rps
+                              in foldl (\acc (pos,cell) -> toGrid acc pos cell) gr (zip poss cells)

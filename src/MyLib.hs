@@ -5,7 +5,9 @@ module MyLib (tpsForRelativeLine,locToIndex,breakText,toDotPos,addMidDots,select
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
-import SDL.Vect (V2(..),V4(..))
+--import SDL.Vect (V2(..),V4(..))
+import Linear.V2 (V2(..))
+import Linear.V4 (V4(..))
 import Data.Maybe(fromMaybe)
 import Data.List (nub,elemIndex)
 import MyData (Pos,Dot,Jump,Attr(..),WMode(..),dotSize)
