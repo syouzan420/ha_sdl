@@ -3,6 +3,7 @@ module Block where
 import Mana (Mn(..),Yo(..),Df(..),setDf)
 import General (getIndex, removeIndex, toGrid)
 import Data.Bifunctor (bimap)
+import Data.List (nub)
 
 type Name = String
 type Value = String
@@ -74,3 +75,17 @@ putBlock :: BGrid -> GPos -> Block -> BGrid
 putBlock gr gpos b@(_,rps) = let cells = blockToCells b
                                  poss = gpos:handPositions gpos rps
                               in foldl (\acc (pos,cell) -> toGrid acc pos cell) gr (zip poss cells)
+
+isBlock :: BGrid -> GPos -> Bool
+isBlock gr pos = getCell gr pos /= Empt
+
+putablePos :: BGrid -> GPos -> [GPos]
+putablePos gr = putablePos' (getGridSize gr) (-1,-1) gr
+
+putablePos' :: GSize -> GPos -> BGrid -> GPos -> [GPos]
+putablePos' (sx,sy) ppos gr (p,q) =
+  let kposs = filter (/=ppos) $ 
+        filter (\(x,y) -> x >= 0 && x < sx && y >= 0 && y < sy) [(p+1,q),(p,q-1),(p-1,q),(p,q+1)]
+   in nub $ foldl (\acc kp -> if isBlock gr kp then acc ++ putablePos' (sx,sy) (p,q) gr kp 
+                                               else acc ++ [kp]) [] kposs
+
