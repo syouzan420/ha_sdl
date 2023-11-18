@@ -89,3 +89,8 @@ putablePos' (sx,sy) ppos gr (p,q) =
    in nub $ foldl (\acc kp -> if isBlock gr kp then acc ++ putablePos' (sx,sy) (p,q) gr kp 
                                                else acc ++ [kp]) [] kposs
 
+rotateBlock :: Bool -> Block -> Block
+rotateBlock d (mn,rps) = (mn,map (rotatePos d) rps)
+
+rotatePos :: Bool -> RPos -> RPos
+rotatePos d (x,y) = let k = if d then 1 else -1 in (k*(-y),k*x)
