@@ -17,7 +17,7 @@ import MyData (IsFormat,Dot,State(..),Attr(..),WMode(..),Pos,TextPos,TextData,fo
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt atrSt _ tpsSt _ _ _ ifmSt icrSt _ _) = do
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt _ atrSt _ tpsSt _ _ _ ifmSt icrSt _ _) = do
   initDraw re
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData

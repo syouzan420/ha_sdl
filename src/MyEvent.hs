@@ -7,11 +7,11 @@ import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
-import Mana (makeMana,makeManas)
+import Mana (makeMana,makeManas,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
+inputEvent st@(State texSt dtsSt _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -70,8 +70,14 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
-      codeResult = if isExeCode then "\n"<>(T.pack.show.makeMana.makeManas) takeCurrentLine 
-                                else T.empty
+
+      codeMana = (makeMana.makeManas) takeCurrentLine
+      (ta,yo) = taiyouMn codeMana
+      codeResult 
+        | isExeCode = if yo==Io then T.empty 
+                                else "\n"<>(T.pack.show) codeMana 
+        | otherwise = T.empty
+
       nscr
         | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
         | ifmSt && wm==T && isRight = scrAt-V2 lw 0
@@ -113,6 +119,9 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
           dtsSt ++ addMidDots (last dtsSt) (toDotPos mps scrAt,cplSt) ++ [(toDotPos mps scrAt,cplSt)]
         | isMousePressed = dtsSt++[(toDotPos mps scrAt,cplSt)]  
         | otherwise = dtsSt
+      ncod
+        | isExeCode && yo==Io = [ta] 
+        | otherwise = [] 
       nifm
         | isTglFmt = not ifmSt
         | otherwise = ifmSt
@@ -125,11 +134,11 @@ inputEvent st@(State texSt dtsSt atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = 
         | isLoadFile = LFL
         | isJump = JMP 
         | isJBak = JBK
-        | isExeCode = EXE
+        | isExeCode && yo==Io = EXE
         | isQuit = QIT
         | isKeyPressed = PKY
         | isMousePressed = PMO
         | otherwise = NON
-      nst = st{tex=ntex,dts=ndts,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
+      nst = st{tex=ntex,dts=ndts,cod=ncod,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,ninp)
 

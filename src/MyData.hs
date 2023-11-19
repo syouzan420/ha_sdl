@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Jump,FrJp
+module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp
               ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
               ,title,windowSize,initState,initAttr,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
@@ -23,6 +23,7 @@ type Cnum = Int         -- color number
 type PList = ((Bool,Bool),Pos)
 type TextData = [(Bool,Text,Attr,[PList])]
 type Dot = (Pos,Cnum)
+type Code = String
 type Jump = ((Int,Text),(Int,Text)) -- ((FileNumber,FileName),(TextPosNumber,TextPosName))
 type FrJp = (Int,(Int,Int)) -- (TextPosition, (FilePosNumber,TextPosNumber))
 type JBak = (Int,Int) -- (FilePosNumber,TextPosNumber)
@@ -36,6 +37,7 @@ data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, S
 
 -- tex: edit text
 -- dts: dots drawing (pixel art)
+-- cod: executable code
 -- atr: text attribute
 -- fps: file position
 -- tps: text position
@@ -45,7 +47,7 @@ data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, S
 -- ifm: view formatted text or not
 -- icr: cursor appear
 -- isk: skk editing
-data State = State{tex :: !Text, dts :: ![Dot], atr :: !Attr, fps :: !Int, tps :: !Int
+data State = State{tex :: !Text, dts :: ![Dot], cod :: ![Code], atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool}
 
@@ -73,7 +75,7 @@ data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: 
 
 -- rps: rubi position
 -- rwi: width for rubi
--- tsz: tempral font size
+-- tsz: temporal font size
 -- tlw: temporal letter width
 -- spr: separation from the main font
 data Rubi = Rubi{rps :: Pos, rwd :: CInt, tsz :: PointSize, tlw :: CInt, spr :: CInt} deriving (Eq,Show)
@@ -136,7 +138,7 @@ initTatePos = V2 (winSizeX-60) 30
 -- INITIALIZE
 
 initState :: State
-initState = State {tex = "", dts = [], atr = initAttr, fps=0, tps=0, crc=0, emd=Nor, cpl=1
+initState = State {tex = "", dts = [], cod = [], atr = initAttr, fps=0, tps=0, crc=0, emd=Nor, cpl=1
                   ,ifm=False, icr=False, isk=False, iup=False}
 
 initAttr :: Attr

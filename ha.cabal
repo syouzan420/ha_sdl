@@ -30,6 +30,7 @@ library
       Mana
       MyAction
       MyApp
+      MyCode
       MyData
       MyEvent
       MyFile

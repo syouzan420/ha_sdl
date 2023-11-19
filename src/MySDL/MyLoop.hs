@@ -1,6 +1,6 @@
 module MySDL.MyLoop (myLoop) where
 
-import Control.Monad (unless,when)
+import Control.Monad (when)
 import Data.IORef (IORef)
 import SDL (get, ($=))
 import SDL.Font (Font)
@@ -15,11 +15,11 @@ import MyAction (beforeDraw,afterDraw,makeTextData)
 import MyLib (textToDots,dotsToText,jumpsToText)
 import MyEvent (inputEvent)
 import MyFile (fileRead,fileWrite)
+import MyCode (exeCode)
 
 myLoop :: IORef State -> Renderer -> [Font] -> [Texture] -> IO ()
 myLoop state re fonts itexs = do
   st <- get state
- -- (st',[isKeyPressed,isMousePressed,isNewFile,isLoadFile,isJump,isJBak,isExeCode,isQuit]) <- inputEvent st
   (st', inp) <- inputEvent st 
   let isUpdateTps = tps st /= tps st'
       nicr = isUpdateTps || icr st'
@@ -34,8 +34,11 @@ myLoop state re fonts itexs = do
       natr = if null textData then atr nst else getAtr textData
       nscr = if inp==NFL || inp==LFL || inp==JMP then V2 0 0 else scr natr
       (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps nst)
+      cst = if inp==EXE then foldl exeCode nst (cod nst) else nst  
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw nst)
   (ntex,nfps,ntps,ndts,niup,njbk) <- case inp of 
+    EXE -> do
+      return (tex cst,fps cst,tps cst,dts cst,iup cst,jbk$atr cst)
     NFL -> do
       fileWriteR fpsSt nst
       nextFileNum <- nextNewFileNum (fpsSt + 1)
@@ -61,7 +64,9 @@ myLoop state re fonts itexs = do
       let dots = if canJBack then textToDots (T.words loadDotText) else dts nst
       return (loadText,loadFileNum,textPos,dots,True,init jbkAt)
     _   -> return (tex nst,fpsSt,tps nst,dts nst,False,jbkAt)
-  state $= afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},fps=nfps,tps=ntps,iup=niup}
+  let nst' = afterDraw nst{tex=ntex,dts=ndts,atr=(atr nst){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},fps=nfps,tps=ntps,iup=niup}
+  when (inp==EXE) $ myDraw re fonts itexs (makeTextData nst') isOnlyMouse (beforeDraw nst')
+  state $= nst'
   delay delayTime
   if inp==QIT then do 
     fileWriteR fpsSt nst

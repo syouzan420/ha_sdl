@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Mana (makeMana, makeManas, Mn(..), Ta, Yo(..),Df(..),setDf)  where
+module Mana (makeMana, makeManas, taiyouMn, Mn(..), Ta, Yo(..),Df(..),setDf)  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
@@ -49,28 +49,35 @@ defForest fm = let mnList = map getManaFromTree fm
                    isdef = Def `elem` yoList
                    ind = if isdef then getIndex Def yoList else (-1)
                    name = if isdef then taList!!ind else ""
-                in if isdef then searchFromDef name [Prim,User] [primDef,userDef] 
+                in if isdef then searchFromDef name [Prim,User,PrIo] [primDef,userDef,prioDef] 
                             else Nothing 
 
 setDf :: String -> Df
-setDf name = fromMaybe (Df Non "" [] "") (searchFromDef name [Prim,User] [primDef,userDef])
+setDf name = fromMaybe (Df Non "" [] "") (searchFromDef name [Prim,User,PrIo] [primDef,userDef,prioDef])
 
 evalDef :: Forest Mn -> Mn 
 evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                  dpList = words dp
-                 dcList = if dt==Prim then words dc else (words.T.unpack.addSpaces.T.pack) dc
+                 dcList = if dt==Prim || dt==PrIo then words dc else (words.T.unpack.addSpaces.T.pack) dc
                  mnList = map getManaFromTree fm
                  rmFo = drop (length dpList) fm 
                  (taList,yoList) = unzip$map taiyouMn mnList
+                 yos = zip yoList dy
+                 isYoMatch = foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
                  knv = zip dpList taList
-                 evs = map (\x -> fromMaybe x (lookup x knv)) dcList 
-                 yo = head$filter (/=Def) yoList
-                 rsl = if dt==Prim then Mn (preFunc evs) yo else makeMana$makeManas (T.pack$unwords evs)
+                 evs = if isYoMatch then map (\x -> fromMaybe x (lookup x knv)) dcList else ["yer"]
+                 yo = fromMaybe Moz (lookup Def yos)
+                 rsl 
+                   | dt==Prim = Mn (preFunc evs) yo 
+                   | dt==PrIo = Mn (unwords evs) yo
+                   | otherwise = makeMana$makeManas (T.pack$unwords evs)
               in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
                  
 makeMana :: Forest Mn -> Mn
 makeMana [] = Mn "" Moz
-makeMana [Node x []] = x
+makeMana [Node x []] 
+  | isJust (defForest [Node x []]) = evalDef [Node x []]
+  | otherwise = x 
 makeMana (Node (Mn "(" _) y0 : Node (Mn ")" _) y1 : xs) = makeMana (Node (makeMana y0) y1 : xs)
 makeMana (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
   | y0==y1 = case y0 of
@@ -201,6 +208,7 @@ preFunc [] = ""
 preFunc ws = 
   case name of
     "pro" -> show $ product args 
+    "yer" -> "Yo Error"
     _     -> ""
   where name = last ws
         args = map read (init ws)
