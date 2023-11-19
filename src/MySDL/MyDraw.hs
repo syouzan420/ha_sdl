@@ -18,10 +18,13 @@ type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
 myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt _ atrSt _ tpsSt _ _ _ ifmSt icrSt _ _) = do
+  let scrAt = scr atrSt
+      wmdAt = wmd atrSt
+      iniPos = if wmdAt==T then initTatePos else initYokoPos
   initDraw re
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
-  let scrAt = scr atrSt
+  when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re iniPos wmdAt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
   present re
 
@@ -52,15 +55,16 @@ statusDraw re font st = do
       lng = fromIntegral$T.length statusText
   fontS <- blended font (colorPallet!!1) statusText 
   fontT <- createTextureFromSurface re fontS
-  --freeSurface fontS
   mapM_ (\i -> do
      copy re fontT (Just (Rectangle (P (V2 (ofs*i) 0)) (V2 ofs ofs)))
                    (Just (Rectangle (P (statusPos+V2 (12*i) 0)) (V2 12 12)))
          ) [0::CInt,1..lng] 
+  destroyTexture fontT
+  freeSurface fontS
   
 
 textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> IO () 
-textsDraw _ _ _ _ _ [] = return ()
+textsDraw _ _ _ _ _ [] = return () 
 textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
   let (scrAt,wmdAt,fszAt,fcoAt,iosAt) = (scr nat,wmd nat,fsz nat,fco nat,ios nat)
       ofs = fromIntegral fontSize
@@ -69,14 +73,12 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
       nscr = if null xs then scrAt else let (_,_,nxtAtr,_) = head xs in scr nxtAtr
       rpText = T.replace "\n" "  " tx
       lPos = snd$last pList
-      iniPos = if wmdAt==T then initTatePos else initYokoPos
   when (tx/=T.empty) $ do
         fontS <- case fnum of
                  1 -> blended (fonts!!fnum) fcoAt tx 
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
         fontT <- createTextureFromSurface re fontS
-        when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt fs
         foldM_ (\ ps ((b,r),pd) -> do
           let sz = if b then ofs `div` 2 else ofs
           copyEx re fontT (Just (Rectangle (P ps) (V2 sz ofs)))
