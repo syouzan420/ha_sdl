@@ -24,7 +24,7 @@ myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt _ atrSt _ tpsSt _ _ _ i
   initDraw re
   statusDraw re (fonts!!1) st 
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
-  when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re iniPos wmdAt (fromIntegral fontSize) 
+  when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
   present re
 
