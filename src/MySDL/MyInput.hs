@@ -13,9 +13,9 @@ import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),KeyModifier(..)
                           ,getModState)
 import SDL.Input.Keyboard.Codes
 import SDL.Vect(Point(P),V2(..))
-import Control.Monad (when)
+--import Control.Monad (when)
 import qualified Data.Text as T
-import qualified Data.Text.IO as TI
+--import qualified Data.Text.IO as TI
 import Data.Maybe(fromMaybe)
 import Data.List(find)
 import Foreign.C.Types(CInt)
@@ -64,7 +64,7 @@ myInput = do
 --  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx) 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
-  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
+--  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
 --  when skkedit $ putStrLn "SkkEditStart"
 --  let kc' 
 --       |kc==KeycodeUnknown && itx/=T.empty = case itx of

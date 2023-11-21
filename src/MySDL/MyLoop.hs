@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MySDL.MyLoop (myLoop) where
 
 import Control.Monad (when)
@@ -24,7 +25,7 @@ myLoop state re fonts itexs = do
   let isUpdateTps = tps st /= tps st'
       nicr = isUpdateTps || icr st'
       ncrc = if isUpdateTps then 0 else crc st'
-      bst = beforeDraw st'{crc=ncrc,icr=nicr}
+      bst = beforeDraw st'{crc=ncrc,icr=nicr,ipr=True}
       cst = if inp==EXE then foldl exeCode bst (cod bst) else bst  
       isUpdateText = tex st /= tex cst || icr st /= icr cst || isUpdateTps 
                                        || inp==PKY || iup cst 

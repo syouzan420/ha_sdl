@@ -12,12 +12,16 @@ import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
-import MyData (IsFormat,Dot,State(..),Attr(..),WMode(..),Pos,TextPos,TextData,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
+import MyData (State(..),Attr(..),WMode(..)
+              ,IsFormat,Dot,Pos,TextPos,TextData
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..)
+              ,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
 
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt _ atrSt _ tpsSt _ _ _ ifmSt icrSt _ _) = do
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ atrSt _ tpsSt _ _ _ ifmSt icrSt _ _ _)
+  = do
   let scrAt = scr atrSt
       wmdAt = wmd atrSt
       iniPos = if wmdAt==T then initTatePos else initYokoPos
@@ -26,7 +30,19 @@ myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt _ atrSt _ tpsSt _ _ _ i
   unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
   when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
+  myDrawing re drwSt
   present re
+
+myDrawing :: Renderer -> [Drw] -> IO ()
+myDrawing _ [] = return () 
+myDrawing re ((Drw cn siz shp):drs) = do
+  rendererDrawColor re $= colorPallet!!cn
+  drawShape re siz shp
+  myDrawing re drs
+
+drawShape :: Renderer -> Int -> Shp -> IO ()
+drawShape re _ (R (Rc True ps wh)) = fillRect re (Just (Rectangle (P ps) wh)) 
+drawShape _ _ _ = return ()
 
 dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
 dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do

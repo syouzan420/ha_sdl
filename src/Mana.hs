@@ -198,7 +198,8 @@ userDef :: [Definition]
 userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")]
 
 prioDef :: [Definition]
-prioDef = [(("cls",[Io]),"cls")]
+prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color")
+          ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")]
 
 speDef :: [String]
 speDef = ["(",")","="]

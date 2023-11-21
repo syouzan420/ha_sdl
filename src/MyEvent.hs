@@ -11,7 +11,7 @@ import Mana (makeMana,makeManas,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) = do
+inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _ _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -58,7 +58,6 @@ inputEvent st@(State texSt dtsSt _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) 
       V4 mr mt ml mb = mgn atrSt
       seeLines = fromIntegral$if wm==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
       scrAt@(V2 sx sy) = scr atrSt
-      ncpl = if isTglColor then if cplSt==length colorPallet - 1 then 0 else cplSt+1 else cplSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
@@ -74,10 +73,13 @@ inputEvent st@(State texSt dtsSt _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _) 
       codeMana = (makeMana.makeManas) takeCurrentLine
       (ta,yo) = taiyouMn codeMana
       codeResult 
-        | isExeCode = if yo==Io then T.empty 
-                                else "\n"<>(T.pack.show) codeMana 
+        | isExeCode && yo==Io = T.empty 
+        | isExeCode = "\n"<>(T.pack.show) codeMana 
         | otherwise = T.empty
 
+      ncpl
+        | isTglColor = if cplSt==length colorPallet - 1 then 0 else cplSt+1 
+        | otherwise = cplSt
       nscr
         | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
         | ifmSt && wm==T && isRight = scrAt-V2 lw 0

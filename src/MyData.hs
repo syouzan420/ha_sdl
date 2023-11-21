@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..)
               ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
               ,title,windowSize,initState,initAttr,dotSize
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
@@ -35,8 +36,16 @@ data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
 data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, Show)
 -- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isJump | isJBack | isExeCode | isQuit
 
+newtype Dt = Dt Pos deriving (Eq,Show)   --Dot: colorNum, size, position
+data Li = Li Pos Pos deriving (Eq,Show)  --Line : colorNum, size, start_position, end_position
+data Rc = Rc Bool Pos Pos deriving (Eq,Show) --Rectangle: colorNum, size, isFill, position,(w,h)
+data Cr = Cr Bool Pos Int deriving (Eq,Show) --Circle: colorNum, size, isFill, orgin, radious
+data Shp = D Dt | L Li | R Rc | C Cr deriving (Eq,Show) -- Shape
+data Drw = Drw Cnum Int Shp deriving (Eq,Show)
+
 -- tex: edit text
 -- dts: dots drawing (pixel art)
+-- drw: drawing
 -- cod: executable code
 -- atr: text attribute
 -- fps: file position
@@ -47,9 +56,12 @@ data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, S
 -- ifm: view formatted text or not
 -- icr: cursor appear
 -- isk: skk editing
-data State = State{tex :: !Text, dts :: ![Dot], cod :: ![Code], atr :: !Attr, fps :: !Int, tps :: !Int
+-- iup: ??
+-- ipr: 'OK' prompt for code execution
+data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], cod :: ![Code], atr :: !Attr
+                  ,fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum
-                  ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool}
+                  ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
 -- wmd: writing mode (Tate, Yoko)
@@ -137,9 +149,15 @@ initTatePos = V2 (winSizeX-60) 30
 
 -- INITIALIZE
 
+--draw Example
+--drw = [Drw 1 1 (R (Rc True (V2 100 100) (V2 50 50)))]
+------ color:1 size:1 Rectangle fill (x,y)=(100,100) (w,h)=(50,50)
+
 initState :: State
-initState = State {tex = "", dts = [], cod = [], atr = initAttr, fps=0, tps=0, crc=0, emd=Nor, cpl=1
-                  ,ifm=False, icr=False, isk=False, iup=False}
+initState = State {tex = "", dts = [], drw = []
+                  , cod = [], atr = initAttr
+                  ,fps=0, tps=0, crc=0, emd=Nor, cpl=1
+                  ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
