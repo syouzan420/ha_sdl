@@ -59,9 +59,9 @@ evalDef :: Forest Mn -> Mn
 evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                  dpList = words dp
                  dcList = if dt==Prim || dt==PrIo then words dc else (words.T.unpack.addSpaces.T.pack) dc
-                 mnList = map getManaFromTree fm
-                 rmFo = drop (length dpList) fm 
-                 (taList,yoList) = unzip$map taiyouMn mnList
+                 mnList = map getManaFromTree' fm
+            --     rmFo = drop (length dpList) fm 
+                 (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
                  yos = zip yoList dy
                  isYoMatch = foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
                  knv = zip dpList taList
@@ -71,7 +71,8 @@ evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                    | dt==Prim = Mn (preFunc evs) yo 
                    | dt==PrIo = Mn (unwords evs) yo
                    | otherwise = makeMana$makeManas (T.pack$unwords evs)
-              in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
+            --  in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
+              in rsl
                  
 makeMana :: Forest Mn -> Mn
 makeMana [] = Mn "" Moz
@@ -103,6 +104,17 @@ getYo x | isDef x = Def | isMoz x = Moz | isKaz x = Kaz | isSpe x = Spe | otherw
 showFLR :: (Forest Mn,LR) -> IO () 
 showFLR (fr,lr) = putStrLn (showF fr ++ "\n" ++ show lr)
 
+getTa :: Tree Mn -> Ta
+getTa (Node (Mn t _) _) = t
+
+howManyElem :: Eq a => a -> [a] -> Int
+howManyElem e = foldl (\acc x -> if x==e then acc+1 else acc) 0 
+
+calcL :: String -> [String] -> Int -> Int -> Int
+calcL _ [] _ acc = acc  
+calcL _ _ 0 acc = acc
+calcL s (x:xs) i acc = if s==x then calcL s xs i (acc+1) else calcL s xs (i-1) (acc+1)
+
 makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn
 makeManas' _ mns [] = mns
 makeManas' (pl,pr) mns (x:xs) = 
@@ -110,7 +122,10 @@ makeManas' (pl,pr) mns (x:xs) =
       (ls,rs) = if you == Def then getLR x (pl,pr) else (pl,pr)
       (l,ls')
         | null ls = (0,[])
-        | otherwise = (head ls,tail ls)
+        | head ls < 2 = (head ls,tail ls)
+        | otherwise = let (l',tls) = (head ls,tail ls)
+                          revTas = map getTa (reverse mns) 
+                       in (calcL ")" revTas l' 0,tls)
       (r,rs') 
         | null rs = (Ri 0,[])
         | x == ")" = let hr = head rs; ir = numR hr
