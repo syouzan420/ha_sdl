@@ -60,7 +60,6 @@ evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                  dpList = words dp
                  dcList = if dt==Prim || dt==PrIo then words dc else (words.T.unpack.addSpaces.T.pack) dc
                  mnList = map getManaFromTree' fm
-            --     rmFo = drop (length dpList) fm 
                  (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
                  yos = zip yoList dy
                  isYoMatch = foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
@@ -71,7 +70,6 @@ evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                    | dt==Prim = Mn (preFunc evs) yo 
                    | dt==PrIo = Mn (unwords evs) yo
                    | otherwise = makeMana$makeManas (T.pack$unwords evs)
-            --  in if null rmFo then rsl else makeMana (Node rsl []:rmFo)
               in rsl
                  
 makeMana :: Forest Mn -> Mn
@@ -130,8 +128,15 @@ makeManas' (pl,pr) mns (x:xs) =
         | null rs = (Ri 0,[])
         | x == ")" = let hr = head rs; ir = numR hr
                       in if ltR hr 1 then 
-                          if head (tail rs) == Rc then (Ri (ir-1),tail$tail rs) else (Ri (ir-1),tail rs) 
-                                     else (Ri 0, tail rs)
+                           if head (tail rs) == Rc then (Ri (ir-1),tail$tail rs) 
+                                                   else (Ri (ir-1),tail rs) 
+                                     else 
+                           if not (null (tail rs)) && hr == Rc
+                                          then let hr' = head (tail rs) 
+                                                   ir' = numR hr'
+                                                in if hr'==Rc then (Ri 0, tail rs)
+                                                              else (Ri 0,Ri (ir'-1):tail (tail rs)) 
+                                          else (Ri 0, tail rs)
         | otherwise = (head rs,tail rs)
       mnl = length mns
       nl 
@@ -141,10 +146,12 @@ makeManas' (pl,pr) mns (x:xs) =
       nr 
         | you /= Def && you /= Spe && mtR r 0 =
             let ri = numR r - 1 
-             in if ri /= 0 then Ri ri:rs' else 
+             in if ri /= 0 then Ri ri:rs'
+                           else 
                   if null rs' then Ri 0:rs' 
                               else let hr' = head rs' ; ri' = numR hr'
-                                    in if ltR hr' 1 then Ri (ri'-1):tail rs' else Ri ri:rs'
+                                    in if ltR hr' 1 then Ri (ri'-1):tail rs' 
+                                                    else Ri ri:rs'
         | x == "(" = if null rs then Rc:rs else if numR r==0 then Rc:rs' else Rc:rs
         | ltR r 1 = rs'
         | r == Rc = r:rs'

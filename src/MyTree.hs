@@ -46,25 +46,3 @@ addElem (El mn l r) fo
                              else it ++ [Node x (addElem (El mn l r) subf)]
   where lng = length fo
 
-        {--
-addElem :: Elm a -> Forest a -> Forest a 
-addElem (El mn _ _) [] = [Node mn []]
-addElem (El mn l r) fo
-  | lng >= l && l /= 0
-              = let (h,(Node s sf):t) = splitAt (lng - abs l) fo
-                    newNode = Node s (t ++ addElem (El mn l r) sf)
-                 in h ++ [newNode]
-  | numR r > 0 || r == Rc
-              = let (it,lt) = (init fo,last fo)
-                    Node x subf = lt 
-                 in if null subf then fo ++ [Node mn []]
-                                 else it ++ [Node x (addElem (El mn l r) subf)]
-  | otherwise = let (it,lt) = (init fo,last fo)
-                    Node x subf = lt
-                 in if isLastLeaf (abs (numR r)) subf then fo ++ [Node mn []] 
-                                                else it ++ [Node x (addElem (El mn l r) subf)]
-  where lng = length fo
---}
-
-testF = [Node "1" [], Node "2" [], Node "3" [], Node "4" [Node "5" [], Node "6" []], Node "7" []]
-
