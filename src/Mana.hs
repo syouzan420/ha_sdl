@@ -205,7 +205,7 @@ getName def = let ws = words def
                in if null searchNameList then "" else head searchNameList
 
 usedForArgs :: [String]
-usedForArgs = ["a","b","c","d","e","f","g"]
+usedForArgs = ["a","b","c","d","e","f","g","h"]
 
 preDef :: [Definition]
 preDef = primDef ++ prioDef ++ userDef
@@ -219,6 +219,14 @@ primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b
 userDef :: [Definition]
 userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")]
 
+
+--color a: color number
+--lineSize a: line size (thickness) (CInt)
+--drawRect a: fill("f") or not, (b,c): startPosition(upper left), (d,e): width & height
+--drawLine (a,b): startPoint, (c,d): endPoint
+--drawCircle a: fill("f") or not, (b,c): orgin point, d: radious (CInt)
+--drawDot (a,b): point
+--drawGrid (a,b): grid size (CInt,CInt), (c,d): startPosition(upper left): (e,f): width & height
 prioDef :: [Definition]
 prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("a lineSize",[Kaz,Io]),"a lineSize")
           ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")
