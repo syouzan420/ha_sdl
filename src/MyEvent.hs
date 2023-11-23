@@ -63,14 +63,14 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
       nit = if isIns && isRet then "\n" else it
-      textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
-      takeCurrentLine = last$T.lines$T.take tpsSt texSt
+    --  textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+    --  takeCurrentLine = last$T.lines$T.take tpsSt texSt
       centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
 
-      codeMana = (makeMana.makeManas) takeCurrentLine
+      codeMana = (makeMana.makeManas) (takeCurrentLine tpsSt texSt)
       (ta,yo) = taiyouMn codeMana
       codeResult 
         | isExeCode && yo==Io = T.empty 
@@ -100,7 +100,7 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
         | isLeft = if wm==Y then if tpsSt==0 then 0 else tpsSt-1 else tpsNextLine
         | isRight = if wm==Y then if tpsSt==tLen then tLen else tpsSt+1 else tpsPreLine
         | isCom = tpsSt + T.length comName 
-        | isExeCode = tpsSt + T.length codeResult
+        | isExeCode = lastTps tpsSt texSt + T.length codeResult
         | isIns && nit/=T.empty = tpsSt + T.length nit 
         | isBS = if tpsSt>0 then tpsSt-1 else tpsSt
         | otherwise = tpsSt
@@ -111,9 +111,9 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
       ntex
         | ifmSt = texSt
         | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
-        | isCom = textIns comName 
-        | isExeCode = textIns codeResult 
-        | isIns = textIns nit 
+        | isCom = textIns comName tpsSt texSt
+        | isExeCode = textIns codeResult (lastTps tpsSt texSt) texSt 
+        | isIns = textIns nit tpsSt texSt 
         | otherwise = texSt
       ndts 
         | isDrawClear = []
@@ -144,3 +144,14 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
       nst = st{tex=ntex,dts=ndts,cod=ncod,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,ninp)
 
+textIns :: T.Text -> Int -> T.Text -> T.Text
+textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+
+lastTps :: Int -> T.Text -> Int
+lastTps tpsSt texSt = let dropLines = T.lines$T.drop tpsSt texSt
+                       in if null dropLines then tpsSt else tpsSt + T.length (head dropLines)
+
+takeCurrentLine :: Int -> T.Text -> T.Text
+takeCurrentLine tpsSt texSt =
+  let lTps = lastTps tpsSt texSt
+   in last$T.lines$T.take lTps texSt
