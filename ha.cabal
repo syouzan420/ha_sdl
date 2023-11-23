@@ -54,6 +54,7 @@ library
     , directory
     , linear
     , sdl2
+    , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
     , text
@@ -74,6 +75,7 @@ executable ha-exe
     , ha
     , linear
     , sdl2
+    , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
     , text
@@ -95,6 +97,7 @@ test-suite ha-test
     , ha
     , linear
     , sdl2
+    , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
     , text

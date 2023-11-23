@@ -36,12 +36,12 @@ data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
 data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, Show)
 -- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isJump | isJBack | isExeCode | isQuit
 
-newtype Dt = Dt Pos deriving (Eq,Show)   --Dot: colorNum, size, position
-data Li = Li Pos Pos deriving (Eq,Show)  --Line : colorNum, size, start_position, end_position
-data Rc = Rc Bool Pos Pos deriving (Eq,Show) --Rectangle: colorNum, size, isFill, position,(w,h)
-data Cr = Cr Bool Pos Int deriving (Eq,Show) --Circle: colorNum, size, isFill, orgin, radious
+newtype Dt = Dt Pos deriving (Eq,Show)   --Dot: position
+data Li = Li Pos Pos deriving (Eq,Show)  --Line : start_position, end_position
+data Rc = Rc Bool Pos Pos deriving (Eq,Show) --Rectangle: isFill, position,(w,h)
+data Cr = Cr Bool Pos CInt deriving (Eq,Show) --Circle: isFill, orgin, radious
 data Shp = D Dt | L Li | R Rc | C Cr deriving (Eq,Show) -- Shape
-data Drw = Drw Cnum Int Shp deriving (Eq,Show)
+data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 
 -- tex: edit text
 -- dts: dots drawing (pixel art)
@@ -53,6 +53,7 @@ data Drw = Drw Cnum Int Shp deriving (Eq,Show)
 -- crc: cursor count
 -- emd: edit mode (normal or insert) 
 -- cpl: color pallet (color number)
+-- lsz: line size
 -- ifm: view formatted text or not
 -- icr: cursor appear
 -- isk: skk editing
@@ -60,7 +61,7 @@ data Drw = Drw Cnum Int Shp deriving (Eq,Show)
 -- ipr: 'OK' prompt for code execution
 data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], cod :: ![Code], atr :: !Attr
                   ,fps :: !Int, tps :: !Int
-                  ,crc :: !Int, emd :: !EMode, cpl :: !Cnum
+                  ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
 -- gps: position (x,y) on graphic pixels
@@ -156,7 +157,7 @@ initTatePos = V2 (winSizeX-60) 30
 initState :: State
 initState = State {tex = "", dts = [], drw = []
                   , cod = [], atr = initAttr
-                  ,fps=0, tps=0, crc=0, emd=Nor, cpl=1
+                  ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 
 initAttr :: Attr

@@ -220,8 +220,12 @@ userDef :: [Definition]
 userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")]
 
 prioDef :: [Definition]
-prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color")
-          ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")]
+prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("a lineSize",[Kaz,Io]),"a lineSize")
+          ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")
+          ,(("a b c d drawLine",[Kaz,Kaz,Kaz,Kaz,Io]),"a b c d drawLine")
+          ,(("a b c d drawCircle",[Moz,Kaz,Kaz,Kaz,Io]),"a b c d drawCircle")
+          ,(("a b drawDot",[Kaz,Kaz,Io]),"a b drawDot")
+          ,(("a b c d e f drawGrid",[Kaz,Kaz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e f drawGrid")]
 
 speDef :: [String]
 speDef = ["(",")","="]

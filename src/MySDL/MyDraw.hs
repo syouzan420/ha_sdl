@@ -3,10 +3,12 @@ module MySDL.MyDraw (myDraw,initDraw) where
 
 import SDL.Video (Renderer, Texture)
 import SDL.Video.Renderer (rendererDrawColor,clear,copy,copyEx,Rectangle(..),textureAlphaMod
-                          ,present,createTextureFromSurface,freeSurface,destroyTexture,fillRect)
+                          ,present,createTextureFromSurface,freeSurface,destroyTexture
+                          ,fillRect,drawPoint)
 import SDL (($=))
 import SDL.Vect (Point(P),V2(..))
 import SDL.Font (Font,blended)
+import SDL.Primitive (thickLine,rectangle,circle,fillCircle)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
@@ -14,13 +16,13 @@ import qualified Data.Text as T
 import Data.Text (pack)
 import MyData (State(..),Attr(..),WMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
-              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..)
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Color
               ,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
 
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ atrSt _ tpsSt _ _ _ ifmSt icrSt _ _ _)
+myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
   = do
   let scrAt = scr atrSt
       wmdAt = wmd atrSt
@@ -36,13 +38,23 @@ myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ atrSt _ tpsSt _
 myDrawing :: Renderer -> [Drw] -> IO ()
 myDrawing _ [] = return () 
 myDrawing re ((Drw cn siz shp):drs) = do
-  rendererDrawColor re $= colorPallet!!cn
-  drawShape re siz shp
+  let col = colorPallet!!cn
+  rendererDrawColor re $= col 
+  drawShape re col siz shp
   myDrawing re drs
 
-drawShape :: Renderer -> Int -> Shp -> IO ()
-drawShape re _ (R (Rc True ps wh)) = fillRect re (Just (Rectangle (P ps) wh)) 
-drawShape _ _ _ = return ()
+drawShape :: Renderer -> Color -> CInt -> Shp -> IO ()
+drawShape re col siz (L (Li ps0 ps1)) = thickLine re ps0 ps1 siz col 
+drawShape re col siz (R (Rc False (V2 x y) (V2 w h))) = 
+  if w>siz && h>siz then mapM_ (\dp -> rectangle re (V2 (x+dp) (y+dp)) (V2 (x+w-dp) (y+h-dp)) col) [0..(siz-1)] 
+                    else fillRect re (Just (Rectangle (P (V2 x y)) (V2 w h)))
+drawShape re _ _ (R (Rc True ps wh)) = fillRect re (Just (Rectangle (P ps) wh)) 
+drawShape re col siz (C (Cr False ps rd)) = 
+  if rd>siz then mapM_ (\dp -> circle re ps (rd-dp) col) [0..(siz-1)] else fillCircle re ps rd col
+drawShape re col _ (C (Cr True ps rd)) = fillCircle re ps rd col
+drawShape re col siz (D (Dt ps)) =
+  if siz==1 then drawPoint re (P ps) else fillCircle re ps (siz-1) col
+drawShape _ _ _ _ = return ()
 
 dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
 dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do

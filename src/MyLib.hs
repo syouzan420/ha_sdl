@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyLib (tpsForRelativeLine,locToIndex,breakText,toDotPos,addMidDots,selectNearest
-             ,textToDots,textToJumps,dotsToText,jumpsToText,nextPos) where
+             ,textToDots,textToJumps,dotsToText,jumpsToText,nextPos,textIns,lastTps,takeCurrentLine) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
@@ -18,6 +18,17 @@ type Letter = Int
 type Location = (Line,Letter)
 type Rect = V4 CInt
 
+textIns :: T.Text -> Int -> T.Text -> T.Text
+textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
+
+lastTps :: Int -> T.Text -> Int
+lastTps tpsSt texSt = let dropLines = T.lines$T.drop tpsSt texSt
+                       in if null dropLines then tpsSt else tpsSt + T.length (head dropLines)
+
+takeCurrentLine :: Int -> T.Text -> T.Text
+takeCurrentLine tpsSt texSt =
+  let lTps = lastTps tpsSt texSt
+   in last$T.lines$T.take lTps texSt
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =
   let (ln,lt) = indexToLoc atrSt texSt ind   

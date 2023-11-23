@@ -6,12 +6,12 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
-import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest)
+import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine)
 import Mana (makeMana,makeManas,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _ _) = do
+inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -63,8 +63,6 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
       nit = if isIns && isRet then "\n" else it
-    --  textIns tx = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
-    --  takeCurrentLine = last$T.lines$T.take tpsSt texSt
       centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
@@ -144,6 +142,7 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt ifmSt _ iskSt _
       nst = st{tex=ntex,dts=ndts,cod=ncod,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,ninp)
 
+  {--
 textIns :: T.Text -> Int -> T.Text -> T.Text
 textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
 
@@ -155,3 +154,4 @@ takeCurrentLine :: Int -> T.Text -> T.Text
 takeCurrentLine tpsSt texSt =
   let lTps = lastTps tpsSt texSt
    in last$T.lines$T.take lTps texSt
+   --}
