@@ -1,9 +1,13 @@
-"f" (50x3) 400 (5x5x9) (9x4x2) drawRect
-4 color
-OK.
-3 lineSize
-OK.
-100 100 drawDot
-OK.
-5 5 100 100 100 100 drawGrid
-OK.
+
+
+
+
+
+
+
+
+
+
+
+
+

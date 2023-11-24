@@ -6,12 +6,12 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
-import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine)
+import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
 import Mana (makeMana,makeManas,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
+inputEvent st@(State texSt dtsSt _ _ comSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -35,13 +35,15 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt
       isFarBack = kc==KeycodeB && md==Shf && isNor
 
       isToIns = kc==KeycodeI && isNor
-      isToNor = kc==KeycodeLeftBracket && md==Ctr && isIns
+      isExit = kc==KeycodeLeftBracket && md==Ctr
+      isToNor = isExit && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
 
       isExeCode = kc==KeycodeE && md==Ctr
 
       isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
+      isDeleteLine = not (null comSt) && last comSt=='d' && kc==KeycodeD 
       isCom = md==Alt
       isDrawClear = kc==KeycodeD && md==Ctr
       isTglColor = kc==KeycodeC && md==Ctr
@@ -101,6 +103,7 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt
         | isExeCode = lastTps tpsSt texSt + T.length codeResult
         | isIns && nit/=T.empty = tpsSt + T.length nit 
         | isBS = if tpsSt>0 then tpsSt-1 else tpsSt
+        | isDeleteLine = headTps tpsSt texSt
         | otherwise = tpsSt
       nemd
         | isToIns = Ins 
@@ -109,6 +112,7 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt
       ntex
         | ifmSt = texSt
         | isBS && tpsSt>0 = T.take (tpsSt-1) texSt <> T.drop tpsSt texSt
+        | isDeleteLine = deleteCurrentLine tpsSt texSt
         | isCom = textIns comName tpsSt texSt
         | isExeCode = textIns codeResult (lastTps tpsSt texSt) texSt 
         | isIns = textIns nit tpsSt texSt 
@@ -122,6 +126,10 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt
       ncod
         | isExeCode && yo==Io = [ta] 
         | otherwise = [] 
+      ncom
+        | isExit || texSt /= ntex = "" 
+        | isNor = comSt ++ T.unpack it 
+        | otherwise = comSt
       nifm
         | isTglFmt = not ifmSt
         | otherwise = ifmSt
@@ -139,19 +147,6 @@ inputEvent st@(State texSt dtsSt _ _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt
         | isKeyPressed = PKY
         | isMousePressed = PMO
         | otherwise = NON
-      nst = st{tex=ntex,dts=ndts,cod=ncod,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
+      nst = st{tex=ntex,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   return (nst,ninp)
 
-  {--
-textIns :: T.Text -> Int -> T.Text -> T.Text
-textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
-
-lastTps :: Int -> T.Text -> Int
-lastTps tpsSt texSt = let dropLines = T.lines$T.drop tpsSt texSt
-                       in if null dropLines then tpsSt else tpsSt + T.length (head dropLines)
-
-takeCurrentLine :: Int -> T.Text -> T.Text
-takeCurrentLine tpsSt texSt =
-  let lTps = lastTps tpsSt texSt
-   in last$T.lines$T.take lTps texSt
-   --}

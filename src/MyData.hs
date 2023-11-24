@@ -47,6 +47,7 @@ data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 -- dts: dots drawing (pixel art)
 -- drw: drawing
 -- cod: executable code
+-- com: command for normal mode
 -- atr: text attribute
 -- fps: file position
 -- tps: text position
@@ -59,8 +60,8 @@ data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 -- isk: skk editing
 -- iup: ??
 -- ipr: 'OK' prompt for code execution
-data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], cod :: ![Code], atr :: !Attr
-                  ,fps :: !Int, tps :: !Int
+data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], cod :: ![Code], com :: !String
+                  ,atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
@@ -150,13 +151,9 @@ initTatePos = V2 (winSizeX-60) 30
 
 -- INITIALIZE
 
---draw Example
---drw = [Drw 1 1 (R (Rc True (V2 100 100) (V2 50 50)))]
------- color:1 size:1 Rectangle fill (x,y)=(100,100) (w,h)=(50,50)
-
 initState :: State
 initState = State {tex = "", dts = [], drw = []
-                  , cod = [], atr = initAttr
+                  , cod = [], com = "", atr = initAttr
                   ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 

@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyLib (tpsForRelativeLine,locToIndex,breakText,toDotPos,addMidDots,selectNearest
-             ,textToDots,textToJumps,dotsToText,jumpsToText,nextPos,textIns,lastTps,takeCurrentLine) where
+             ,textToDots,textToJumps,dotsToText,jumpsToText,nextPos,textIns,lastTps,headTps
+             ,takeCurrentLine,deleteCurrentLine) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
 import Foreign.C.Types (CInt)
---import SDL.Vect (V2(..),V4(..))
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import Data.Maybe(fromMaybe)
@@ -25,10 +25,22 @@ lastTps :: Int -> T.Text -> Int
 lastTps tpsSt texSt = let dropLines = T.lines$T.drop tpsSt texSt
                        in if null dropLines then tpsSt else tpsSt + T.length (head dropLines)
 
+headTps :: Int -> T.Text -> Int
+headTps tpsSt texSt = let takeLines = T.lines$T.take tpsSt texSt
+                       in if null takeLines then tpsSt else tpsSt - T.length (last takeLines) - 1
+
 takeCurrentLine :: Int -> T.Text -> T.Text
 takeCurrentLine tpsSt texSt =
   let lTps = lastTps tpsSt texSt
    in last$T.lines$T.take lTps texSt
+
+deleteCurrentLine :: Int -> T.Text -> T.Text
+deleteCurrentLine tpsSt texSt =
+  let lTps = lastTps tpsSt texSt
+      takeLines = T.lines$T.take lTps texSt
+      textForward = if null takeLines then T.empty else T.unlines$init$T.lines$T.take lTps texSt 
+   in textForward <> T.drop lTps texSt
+
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =
   let (ln,lt) = indexToLoc atrSt texSt ind   

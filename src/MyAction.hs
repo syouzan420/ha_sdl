@@ -29,7 +29,7 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> TextData 
-makeTextData (State texSt _ _ _ atrSt fpsSt tpsSt _ _ _ _ ifmSt _ _ _ _) =
+makeTextData (State texSt _ _ _ _ atrSt fpsSt tpsSt _ _ _ _ ifmSt _ _ _ _) =
   makeTexts 0 ifmSt fpsSt tpsSt atrSt texSt
 
 makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> TextData 

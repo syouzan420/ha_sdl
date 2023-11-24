@@ -61,11 +61,15 @@ evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
                  dcList = if dt==Prim || dt==PrIo then words dc else (words.T.unpack.addSpaces.T.pack) dc
                  mnList = map getManaFromTree' fm
                  (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
+                 isNumMatch = length yoList == length dy
                  yos = zip yoList dy
-                 isYoMatch = foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
+                 isYoMatch = isNumMatch && foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
                  knv = zip dpList taList
-                 evs = if isYoMatch then map (\x -> fromMaybe x (lookup x knv)) dcList else ["yer"]
-                 yo = fromMaybe Moz (lookup Def yos)
+                 evs
+                   | isYoMatch = map (\x -> fromMaybe x (lookup x knv)) dcList
+                   | isNumMatch = ["yos don't match"]
+                   | otherwise = ["need more arguments"]
+                 yo = if isNumMatch then fromMaybe Moz (lookup Def yos) else Spe
                  rsl 
                    | dt==Prim = Mn (preFunc evs) yo 
                    | dt==PrIo = Mn (unwords evs) yo
@@ -185,10 +189,6 @@ isSpe :: String -> Bool
 isSpe [] = False
 isSpe str = str `elem` speDef
 
-isIo :: String -> Bool
-isIo [] = False
-isIo str = str `elem` map (getName . fst . fst) prioDef
-
 makeStrings :: T.Text -> [String]
 makeStrings  = words . T.unpack . addSpaces . forMath 
 
@@ -203,6 +203,7 @@ getName :: String -> String
 getName def = let ws = words def
                   searchNameList = filter (`notElem` usedForArgs) ws
                in if null searchNameList then "" else head searchNameList
+
 
 usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g","h"]
@@ -243,7 +244,7 @@ preFunc [] = ""
 preFunc ws = 
   case name of
     "pro" -> show $ product args 
-    "yer" -> "Yo Error"
-    _     -> ""
+    _     -> name 
   where name = last ws
         args = map read (init ws)
+
