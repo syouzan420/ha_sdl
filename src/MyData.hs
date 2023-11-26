@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp
-              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..)
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
               ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
-              ,title,windowSize,initState,initAttr,dotSize
+              ,title,windowSize,initState,initAttr,dotSize,imageNames
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
               ,rubiSize,delayTime,cursorTime
               ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
@@ -18,6 +18,7 @@ import Data.Word (Word8,Word32)
 
 type TextPos = Int
 type Pos = V2 CInt
+type Size = V2 CInt
 type PointSize = Int
 type Color = V4 Word8
 type Cnum = Int         -- color number
@@ -25,6 +26,7 @@ type PList = ((Bool,Bool),Pos)
 type TextData = [(Bool,Text,Attr,[PList])]
 type Dot = (Pos,Cnum)
 type Code = String
+type Name = String
 type Jump = ((Int,Text),(Int,Text)) -- ((FileNumber,FileName),(TextPosNumber,TextPosName))
 type FrJp = (Int,(Int,Int)) -- (TextPosition, (FilePosNumber,TextPosNumber))
 type JBak = (Int,Int) -- (FilePosNumber,TextPosNumber)
@@ -38,14 +40,17 @@ data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, S
 
 newtype Dt = Dt Pos deriving (Eq,Show)   --Dot: position
 data Li = Li Pos Pos deriving (Eq,Show)  --Line : start_position, end_position
-data Rc = Rc Bool Pos Pos deriving (Eq,Show) --Rectangle: isFill, position,(w,h)
+data Rc = Rc Bool Pos Size deriving (Eq,Show) --Rectangle: isFill, position,(w,h)
 data Cr = Cr Bool Pos CInt deriving (Eq,Show) --Circle: isFill, orgin, radious
 data Shp = D Dt | L Li | R Rc | C Cr deriving (Eq,Show) -- Shape
 data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 
+data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, rotate, name
+
 -- tex: edit text
 -- dts: dots drawing (pixel art)
 -- drw: drawing
+-- img: images 
 -- cod: executable code
 -- com: command for normal mode
 -- atr: text attribute
@@ -60,8 +65,8 @@ data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 -- isk: skk editing
 -- iup: ??
 -- ipr: 'OK' prompt for code execution
-data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], cod :: ![Code], com :: !String
-                  ,atr :: !Attr, fps :: !Int, tps :: !Int
+data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], img :: ![Img], cod :: ![Code]
+                  ,com :: !String ,atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
@@ -115,7 +120,13 @@ fontFiles :: [FilePath]
 fontFiles = map ("font/"++) ["monaco.ttf","marugo.TTC","oshide.otf"]
 
 imageFiles :: [FilePath]
-imageFiles = map (\s -> "images/"++s++".png") ["onigiri","nori"]
+imageFiles = map (\s -> "images/"++s++".png") imageNames 
+
+imageNames :: [String]
+imageNames = ["nori","onigiri"] ++ blockNames
+
+blockNames :: [String]
+blockNames = map ("block_"++) ["ho","midu","tama","arg"]
 
 -- SIZE AND POSITION
 
@@ -152,7 +163,7 @@ initTatePos = V2 (winSizeX-60) 30
 -- INITIALIZE
 
 initState :: State
-initState = State {tex = "", dts = [], drw = []
+initState = State {tex = "", dts = [], drw = [], img = []
                   , cod = [], com = "", atr = initAttr
                   ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}

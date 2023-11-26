@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Mana (makeMana, makeManas, taiyouMn, Mn(..), Ta, Yo(..),Df(..),setDf)  where
+module Mana (evalCode,makeManas,addSpaces,taiyouMn,makeStrings, Mn(..), Ta, Yo(..),Definition,Df(..),setDf)  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
@@ -56,40 +56,46 @@ setDf :: String -> Df
 setDf name = fromMaybe (Df Non "" [] "") (searchFromDef name [Prim,User,PrIo] [primDef,userDef,prioDef])
 
 evalDef :: Forest Mn -> Mn 
-evalDef fm = let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
-                 dpList = words dp
-                 dcList = if dt==Prim || dt==PrIo then words dc else (words.T.unpack.addSpaces.T.pack) dc
-                 mnList = map getManaFromTree' fm
-                 (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
-                 isNumMatch = length yoList == length dy
-                 yos = zip yoList dy
-                 isYoMatch = isNumMatch && foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
-                 knv = zip dpList taList
-                 evs
-                   | isYoMatch = map (\x -> fromMaybe x (lookup x knv)) dcList
-                   | isNumMatch = ["yos don't match"]
-                   | otherwise = ["need more arguments"]
-                 yo = if isNumMatch then fromMaybe Moz (lookup Def yos) else Spe
-                 rsl 
-                   | dt==Prim = Mn (preFunc evs) yo 
-                   | dt==PrIo = Mn (unwords evs) yo
-                   | otherwise = makeMana$makeManas (T.pack$unwords evs)
-              in rsl
-                 
+evalDef fm = 
+  let Df dt dp dy dc = fromMaybe (Df Non "" [] "") (defForest fm)
+      dpList = words dp
+      dcList = if dt==Prim || dt==PrIo then words dc else (makeStrings.T.pack) dc
+      mnList = map getManaFromTree'  fm
+      (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
+      isNumMatch = length yoList == length dy
+      yos = zip yoList dy
+      isYoMatch = isNumMatch && foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
+      knv = zip dpList taList
+      evs
+        | isYoMatch = map (\x -> fromMaybe x (lookup x knv)) dcList
+        | isNumMatch = ["yos don't match"]
+        | otherwise = ["need more arguments"]
+      yo = if isNumMatch then fromMaybe Moz (lookup Def yos) else Spe
+      rsl 
+        | dt==Prim = Mn (preFunc evs) yo 
+        | dt==PrIo = Mn (unwords evs) yo
+        | otherwise = makeMana $ fst $ makeManas (T.pack$unwords evs)
+   in rsl
+                
+evalCode :: T.Text -> Mn
+evalCode = makeMana . fst . makeManas 
+
 makeMana :: Forest Mn -> Mn
 makeMana [] = Mn "" Moz
 makeMana [Node x []] 
   | isJust (defForest [Node x []]) = evalDef [Node x []]
   | otherwise = x 
-makeMana (Node (Mn "(" _) y0 : Node (Mn ")" _) y1 : xs) = makeMana (Node (makeMana y0) y1 : xs)
+makeMana (Node (Mn "(" _) y0 : Node (Mn ")" _) y1 : xs)
+                            = makeMana (Node (makeMana y0) y1 : xs)
 makeMana (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
   | y0==y1 = case y0 of
-      Kaz -> makeMana$Node (Mn (show (read t0 + read t1)) Kaz) []:xs
-      Moz -> makeMana$Node (Mn (init t0 ++ " " ++ tail t1) Moz) [] : xs
-  | t0 == ")" = makeMana$Node (Mn t1 y1) [] : xs
-  | t1 == ")" = makeMana$Node (Mn t0 y0) [] : xs
-  | t0 == "(" = makeMana$Node (Mn t1 y1) [] : xs
-  | t1 == "(" = makeMana$Node (Mn t0 y0) [] : xs
+      Kaz -> makeMana $ Node (Mn (show (read t0 + read t1)) Kaz) []:xs
+      Moz -> makeMana $ Node (Mn (init t0 ++ tail t1) Moz) [] : xs
+      _ -> makeMana xs 
+  | t0 == ")" = makeMana $ Node (Mn t1 y1) [] : xs
+  | t1 == ")" = makeMana $ Node (Mn t0 y0) [] : xs
+  | t0 == "(" = makeMana $ Node (Mn t1 y1) [] : xs
+  | t1 == "(" = makeMana $ Node (Mn t0 y0) [] : xs
   | otherwise = Mn "Error" Spe 
 makeMana (Node mn [] : xs) = makeMana [Node mn [], Node (makeMana xs) []]
 makeMana (Node x y : xs) 
@@ -97,7 +103,7 @@ makeMana (Node x y : xs)
   | otherwise = makeMana (Node (makeMana nfm) [] : xs)
    where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
 
-makeManas :: T.Text -> Forest Mn
+makeManas :: T.Text -> (Forest Mn,LR)
 makeManas = makeManas' ([],[]) [] . makeStrings 
 
 getYo :: String -> Yo
@@ -117,8 +123,8 @@ calcL _ [] _ acc = acc
 calcL _ _ 0 acc = acc
 calcL s (x:xs) i acc = if s==x then calcL s xs i (acc+1) else calcL s xs (i-1) (acc+1)
 
-makeManas' :: LR -> Forest Mn -> [String] -> Forest Mn
-makeManas' _ mns [] = mns
+makeManas' :: LR -> Forest Mn -> [String] -> (Forest Mn,LR)
+makeManas' lr mns [] = (mns,lr)
 makeManas' (pl,pr) mns (x:xs) = 
   let you = getYo x 
       (ls,rs) = if you == Def then getLR x (pl,pr) else (pl,pr)
@@ -164,11 +170,11 @@ makeManas' (pl,pr) mns (x:xs) =
   in makeManas' (nl,nr) nmns xs  
 
 getLR :: String -> LR -> LR
-getLR def (pl,pr) = let names = map (getName . fst . fst) preDef
-                        ind = getIndex def names
-                        defws = words$fst$fst$preDef!!ind
-                        wsLng = length defws
-                        nmInd = getIndex def defws
+getLR df (pl,pr) = let names = map (getName . fst . fst) preDef 
+                       ind = getIndex df names
+                       defws = words$fst$fst$preDef!!ind
+                       wsLng = length defws
+                       nmInd = getIndex df defws
                     in (nmInd:pl, Ri (wsLng - nmInd - 1):pr) 
 
 isMoz :: String -> Bool
@@ -190,7 +196,9 @@ isSpe [] = False
 isSpe str = str `elem` speDef
 
 makeStrings :: T.Text -> [String]
-makeStrings  = words . T.unpack . addSpaces . forMath 
+makeStrings  =  concatMap (\wd -> if isMoz wd then [wd] else (words . T.unpack . addSpaces . T.pack) wd) .  words . T.unpack . forMath 
+
+--makeStrings = words . T.unpack . addSpaces . forMath
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
@@ -218,7 +226,9 @@ primDef :: [Definition]
 primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b pro")]
 
 userDef :: [Definition]
-userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")]
+userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")
+          ,(("a grid",[Kaz, Io]),"a a 100 100 64xa 64xa drawGrid")
+          ,(("a b c block",[Kaz,Kaz,Kaz,Io]),"a (100 bx64) 64 64 cx90 \"block_ho\" drawImage")]
 
 
 --color a: color number
@@ -234,7 +244,8 @@ prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("a lineSize",
           ,(("a b c d drawLine",[Kaz,Kaz,Kaz,Kaz,Io]),"a b c d drawLine")
           ,(("a b c d drawCircle",[Moz,Kaz,Kaz,Kaz,Io]),"a b c d drawCircle")
           ,(("a b drawDot",[Kaz,Kaz,Io]),"a b drawDot")
-          ,(("a b c d e f drawGrid",[Kaz,Kaz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e f drawGrid")]
+          ,(("a b c d e f drawGrid",[Kaz,Kaz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e f drawGrid")
+          ,(("a b c d e f drawImage",[Kaz,Kaz,Kaz,Kaz,Kaz,Moz,Io]),"a b c d e f drawImage")]
 
 speDef :: [String]
 speDef = ["(",")","="]

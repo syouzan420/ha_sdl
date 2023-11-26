@@ -37,9 +37,13 @@ takeCurrentLine tpsSt texSt =
 deleteCurrentLine :: Int -> T.Text -> T.Text
 deleteCurrentLine tpsSt texSt =
   let lTps = lastTps tpsSt texSt
-      takeLines = T.lines$T.take lTps texSt
-      textForward = if null takeLines then T.empty else T.unlines$init$T.lines$T.take lTps texSt 
-   in textForward <> T.drop lTps texSt
+      takeText = T.take lTps texSt
+      textForward 
+          | takeText==T.empty = T.empty
+          | T.last takeText =='\n' = T.init takeText 
+          | otherwise = let iLine = init$T.lines takeText
+                         in if null iLine then T.empty else T.unlines iLine
+   in textForward <> if texSt == T.empty then T.empty else T.tail$T.drop lTps texSt
 
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =

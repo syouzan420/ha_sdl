@@ -5,7 +5,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
-import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..))
+import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
 import MyLib (textIns,lastTps)
 
 type Func = [String] -> State -> State
@@ -32,7 +32,8 @@ getMoz mz = if length mz > 2 then tail$init mz else mz
 funcs :: [(String,Func)]
 funcs = [("cls",cls),("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
-        ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)]
+        ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
+        ,("drawImage",drawImage)]
 
 idf :: [String] -> State -> State
 idf _ st = st
@@ -81,3 +82,11 @@ drawGrid dts st
         nst = foldl (\acc x -> putDraw acc (L (Li (V2 (c+x) d) (V2 (c+x) (d+f))))) st (map (dw*) [0..a])
      in foldl (\acc y -> putDraw acc (L (Li (V2 c (d+y)) (V2 (c+e) (d+y))))) nst (map (dh*) [0..b])
   | otherwise = st
+
+drawImage :: [String] -> State -> State
+drawImage [a,b,c,d,e,f] st = 
+  let imgSt = img st
+      nimg = Img (V2 (read a) (read b)) (V2 (read c) (read d)) (read e) (getMoz f) 
+   in st{img=imgSt++[nimg]}
+drawImage _ st = st
+

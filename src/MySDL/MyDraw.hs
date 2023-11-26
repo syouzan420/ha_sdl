@@ -14,15 +14,17 @@ import Control.Monad (foldM_,when,unless)
 import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
+import General (getIndex)
 import MyData (State(..),Attr(..),WMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
-              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Color
-              ,fontSize,cursorColor,backColor,initTatePos,initYokoPos,dotSize,colorPallet,statusPos)
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..),Color
+              ,fontSize,cursorColor,backColor,initTatePos,initYokoPos
+              ,dotSize,colorPallet,statusPos,imageNames)
 
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
+myDraw re fonts itex textData isOnlyMouse st@(State _ dtsSt drwSt imgSt _ _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
   = do
   let scrAt = scr atrSt
       wmdAt = wmd atrSt
@@ -33,7 +35,16 @@ myDraw re fonts _ textData isOnlyMouse st@(State _ dtsSt drwSt _ _ atrSt _ tpsSt
   when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
   myDrawing re drwSt
+  imageDraw re itex imgSt
   present re
+
+imageDraw :: Renderer -> [Texture] -> [Img] -> IO ()
+imageDraw re itex = mapM_ (\(Img pos siz rot name) -> 
+  when (name `elem` imageNames) $ do
+            let ind = getIndex name imageNames
+            copyEx re (itex!!ind) (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
+                                  (Just (Rectangle (P pos) siz))
+                                  (fromIntegral rot) Nothing (V2 False False) ) 
 
 myDrawing :: Renderer -> [Drw] -> IO ()
 myDrawing _ [] = return () 

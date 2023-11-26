@@ -7,11 +7,11 @@ import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
-import Mana (makeMana,makeManas,taiyouMn,Yo(..))
+import Mana (evalCode,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ _ comSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
+inputEvent st@(State texSt dtsSt _ _ _ comSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -70,7 +70,7 @@ inputEvent st@(State texSt dtsSt _ _ comSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
 
-      codeMana = (makeMana.makeManas) (takeCurrentLine tpsSt texSt)
+      codeMana = evalCode (takeCurrentLine tpsSt texSt)
       (ta,yo) = taiyouMn codeMana
       codeResult 
         | isExeCode && yo==Io = T.empty 

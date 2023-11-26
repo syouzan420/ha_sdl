@@ -94,3 +94,5 @@ rotateBlock d (mn,rps) = (mn,map (rotatePos d) rps)
 
 rotatePos :: Bool -> RPos -> RPos
 rotatePos d (x,y) = let k = if d then 1 else -1 in (k*(-y),k*x)
+
+
