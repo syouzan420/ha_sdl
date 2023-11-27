@@ -1,9 +1,12 @@
-10 200 64 64 0 ("b" "lock_ho") drawImage
+10 10 64 64 0 ("block_" "ho") drawImage
+```
+3 grid
+1 1 0 "tama" block
+1 2 0 "ho" block
+0 1 0 "midu" block
+```
+run
 OK.
-100 3 0 block
-50 2 1 block
-60 1 1 block
-
 問題點
 函數の最初の引數に 括弧や函數を適用できない
 文字列を評価する際 函數名と一致する文字列が抽出されてしまふ
@@ -11,5 +14,8 @@ OK.
 前者は makeManas 評価時の問題であり
 後者は makeMana 評価時の問題である
 
+令和5
+11月27日
+多分一應解決した
 
 

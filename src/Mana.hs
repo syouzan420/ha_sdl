@@ -101,7 +101,10 @@ makeMana (Node mn [] : xs) = makeMana [Node mn [], Node (makeMana xs) []]
 makeMana (Node x y : xs) 
   | isJust (defForest nfm) = makeMana (Node (evalDef nfm) [] : xs)
   | otherwise = makeMana (Node (makeMana nfm) [] : xs)
-   where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
+   where nfm = let Node x' y' = head y
+                in if null y' then Node x [] : y 
+                              else Node x (Node x' []:y') : tail y 
+ --  where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
 
 makeManas :: T.Text -> (Forest Mn,LR)
 makeManas = makeManas' ([],[]) [] . makeStrings 
@@ -196,13 +199,13 @@ isSpe [] = False
 isSpe str = str `elem` speDef
 
 makeStrings :: T.Text -> [String]
-makeStrings  =  concatMap (\wd -> if isMoz wd then [wd] else (words . T.unpack . addSpaces . T.pack) wd) .  words . T.unpack . forMath 
+makeStrings = words . T.unpack . addSpaces . forMath
+--makeStrings  =  concatMap (\wd -> if isMoz wd then [wd] else (words . T.unpack . addSpaces . T.pack) wd) .  words . T.unpack . forMath 
 
---makeStrings = words . T.unpack . addSpaces . forMath
 
 addSpaces :: T.Text -> T.Text
 addSpaces txt =
-  foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map (T.pack . getName . fst . fst) nameDef)
+  foldl (\acc nm -> T.replace nm (" "<>nm<>" ") acc) txt (map T.pack needSpace)
 
 forMath :: T.Text -> T.Text
 forMath = T.replace "+" " " . T.replace "-" " -"
@@ -219,8 +222,8 @@ usedForArgs = ["a","b","c","d","e","f","g","h"]
 preDef :: [Definition]
 preDef = primDef ++ prioDef ++ userDef
 
-nameDef :: [Definition]
-nameDef = primDef ++ map (\x -> ((x,[Spe]),"")) speDef ++ prioDef ++ userDef
+--nameDef :: [Definition]
+--nameDef = primDef ++ map (\x -> ((x,[Spe]),"")) speDef ++ prioDef ++ userDef
 
 primDef :: [Definition]
 primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b pro")]
@@ -228,7 +231,7 @@ primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b
 userDef :: [Definition]
 userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")
           ,(("a grid",[Kaz, Io]),"a a 100 100 64xa 64xa drawGrid")
-          ,(("a b c block",[Kaz,Kaz,Kaz,Io]),"a (100 bx64) 64 64 cx90 \"block_ho\" drawImage")]
+          ,(("a b c d block",[Kaz,Kaz,Kaz,Moz,Io]),"(100 ax64) (100 bx64) 64 64 cx90 (\"block_\" d) drawImage")]
 
 
 --color a: color number
@@ -239,7 +242,8 @@ userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")
 --drawDot (a,b): point
 --drawGrid (a,b): grid size (CInt,CInt), (c,d): startPosition(upper left): (e,f): width & height
 prioDef :: [Definition]
-prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("a lineSize",[Kaz,Io]),"a lineSize")
+prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("run",[Io]),"run")
+          ,(("a lineSize",[Kaz,Io]),"a lineSize")
           ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")
           ,(("a b c d drawLine",[Kaz,Kaz,Kaz,Kaz,Io]),"a b c d drawLine")
           ,(("a b c d drawCircle",[Moz,Kaz,Kaz,Kaz,Io]),"a b c d drawCircle")
@@ -249,6 +253,9 @@ prioDef = [(("cls",[Io]),"cls"),(("a color",[Kaz,Io]),"a color"),(("a lineSize",
 
 speDef :: [String]
 speDef = ["(",")","="]
+
+needSpace :: [String]
+needSpace = speDef ++ ["x","*"]
 
 preFunc :: [String] -> String 
 preFunc [] = "" 

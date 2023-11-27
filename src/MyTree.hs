@@ -36,7 +36,10 @@ addElem (El mn _ _) [] = [Node mn []]
 addElem (El mn l r) fo
   | lng >= l && l /= 0
           = let (h,(Node s sf):t) = splitAt (lng - abs l) fo
-                newNode = Node s (t ++ addElem (El mn l r) sf)
+                newNode = if l==1 || l==(-1) || null sf then Node s (t ++ addElem (El mn l r) sf)
+                                             else let (Node s' _) = head sf
+                                                   in Node s (Node s' (tail sf):t ++ [Node mn []])
+                --newNode = Node s (t ++ addElem (El mn l r) sf)
              in h ++ [newNode]
   | otherwise 
           = let (it,lt) = (init fo,last fo)

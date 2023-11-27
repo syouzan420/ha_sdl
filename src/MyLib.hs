@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyLib (tpsForRelativeLine,locToIndex,breakText,toDotPos,addMidDots,selectNearest
              ,textToDots,textToJumps,dotsToText,jumpsToText,nextPos,textIns,lastTps,headTps
-             ,takeCurrentLine,deleteCurrentLine) where
+             ,takeCurrentLine,deleteCurrentLine,takeCodes) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
@@ -17,6 +17,21 @@ type Line = Int
 type Letter = Int
 type Location = (Line,Letter)
 type Rect = V4 CInt
+
+codeSeparator :: T.Text
+codeSeparator = "```"
+
+takeCodes :: T.Text -> [T.Text]
+takeCodes tx = takeCodes' False (T.lines tx)
+
+takeCodes' :: Bool -> [T.Text] -> [T.Text]
+takeCodes' _ [] = []
+takeCodes' True (x:xs) 
+  | x == codeSeparator = takeCodes' False xs
+  | otherwise = x : takeCodes' True xs
+takeCodes' False (x:xs)
+  | x == codeSeparator = takeCodes' True xs
+  | otherwise = takeCodes' False xs
 
 textIns :: T.Text -> Int -> T.Text -> T.Text
 textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 

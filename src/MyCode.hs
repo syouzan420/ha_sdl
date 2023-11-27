@@ -4,9 +4,10 @@ module MyCode(exeCode) where
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Linear.V2 (V2(..))
-import Linear.V4 (V4(..))
+--import Linear.V4 (V4(..))
 import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
-import MyLib (textIns,lastTps)
+import Mana (evalCode,taiyouMn,Yo(..))
+import MyLib (textIns,lastTps,takeCodes)
 
 type Func = [String] -> State -> State
 
@@ -23,8 +24,8 @@ addTex tx st = let texSt = tex st; tpsSt = tps st
                    ntps = lTps + T.length ("\n"<>tx)
                 in st{tex = ntex, tps = ntps, ipr = False}
 
-showT :: Show a => a -> T.Text
-showT = T.pack . show
+--showT :: Show a => a -> T.Text
+--showT = T.pack . show
 
 getMoz :: String -> String
 getMoz mz = if length mz > 2 then tail$init mz else mz
@@ -33,7 +34,7 @@ funcs :: [(String,Func)]
 funcs = [("cls",cls),("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
         ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
-        ,("drawImage",drawImage)]
+        ,("drawImage",drawImage),("run",run)]
 
 idf :: [String] -> State -> State
 idf _ st = st
@@ -74,9 +75,9 @@ drawDot [a,b] st = putDraw st (D (Dt (V2 (read a) (read b))))
 drawDot _ st = st
 
 drawGrid :: [String] -> State -> State
-drawGrid dts st 
-  | length dts == 6 =
-    let [a,b,c,d,e,f] = map read dts
+drawGrid args st 
+  | length args == 6 =
+    let [a,b,c,d,e,f] = map read args 
         dw = e `div` a
         dh = f `div` b
         nst = foldl (\acc x -> putDraw acc (L (Li (V2 (c+x) d) (V2 (c+x) (d+f))))) st (map (dw*) [0..a])
@@ -89,4 +90,11 @@ drawImage [a,b,c,d,e,f] st =
       nimg = Img (V2 (read a) (read b)) (V2 (read c) (read d)) (read e) (getMoz f) 
    in st{img=imgSt++[nimg]}
 drawImage _ st = st
+
+run :: [String] -> State -> State
+run _ st = let codes = takeCodes (tex st)
+               manas = map (taiyouMn.evalCode) codes
+               ioCodes = map fst $ filter (\(_,y) -> y==Io) manas
+               --results = map fst $ filter (\(_,y) -> y/=Io) manas
+            in st{cod=ioCodes, msg=["codeExe"]}
 

@@ -11,7 +11,7 @@ import Mana (evalCode,taiyouMn,Yo(..))
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ _ _ comSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
+inputEvent st@(State texSt dtsSt _ _ _ comSt msgSt atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
   (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)

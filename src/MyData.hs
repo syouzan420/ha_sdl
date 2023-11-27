@@ -53,6 +53,7 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- img: images 
 -- cod: executable code
 -- com: command for normal mode
+-- msg: message from executed code
 -- atr: text attribute
 -- fps: file position
 -- tps: text position
@@ -66,7 +67,7 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- iup: ??
 -- ipr: 'OK' prompt for code execution
 data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], img :: ![Img], cod :: ![Code]
-                  ,com :: !String ,atr :: !Attr, fps :: !Int, tps :: !Int
+                  ,com :: !String ,msg :: ![String], atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
@@ -164,7 +165,7 @@ initTatePos = V2 (winSizeX-60) 30
 
 initState :: State
 initState = State {tex = "", dts = [], drw = [], img = []
-                  , cod = [], com = "", atr = initAttr
+                  , cod = [], com = "", msg = [], atr = initAttr
                   ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 

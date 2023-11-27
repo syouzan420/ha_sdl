@@ -29,7 +29,7 @@ afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> TextData 
-makeTextData (State texSt _ _ _ _ _ atrSt fpsSt tpsSt _ _ _ _ ifmSt _ _ _ _) =
+makeTextData (State texSt _ _ _ _ _ _ atrSt fpsSt tpsSt _ _ _ _ ifmSt _ _ _ _) =
   makeTexts 0 ifmSt fpsSt tpsSt atrSt texSt
 
 makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> TextData 
@@ -78,13 +78,13 @@ makePList at tx =
 
 changeAtr :: Attr -> Text -> (Attr, Text)
 changeAtr attr tx = 
-  let (com,rtx) = T.break (==' ') tx
-      ncid = case com of
+  let (cm,rtx) = T.break (==' ') tx
+      ncid = case cm of
                "rb" -> 2 
                "jtg" -> 1
                "jp" -> 3
                _    -> 0
-      natr = attr{cnm=com, cid=ncid}
+      natr = attr{cnm=cm, cid=ncid}
    in (natr , rtx)
 
 exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
