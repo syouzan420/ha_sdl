@@ -6,7 +6,7 @@ import qualified Data.Text as T
 import Linear.V2 (V2(..))
 --import Linear.V4 (V4(..))
 import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
-import Mana (evalCode,taiyouMn,Yo(..))
+import Mana (evalCode,taiyouMn,Yo(..),preDef)
 import MyLib (textIns,lastTps,takeCodes)
 
 type Func = [String] -> State -> State
@@ -31,7 +31,8 @@ getMoz :: String -> String
 getMoz mz = if length mz > 2 then tail$init mz else mz
 
 funcs :: [(String,Func)]
-funcs = [("cls",cls),("color",color),("lineSize",lineSize)
+funcs = [("cls",cls),("clear",clear)
+        ,("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
         ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
         ,("drawImage",drawImage),("run",run)]
@@ -41,6 +42,9 @@ idf _ st = st
 
 cls :: [String] -> State -> State
 cls _ st = st{tex=T.empty,tps=0,ipr=False}
+
+clear :: [String] -> State -> State
+clear _ st = st{drw=[],img=[]}
 
 color :: [String] -> State -> State
 color [x] st = st{cpl=read x}
@@ -93,7 +97,7 @@ drawImage _ st = st
 
 run :: [String] -> State -> State
 run _ st = let codes = takeCodes (tex st)
-               manas = map (taiyouMn.evalCode) codes
+               manas = map (taiyouMn.evalCode preDef) codes
                ioCodes = map fst $ filter (\(_,y) -> y==Io) manas
                --results = map fst $ filter (\(_,y) -> y/=Io) manas
             in st{cod=ioCodes, msg=["codeExe"]}

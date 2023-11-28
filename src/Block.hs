@@ -1,6 +1,6 @@
 module Block where
 
-import Mana (Mn(..),Yo(..),Df(..),setDf)
+import Mana (Mn(..),Yo(..),Df(..),DefList,setDf)
 import General (getIndex, removeIndex, toGrid)
 import Data.Bifunctor (bimap)
 import Data.List (nub)
@@ -28,10 +28,10 @@ getGridSize gr = if null gr then (0,0) else (length$head gr,length gr)
 getCenter :: GSize -> GPos
 getCenter (a,b) = (a `div` 2, b `div` 2)
 
-putFirstBlock :: BGrid -> Block -> BGrid
-putFirstBlock gr b = let gsize = getGridSize gr 
-                         cpos = getCenter gsize
-                      in putBlock gr cpos b
+putFirstBlock :: DefList -> BGrid -> Block -> BGrid
+putFirstBlock dfl gr b = let gsize = getGridSize gr 
+                             cpos = getCenter gsize
+                          in putBlock dfl gr cpos b
 
 getCell :: BGrid -> GPos -> BCell
 getCell gr (p,q) = (gr!!q)!!p
@@ -59,9 +59,9 @@ canPutBlock gr pos (_,rps) = let gsize = getGridSize gr
                                  iOnGrid = isOnGrid gsize pos rps
                               in iOnGrid && isOffMana gr pos rps
 
-blockToCells :: Block -> [BCell]
-blockToCells (mn@(Mn t y),_) 
-  | y==Def = let (Df _ dp dy _) = setDf t
+blockToCells :: DefList -> Block -> [BCell]
+blockToCells dfl (mn@(Mn t y),_) 
+  | y==Def = let (Df _ dp dy _) = setDf dfl t
                  pList = words dp
                  dind = getIndex t pList
                  hyList = removeIndex dind dy
@@ -71,10 +71,10 @@ blockToCells (mn@(Mn t y),_)
 handPositions :: GPos -> [RPos] -> [GPos]
 handPositions (p,q) = map (bimap (p +) (q +)) 
 
-putBlock :: BGrid -> GPos -> Block -> BGrid
-putBlock gr gpos b@(_,rps) = let cells = blockToCells b
-                                 poss = gpos:handPositions gpos rps
-                              in foldl (\acc (pos,cell) -> toGrid acc pos cell) gr (zip poss cells)
+putBlock :: DefList -> BGrid -> GPos -> Block -> BGrid
+putBlock dfl gr gpos b@(_,rps) = let cells = blockToCells dfl b
+                                     poss = gpos:handPositions gpos rps
+                                  in foldl (\acc (pos,cell) -> toGrid acc pos cell) gr (zip poss cells)
 
 isBlock :: BGrid -> GPos -> Bool
 isBlock gr pos = getCell gr pos /= Empt

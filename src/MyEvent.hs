@@ -7,7 +7,7 @@ import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
-import Mana (evalCode,taiyouMn,Yo(..))
+import Mana (evalCode,taiyouMn,Yo(..),preDef)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: State -> IO (State,Input)
@@ -70,7 +70,7 @@ inputEvent st@(State texSt dtsSt _ _ _ comSt msgSt atrSt _ tpsSt _ emdSt cplSt _
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
 
-      codeMana = evalCode (takeCurrentLine tpsSt texSt)
+      codeMana = evalCode preDef (takeCurrentLine tpsSt texSt)
       (ta,yo) = taiyouMn codeMana
       codeResult 
         | isExeCode && yo==Io = T.empty 
