@@ -132,12 +132,17 @@ makeMana dfl (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
   | otherwise = Mn "Error" Spe 
 makeMana dfl (Node mn [] : xs) = makeMana dfl [Node mn [], Node (makeMana dfl xs) []]
 makeMana dfl (Node x y : xs) 
+  | null xs && getTa (last y) == "=" = Mn (makeHaString (Node x y)) Io 
   | isJust (defForest dfl nfm) = makeMana dfl (Node (evalDef dfl nfm) [] : xs)
   | otherwise = makeMana dfl (Node (makeMana dfl nfm) [] : xs)
    where nfm = let Node x' y' = head y
                 in if null y' || isJust (defForest dfl y') then Node x [] : y 
                                                            else Node x (Node x' []:y') : tail y 
  --  where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
+makeHaString :: Tree Mn -> String
+makeHaString (Node x y) = manasToString [Node x (init y)] ++ "\n" 
+                        ++ concatMap (flip (++) " ".show) (manasToYos [Node x (init y)]) ++ "\n"
+                        ++ drop 2 (manasToString [last y])
 
 makeManas :: [Definition] -> T.Text -> (Forest Mn,LR)
 makeManas defs = makeManas' defs ([],[]) [] . makeStrings 

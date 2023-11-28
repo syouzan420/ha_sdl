@@ -1,6 +1,8 @@
 10 10 64 64 0 ("block_" "ho") drawImage
 ```
 clear
+3 color
+2 lineSize
 5 grid
 1 1 0 "tama" block
 (2 2) (2 2) 0 "ho" block
@@ -9,8 +11,6 @@ clear
 0 2 0 "midu" block
 ```
 run
-OK.
-OK.
 
 問題;rb 點 てん
 函數の最初の引數に 括弧や函數を適用できない

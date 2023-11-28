@@ -24,7 +24,7 @@ import MyData (State(..),Attr(..),WMode(..)
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts itex textData isOnlyMouse st@(State _ dtsSt drwSt imgSt _ _ _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
+myDraw re fonts itex textData isOnlyMouse st@(State _ dtsSt drwSt imgSt _ _ _ _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
   = do
   let scrAt = scr atrSt
       wmdAt = wmd atrSt

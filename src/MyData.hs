@@ -15,6 +15,7 @@ import Foreign.C.Types (CInt)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import Data.Word (Word8,Word32)
+import Mana (Definition)
 
 type TextPos = Int
 type Pos = V2 CInt
@@ -52,6 +53,7 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- drw: drawing
 -- img: images 
 -- cod: executable code
+-- dfn: definition of Mana
 -- com: command for normal mode
 -- msg: message from executed code
 -- atr: text attribute
@@ -66,7 +68,8 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- isk: skk editing
 -- iup: ??
 -- ipr: 'OK' prompt for code execution
-data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], img :: ![Img], cod :: ![Code]
+data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], img :: ![Img]
+                  ,cod :: ![Code], dfn :: ![Definition]
                   ,com :: !String ,msg :: ![String], atr :: !Attr, fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
@@ -165,7 +168,7 @@ initTatePos = V2 (winSizeX-60) 30
 
 initState :: State
 initState = State {tex = "", dts = [], drw = [], img = []
-                  , cod = [], com = "", msg = [], atr = initAttr
+                  , cod = [], dfn = [], com = "", msg = [], atr = initAttr
                   ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 
