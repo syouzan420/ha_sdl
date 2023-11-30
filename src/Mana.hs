@@ -124,6 +124,7 @@ makeMana dfl (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
   | y0==y1 = case y0 of
       Kaz -> makeMana dfl $ Node (Mn (show (read t0 + read t1)) Kaz) []:xs
       Moz -> makeMana dfl $ Node (Mn (init t0 ++ tail t1) Moz) [] : xs
+      Io  -> makeMana dfl $ Node (Mn (t0 ++"\n"++ t1) Io) [] : xs
       _ -> makeMana dfl xs 
   | t0 == ")" = makeMana dfl $ Node (Mn t1 y1) [] : xs
   | t1 == ")" = makeMana dfl $ Node (Mn t0 y0) [] : xs
