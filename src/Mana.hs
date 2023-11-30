@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Mana (evalCode,makeManas,addSpaces,taiyouMn,makeStrings, Mn(..), Ta, Yo(..),Definition,Df(..),DefList,setDf,preDef)  where
+module Mana (evalCode,makeManas,addSpaces,taiyouMn,makeStrings, Mn(..), Ta, Yo(..),Definition,Df(..),Dtype(..),DefList,setDf,preDef,userDef)  where
 
 import qualified Data.Text as T
 import Data.Char (isDigit)
@@ -9,7 +9,7 @@ import MyTree (Elm(..),L,R(..),numR,mtR,ltR,addElem,showF)
 import General (getIndex)
   
 type Ta = String 
-data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show) 
+data Yo = Kaz | Moz | Io | Def | Spe | Var deriving (Eq, Show, Read) 
 data Mn = Mn Ta Yo deriving Eq
 type LR = ([L],[R])
 type Definition = ((String,[Yo]),String)
@@ -38,7 +38,7 @@ codeToYos = manasToYos . fst .makeManas (concatMap snd preDef)
 
 manasToString :: Forest Mn -> String
 manasToString [] = []
-manasToString (Node (Mn t _) sf:xs) = t ++" "++ manasToString sf ++ manasToString xs 
+manasToString (Node (Mn t _) sf:xs) = t ++","++ manasToString sf ++ manasToString xs 
 
 manasToYos :: Forest Mn -> [Yo]
 manasToYos [] = []
@@ -50,8 +50,8 @@ setDf dfl name = fromMaybe (Df Non "" [] "") (searchFromDef name dfl)
 howManyElem :: Eq a => a -> [a] -> Int
 howManyElem e = foldl (\acc x -> if x==e then acc+1 else acc) 0 
 
-getYo :: String -> Yo
-getYo x | isDef x = Def | isMoz x = Moz | isKaz x = Kaz | isSpe x = Spe | otherwise = Var
+getYo :: [Definition] -> String -> Yo
+getYo def x | isDef def x = Def | isMoz x = Moz | isKaz x = Kaz | isSpe x = Spe | otherwise = Var
 
 showFLR :: (Forest Mn,LR) -> IO () 
 showFLR (fr,lr) = putStrLn (showF fr ++ "\n" ++ show lr)
@@ -140,9 +140,8 @@ makeMana dfl (Node x y : xs)
                                                            else Node x (Node x' []:y') : tail y 
  --  where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
 makeHaString :: Tree Mn -> String
-makeHaString (Node x y) = manasToString [Node x (init y)] ++ "\n" 
-                        ++ concatMap (flip (++) " ".show) (manasToYos [Node x (init y)]) ++ "\n"
-                        ++ drop 2 (manasToString [last y])
+makeHaString (Node x y) = init (manasToString [Node x (init y)]) ++ " " 
+                        ++ init (drop 2 (manasToString [last y])) ++ " ha"
 
 makeManas :: [Definition] -> T.Text -> (Forest Mn,LR)
 makeManas defs = makeManas' defs ([],[]) [] . makeStrings 
@@ -155,7 +154,7 @@ calcL s (x:xs) i acc = if s==x then calcL s xs i (acc+1) else calcL s xs (i-1) (
 makeManas' :: [Definition] -> LR -> Forest Mn -> [String] -> (Forest Mn,LR)
 makeManas' _ lr mns [] = (mns,lr)
 makeManas' defs (pl,pr) mns (x:xs) = 
-  let you = getYo x 
+  let you = getYo defs x 
       mnl = length mns
       (ls,rs) = if you == Def then getLR defs x (pl,pr) else (pl,pr)
       (l,ls')
@@ -218,9 +217,9 @@ isKaz [] = False
 isKaz [x] = isDigit x
 isKaz (h:tl) = (h=='+' || h=='-' || isDigit h) && all isDigit tl
 
-isDef :: String -> Bool
-isDef [] = False
-isDef str = str `elem` map (getName . fst . fst) (concatMap snd preDef)
+isDef :: [Definition] -> String -> Bool
+isDef _ [] = False
+isDef defs str = str `elem` map (getName . fst . fst) defs 
 
 isSpe :: String -> Bool
 isSpe [] = False
@@ -246,7 +245,7 @@ usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g","h"]
 
 preDef :: DefList 
-preDef = [(Prim,primDef),(PrIo,prioDef),(User,userDef)]
+preDef = [(Prim,primDef),(PrIo,prioDef)]
 
 --nameDef :: [Definition]
 --nameDef = primDef ++ map (\x -> ((x,[Spe]),"")) speDef ++ prioDef ++ userDef
@@ -272,6 +271,7 @@ prioDef = [(("cls",[Io]),"cls")
           ,(("clear",[Io]),"clear")
           ,(("a color",[Kaz,Io]),"a color")
           ,(("run",[Io]),"run")
+          ,(("a b define",[Moz,Moz,Io]),"a b define")
           ,(("a lineSize",[Kaz,Io]),"a lineSize")
           ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")
           ,(("a b c d drawLine",[Kaz,Kaz,Kaz,Kaz,Io]),"a b c d drawLine")
@@ -284,7 +284,7 @@ speDef :: [String]
 speDef = ["(",")","="]
 
 needSpace :: [String]
-needSpace = speDef ++ ["x","*"]
+needSpace = speDef ++ ["x","*","=","::"]
 
 preFunc :: [String] -> String 
 preFunc [] = "" 

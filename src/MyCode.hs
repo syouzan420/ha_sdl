@@ -3,10 +3,11 @@ module MyCode(exeCode) where
 
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import Data.List.Split (splitOn)
 import Linear.V2 (V2(..))
 --import Linear.V4 (V4(..))
 import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
-import Mana (evalCode,taiyouMn,Yo(..),preDef)
+import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
 import MyLib (textIns,lastTps,takeCodes)
 
 type Func = [String] -> State -> State
@@ -35,7 +36,7 @@ funcs = [("cls",cls),("clear",clear)
         ,("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
         ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
-        ,("drawImage",drawImage),("run",run)]
+        ,("drawImage",drawImage),("run",run),("ha",ha)]
 
 idf :: [String] -> State -> State
 idf _ st = st
@@ -97,8 +98,27 @@ drawImage _ st = st
 
 run :: [String] -> State -> State
 run _ st = let codes = takeCodes (tex st)
-               manas = map (taiyouMn.evalCode preDef) codes
+               dfnSt = dfn st
+               manas = map (taiyouMn.evalCode (preDef++[(User,userDef++dfnSt)])) codes
                ioCodes = map fst $ filter (\(_,y) -> y==Io) manas
                --results = map fst $ filter (\(_,y) -> y/=Io) manas
             in st{cod=ioCodes, msg=["codeExe"]}
+
+strYo :: [(String,Yo)]
+strYo = [("k",Kaz),("m",Moz),("i",Io)]
+
+readYo :: String -> Yo
+readYo str = fromMaybe (read str) (lookup str strYo)
+
+ha :: [String] -> State -> State
+ha [a,b] st =
+  let (lfts,rits) = (splitOn "," a, splitOn "," b)
+      (tgts,pyos) = break (=="::") lfts
+      yos = if null pyos then gessYos tgts (T.pack (unwords rits)) else map readYo (tail pyos)
+      ndfn = ((unwords tgts,yos),unwords rits)
+   in st{dfn=dfn st++[ndfn]} 
+ha _ st = st
+
+gessYos :: [String] -> T.Text -> [Yo]
+gessYos lfs rt = undefined
 

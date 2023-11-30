@@ -57,6 +57,7 @@ library
     , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
+    , split
     , text
   default-language: Haskell2010
 
@@ -78,6 +79,7 @@ executable ha-exe
     , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
+    , split
     , text
   default-language: Haskell2010
 
@@ -100,5 +102,6 @@ test-suite ha-test
     , sdl2-gfx
     , sdl2-image
     , sdl2-ttf
+    , split
     , text
   default-language: Haskell2010

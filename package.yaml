@@ -30,6 +30,7 @@ dependencies:
 - linear
 - directory
 - containers
+- split
 
 ghc-options:
 - -Wall
