@@ -120,7 +120,11 @@ makeMana dfl [Node x []]
   | otherwise = x 
 makeMana dfl (Node (Mn "(" _) y0 : Node (Mn ")" _) y1 : xs)
                             = makeMana dfl (Node (makeMana dfl y0) y1 : xs)
-makeMana dfl (Node (Mn t0 y0) [] : Node (Mn t1 y1) [] : xs)
+makeMana dfl (Node mn0@(Mn t0 y0) [] : Node mn1@(Mn t1 y1) [] : xs)
+  | isJust (defForest dfl [Node mn0 []]) =
+    makeMana dfl (Node (evalDef dfl [Node mn0 []]) [] : Node mn1 [] : xs)
+  | isJust (defForest dfl [Node mn1 []]) =
+    makeMana dfl (Node mn0 [] : Node (evalDef dfl [Node mn1 []]) [] : xs)
   | y0==y1 = case y0 of
       Kaz -> makeMana dfl $ Node (Mn (show (read t0 + read t1)) Kaz) []:xs
       Moz -> makeMana dfl $ Node (Mn (init t0 ++ tail t1) Moz) [] : xs
@@ -206,7 +210,10 @@ getLR defs df (pl,pr) = let names = map (getName . fst . fst) defs
                             defws = words$fst$fst$defs!!ind
                             wsLng = length defws
                             nmInd = getIndex df defws
-                         in (nmInd:pl, Ri (wsLng - nmInd - 1):pr) 
+                            npl = if nmInd==0 then pl else nmInd:pl
+                            nhpr = wsLng - nmInd - 1
+                            npr = if nhpr==0 then pr else Ri nhpr:pr
+                         in (npl, npr) 
 
 isMoz :: String -> Bool
 isMoz [] = False
@@ -257,7 +264,8 @@ primDef = [(("a x b",[Kaz, Kaz, Kaz]),"a b pro"),(("a * b",[Kaz, Kaz, Kaz]),"a b
 userDef :: [Definition]
 userDef = [(("a bon b",[Kaz, Kaz, Kaz]),"a bxa")
           ,(("a grid",[Kaz, Io]),"a a 100 100 64xa 64xa drawGrid")
-          ,(("a b c d block",[Kaz,Kaz,Kaz,Moz,Io]),"(100 ax64) (100 bx64) 64 64 cx90 (\"block_\" d) drawImage")]
+          ,(("a b c d block",[Kaz,Kaz,Kaz,Moz,Io]),"(100 ax64) (100 bx64) 64 64 cx90 (\"block_\" d) drawImage")
+          ,(("a b c nanika",[Kaz,Kaz,Kaz,Io]),"a color b lineSize 100 100 (100 c) (100 c) drawLine")]
 
 
 --color a: color number

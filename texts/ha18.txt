@@ -1,8 +1,8 @@
 10 10 64 64 0 ("block_" "ho") drawImage
 OK.
-```
+```a oneBlock :: k i
 clear
-3 color
+a color
 2 lineSize
 5 grid
 1 1 0 "tama" block
@@ -12,8 +12,29 @@ clear
 0 2 0 "midu" block
 ```
 run
+5 oneBlock
 OK.
+OK.
+OK.
+a otherClear ::k i = clear 2 color
+OK.
+3 otherClear
+Error
+Error
 
+OK.
+OK.
+OK.
+5 oneBlock
+OK.
+Error
+OK.
+Error
+OK.
+OK.
+clear
+OK.
+Error
 問題;rb 點 てん
 函數の最初の引數に 括弧や函數を適用できない
 文字列を評価する際 函數名と一致する文字列が抽出されてしまふ

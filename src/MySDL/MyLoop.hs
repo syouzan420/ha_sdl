@@ -29,7 +29,8 @@ myLoop state re fonts itexs = do
       cst = if inp==EXE then foldl exeCode bst (cod bst) else bst  
       msgSt = msg cst
   let cst' = if not (null msgSt) && last msgSt=="codeExe" then foldl exeCode cst (cod cst) else cst
-      isUpdateText = tex st /= tex cst' || icr st /= icr cst' || isUpdateTps 
+  when (not (null msgSt) && last msgSt=="codeExe") $ print (dfn cst') 
+  let isUpdateText = tex st /= tex cst' || icr st /= icr cst' || isUpdateTps 
                                         || inp==PKY || iup cst' 
       isUpdateDraw = inp==PMO || inp==EXE || isUpdateText
       isOnlyMouse = inp==PMO && not isUpdateText

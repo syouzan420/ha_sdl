@@ -22,16 +22,20 @@ codeSeparator :: T.Text
 codeSeparator = "```"
 
 takeCodes :: T.Text -> [T.Text]
-takeCodes tx = takeCodes' False (T.lines tx)
+takeCodes tx = takeCodes' False False (T.lines tx)
 
-takeCodes' :: Bool -> [T.Text] -> [T.Text]
-takeCodes' _ [] = []
-takeCodes' True (x:xs) 
-  | x == codeSeparator = takeCodes' False xs
-  | otherwise = x : takeCodes' True xs
-takeCodes' False (x:xs)
-  | x == codeSeparator = takeCodes' True xs
-  | otherwise = takeCodes' False xs
+takeCodes' :: Bool -> Bool -> [T.Text] -> [T.Text]
+takeCodes' _ _ [] = []
+takeCodes' True True (x:xs)
+  | x == codeSeparator = [T.empty]
+  | otherwise = [x <> " " <> head (takeCodes' True True xs)]
+takeCodes' True False (x:xs) 
+  | x == codeSeparator = takeCodes' False False xs
+  | otherwise = x : takeCodes' True False xs
+takeCodes' False False (x:xs)
+  | x == codeSeparator = takeCodes' True False xs
+  | T.isPrefixOf codeSeparator x = [(T.drop (T.length codeSeparator) x <> " = ") <> head (takeCodes' True True xs)]
+  | otherwise = takeCodes' False False xs
 
 textIns :: T.Text -> Int -> T.Text -> T.Text
 textIns tx tpsSt texSt = T.take tpsSt texSt <> tx <> T.drop tpsSt texSt 
@@ -53,12 +57,13 @@ deleteCurrentLine :: Int -> T.Text -> T.Text
 deleteCurrentLine tpsSt texSt =
   let lTps = lastTps tpsSt texSt
       takeText = T.take lTps texSt
+      dropText = T.drop lTps texSt
       textForward 
           | takeText==T.empty = T.empty
           | T.last takeText =='\n' = T.init takeText 
           | otherwise = let iLine = init$T.lines takeText
                          in if null iLine then T.empty else T.unlines iLine
-   in textForward <> if texSt == T.empty then T.empty else T.tail$T.drop lTps texSt
+   in textForward <> if texSt == T.empty || dropText == T.empty then T.empty else T.tail dropText
 
 tpsForRelativeLine :: Attr -> Text -> Int -> Index -> Index 
 tpsForRelativeLine atrSt texSt rdv ind =

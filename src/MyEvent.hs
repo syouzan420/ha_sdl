@@ -124,7 +124,7 @@ inputEvent st@(State texSt dtsSt _ _ _ dfnSt comSt _ atrSt _ tpsSt _ emdSt cplSt
         | isMousePressed = dtsSt++[(toDotPos mps scrAt,cplSt)]  
         | otherwise = dtsSt
       ncod
-        | isExeCode && yo==Io = [ta] 
+        | isExeCode && yo==Io = if '\n' `elem` ta then lines ta else [ta] 
         | otherwise = [] 
       ncom
         | isExit || texSt /= ntex = "" 
@@ -148,5 +148,6 @@ inputEvent st@(State texSt dtsSt _ _ _ dfnSt comSt _ atrSt _ tpsSt _ emdSt cplSt
         | isMousePressed = PMO
         | otherwise = NON
       nst = st{tex=ntex,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
+  --if isExeCode then print ncod else return ()
   return (nst,ninp)
 
