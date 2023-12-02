@@ -3,26 +3,31 @@ OK.
 ```a oneBlock :: k i
 clear
 4 color
-5 lineSize
-5 grid
+1 lineSize
+3 grid
 1 1 0 "tama" block
-(a 2) (2 1) 0 "ho" block
+(1 2) 2 0 "ho" block
 1 2 3 "arg" block
 2 1 0 "arg" block
 0 2 0 "midu" block
 ```
 run
 OK.
-
-OK.
-OK.
 2 oneBlock
+OK.
+Error
+OK.
+OK.
+OK.
+OK.
 OK.
 OK.
 a otherClear ::k i = clear 2 color
 OK.
 3 otherClear
-
+a あか :: k i = 2 2 a "ho" block 
+OK.
+3 あか
 OK.
 問題;rb 點 てん
 函數の最初の引數に 括弧や函數を適用できない

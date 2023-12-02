@@ -9,6 +9,7 @@ import Linear.V2 (V2(..))
 import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
 import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
 import MyLib (textIns,lastTps,takeCodes)
+import General (getIndex,delIndex)
 
 type Func = [String] -> State -> State
 
@@ -115,8 +116,12 @@ ha [a,b] st =
   let (lfts,rits) = (splitOn "," a, splitOn "," b)
       (tgts,pyos) = break (=="::") lfts
       yos = if null pyos then gessYos tgts (T.pack (unwords rits)) else map readYo (tail pyos)
-      ndfn = ((unwords tgts,yos),unwords rits)
-   in st{dfn=dfn st++[ndfn]} 
+      tgtStr = unwords tgts
+      dfnSt = dfn st
+      tgtList = if null dfnSt then [] else map (fst.fst) dfnSt
+      dfnSt' = if not (null dfnSt) && tgtStr `elem` tgtList then delIndex (getIndex tgtStr tgtList) dfnSt else dfnSt
+      ndfn = ((tgtStr,yos),unwords rits)
+   in st{dfn=dfnSt'++[ndfn]} 
 ha _ st = st
 
 gessYos :: [String] -> T.Text -> [Yo]

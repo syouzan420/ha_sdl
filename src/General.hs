@@ -13,3 +13,5 @@ toList ls i el = take i ls ++ [el] ++ drop (i+1) ls
 toGrid :: [[a]] -> (Int,Int) -> a -> [[a]]
 toGrid gr (i,j) el = toList gr j (toList (gr!!j) i el)
 
+delIndex :: Int -> [a] -> [a]
+delIndex i lst = take i lst ++ drop (i+1) lst
