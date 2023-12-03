@@ -141,8 +141,8 @@ makeMana dfl (Node x y : xs)
   | isJust (defForest dfl nfm) = makeMana dfl (Node (evalDef dfl nfm) [] : xs)
   | otherwise = makeMana dfl (Node (makeMana dfl nfm) [] : xs)
    where nfm = let Node x' y' = head y
-                in if null y' || isJust (defForest dfl y') then Node x [] : y 
-                                                           else Node x (Node x' []:y') : tail y 
+                in if null y' || isJust (defForest dfl y') || fst (taiyouMn x')=="("
+                      then Node x [] : y else Node x (Node x' []:y') : tail y 
  --  where nfm = if fst (taiyouMn x)=="(" then y else Node x [] : y
 makeHaString :: Tree Mn -> String
 makeHaString (Node x y) = init (manasToString [Node x (init y)]) ++ " " 
