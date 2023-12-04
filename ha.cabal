@@ -53,6 +53,7 @@ library
     , containers
     , directory
     , linear
+    , mtl
     , sdl2
     , sdl2-gfx
     , sdl2-image
@@ -75,6 +76,7 @@ executable ha-exe
     , directory
     , ha
     , linear
+    , mtl
     , sdl2
     , sdl2-gfx
     , sdl2-image
@@ -98,6 +100,7 @@ test-suite ha-test
     , directory
     , ha
     , linear
+    , mtl
     , sdl2
     , sdl2-gfx
     , sdl2-image

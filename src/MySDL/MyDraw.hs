@@ -24,10 +24,10 @@ import MyData (State(..),Attr(..),WMode(..)
 type IsCursor = Bool
 
 myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
-myDraw re fonts itex textData isOnlyMouse st@(State _ dtsSt drwSt imgSt _ _ _ _ atrSt _ tpsSt _ _ _ _ ifmSt icrSt _ _ _)
-  = do
-  let scrAt = scr atrSt
-      wmdAt = wmd atrSt
+myDraw re fonts itex textData isOnlyMouse st = do
+  let (dtsSt,drwSt,imgSt,atrSt,tpsSt,ifmSt,icrSt) =
+        (dts st,drw st,img st,atr st,tps st,ifm st,icr st)
+      (scrAt,wmdAt) = (scr atrSt,wmd atrSt)
       iniPos = if wmdAt==T then initTatePos else initYokoPos
   initDraw re
   statusDraw re (fonts!!1) st 
@@ -65,7 +65,7 @@ drawShape re col siz (C (Cr False ps rd)) =
 drawShape re col _ (C (Cr True ps rd)) = fillCircle re ps rd col
 drawShape re col siz (D (Dt ps)) =
   if siz==1 then drawPoint re (P ps) else fillCircle re ps (siz-1) col
-drawShape _ _ _ _ = return ()
+--drawShape _ _ _ _ = return ()
 
 dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
 dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do

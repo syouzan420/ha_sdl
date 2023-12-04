@@ -6,7 +6,7 @@ clear
 1 lineSize
 3 grid
 1 1 0 "tama" block
-(1 2) 2 0 "ho" block
+2 (1 a) 0 "ho" block
 1 2 3 "arg" block
 2 1 0 "arg" block
 0 2 0 "midu" block
@@ -15,13 +15,17 @@ run
 OK.
 2 oneBlock
 OK.
-Error
 OK.
 OK.
+abc :: k = 3
 OK.
+a :: k = 4
 OK.
-OK.
-OK.
+a
+a
+abc
+1 abc
+4
 a otherClear ::k i = clear 2 color
 OK.
 3 otherClear

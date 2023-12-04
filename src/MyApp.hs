@@ -1,6 +1,6 @@
 module MyApp(appMain) where
 
-import Data.IORef(newIORef)
+import qualified Control.Monad.State.Strict as S
 import MySDL.MyLoad (myLoad)
 import MySDL.MyLoop (myLoop)
 import MySDL.MyInit (withMyInit)
@@ -16,6 +16,5 @@ appMain =
     withMyVideo sur $
       \(renderer,itexs) -> do
         let newState = initState{tex=text,dts=dots,fps=fpos,tps=tpos,atr=initAttr{jps=jumps}} 
-        state <- newIORef newState
         myDraw renderer fonts itexs (makeTextData newState) False newState 
-        myLoop state renderer fonts itexs
+        S.runStateT (myLoop renderer fonts itexs) newState

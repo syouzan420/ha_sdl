@@ -4,15 +4,20 @@ module MyEvent (inputEvent) where
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
+import Control.Monad.IO.Class (liftIO)
+import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
 import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
 import SDL.Input.Keyboard.Codes
 
-inputEvent :: State -> IO (State,Input)
-inputEvent st@(State texSt dtsSt _ _ _ dfnSt comSt _ atrSt _ tpsSt _ emdSt cplSt _ ifmSt _ iskSt _ _) = do
-  (kc,md,it,mps,isc) <- myInput    -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
+inputEvent :: S.StateT State IO Input
+inputEvent = do
+  st <- S.get
+  let (texSt,dtsSt,dfnSt,comSt,atrSt,tpsSt,emdSt,cplSt,ifmSt,iskSt) =
+        (tex st,dts st,dfn st,com st,atr st,tps st,emd st,cpl st,ifm st,isk st)
+  (kc,md,it,mps,isc) <- liftIO myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
@@ -148,6 +153,6 @@ inputEvent st@(State texSt dtsSt _ _ _ dfnSt comSt _ atrSt _ tpsSt _ emdSt cplSt
         | isMousePressed = PMO
         | otherwise = NON
       nst = st{tex=ntex,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
-  --if isExeCode then print ncod else return ()
-  return (nst,ninp)
+  S.put nst
+  return ninp
 

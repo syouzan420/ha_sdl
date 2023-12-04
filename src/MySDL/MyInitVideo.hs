@@ -18,7 +18,5 @@ withMyVideo imageS op = do
       mapM_ freeSurface imageS
       initDraw renderer
       present renderer
---      startTextInput (Rect 0 0 200 50)
       void $ op (renderer,itexs)
---      stopTextInput
       destroyWindow window
