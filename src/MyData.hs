@@ -169,7 +169,7 @@ initTatePos = V2 (winSizeX-60) 30
 initState :: State
 initState = State {tex = "", dts = [], drw = [], img = []
                   , cod = [], dfn = [], com = "", msg = [], atr = initAttr
-                  ,fps=0, tps=0, crc=0, emd=Nor, cpl=1, lsz=1
+                  ,fps=0, tps=0, crc=cursorTime, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
 
 initAttr :: Attr

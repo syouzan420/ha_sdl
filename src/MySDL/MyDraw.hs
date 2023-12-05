@@ -23,7 +23,7 @@ import MyData (State(..),Attr(..),WMode(..)
 
 type IsCursor = Bool
 
-myDraw :: Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> IO () 
+myDraw :: (MonadIO m) => Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> m () 
 myDraw re fonts itex textData isOnlyMouse st = do
   let (dtsSt,drwSt,imgSt,atrSt,tpsSt,ifmSt,icrSt) =
         (dts st,drw st,img st,atr st,tps st,ifm st,icr st)
@@ -38,7 +38,7 @@ myDraw re fonts itex textData isOnlyMouse st = do
   imageDraw re itex imgSt
   present re
 
-imageDraw :: Renderer -> [Texture] -> [Img] -> IO ()
+imageDraw :: (MonadIO m) => Renderer -> [Texture] -> [Img] -> m ()
 imageDraw re itex = mapM_ (\(Img pos siz rot name) -> 
   when (name `elem` imageNames) $ do
             let ind = getIndex name imageNames
@@ -46,7 +46,7 @@ imageDraw re itex = mapM_ (\(Img pos siz rot name) ->
                                   (Just (Rectangle (P pos) siz))
                                   (fromIntegral rot) Nothing (V2 False False) ) 
 
-myDrawing :: Renderer -> [Drw] -> IO ()
+myDrawing :: (MonadIO m) => Renderer -> [Drw] -> m ()
 myDrawing _ [] = return () 
 myDrawing re ((Drw cn siz shp):drs) = do
   let col = colorPallet!!cn
@@ -54,7 +54,7 @@ myDrawing re ((Drw cn siz shp):drs) = do
   drawShape re col siz shp
   myDrawing re drs
 
-drawShape :: Renderer -> Color -> CInt -> Shp -> IO ()
+drawShape :: (MonadIO m) => Renderer -> Color -> CInt -> Shp -> m ()
 drawShape re col siz (L (Li ps0 ps1)) = thickLine re ps0 ps1 siz col 
 drawShape re col siz (R (Rc False (V2 x y) (V2 w h))) = 
   if w>siz && h>siz then mapM_ (\dp -> rectangle re (V2 (x+dp) (y+dp)) (V2 (x+w-dp) (y+h-dp)) col) [0..(siz-1)] 
@@ -67,21 +67,21 @@ drawShape re col siz (D (Dt ps)) =
   if siz==1 then drawPoint re (P ps) else fillCircle re ps (siz-1) col
 --drawShape _ _ _ _ = return ()
 
-dotsDraw :: Renderer -> Pos -> [Dot] -> IO () 
+dotsDraw :: (MonadIO m) => Renderer -> Pos -> [Dot] -> m () 
 dotsDraw re (V2 sx sy) = mapM_ (\(V2 x y,cn) -> do
   let ds = dotSize
   rendererDrawColor re $= colorPallet!!cn 
   fillRect re (Just (Rectangle (P (V2 (x*ds+sx) (y*ds+sy))) (V2 ds ds)))
                     ) 
 
-cursorDraw :: Renderer -> Pos -> WMode -> CInt -> IO () 
+cursorDraw :: (MonadIO m) => Renderer -> Pos -> WMode -> CInt -> m () 
 cursorDraw re (V2 x y) wm sz = do
   let rect = if wm==T then Rectangle (P (V2 x y)) (V2 sz 2) 
                       else Rectangle (P (V2 (x-1) y)) (V2 2 sz)
   rendererDrawColor re $= cursorColor 
   fillRect re (Just rect) 
 
-statusDraw :: Renderer -> Font -> State -> IO ()
+statusDraw :: (MonadIO m) => Renderer -> Font -> State -> m ()
 statusDraw re font st = do
   let fileNum = pack$show$fps st
       textPos = pack$show$tps st
@@ -102,7 +102,7 @@ statusDraw re font st = do
   freeSurface fontS
   
 
-textsDraw :: Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> IO () 
+textsDraw :: (MonadIO m) => Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> m () 
 textsDraw _ _ _ _ _ [] = return () 
 textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
   let (scrAt,wmdAt,fszAt,fcoAt,iosAt) = (scr nat,wmd nat,fsz nat,fco nat,ios nat)
