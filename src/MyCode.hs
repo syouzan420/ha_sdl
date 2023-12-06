@@ -41,7 +41,7 @@ funcs = [("cls",cls),("clear",clear)
         ,("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
         ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
-        ,("drawImage",drawImage),("run",run),("ha",ha)]
+        ,("drawImage",drawImage),("load",load),("run",run),("ha",ha)]
 
 idf :: [String] -> StateIO
 idf _  = return () 
@@ -99,6 +99,10 @@ drawImage [a,b,c,d,e,f] = do
       nimg = Img (V2 (read a) (read b)) (V2 (read c) (read d)) (read e) (getMoz f) 
   S.put st{img=imgSt++[nimg]}
 drawImage _  = return () 
+
+load :: [String] -> StateIO
+load [a] = S.get >>= (\st -> return st{msg=[a,"loadFile"],ipr=False}) >>= S.put  
+load _ = return ()
 
 run :: [String] -> StateIO
 run _ = do

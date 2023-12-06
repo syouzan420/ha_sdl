@@ -15,3 +15,8 @@ toGrid gr (i,j) el = toList gr j (toList (gr!!j) i el)
 
 delIndex :: Int -> [a] -> [a]
 delIndex i lst = take i lst ++ drop (i+1) lst
+
+isLastElem :: (Eq a) => [a] -> a -> Bool
+isLastElem [] _ = False
+isLastElem lst elm = last lst == elm
+

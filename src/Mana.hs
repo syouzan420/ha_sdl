@@ -100,7 +100,7 @@ evalDef dfl fm =
       (taList,yoList) = unzip$filter (\(t,_) -> t /= ")")$map taiyouMn mnList
       isNumMatch = length yoList == length dy
       yos = zip yoList dy
-      isYoMatch = isNumMatch && foldl (\acc (yo,yc) -> acc && (yo==Def || yo==yc)) True yos
+      isYoMatch = isNumMatch && foldl (\acc (y,yc) -> acc && (y==Def || y==yc)) True yos
       knv = zip dpList taList
       evs
         | isYoMatch = map (\x -> fromMaybe x (lookup x knv)) dcList
@@ -280,6 +280,7 @@ prioDef = [(("cls",[Io]),"cls")
           ,(("clear",[Io]),"clear")
           ,(("a color",[Kaz,Io]),"a color")
           ,(("run",[Io]),"run")
+          ,(("a load",[Kaz,Io]),"a load")
           ,(("a b define",[Moz,Moz,Io]),"a b define")
           ,(("a lineSize",[Kaz,Io]),"a lineSize")
           ,(("a b c d e drawRect",[Moz,Kaz,Kaz,Kaz,Kaz,Io]),"a b c d e drawRect")

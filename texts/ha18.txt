@@ -14,11 +14,6 @@ clear
 run
 OK.
 2 oneBlock
-OK.
-OK.
-OK.
-OK.
-OK.
 abc :: k = 3
 OK.
 a :: k = 4

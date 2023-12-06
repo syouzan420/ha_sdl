@@ -18,7 +18,9 @@ import MyLib (textToDots,dotsToText,jumpsToText)
 import MyEvent (inputEvent)
 import MyFile (fileRead,fileWrite)
 import MyCode (exeCode)
+import General (isLastElem)
 
+data FC = NewFile | LoadNextFile | LoadFile | JumpFile | JumpBackFile | DoNothing deriving Eq
 type ChangeFile = (T.Text,Int,Int,[Dot],Bool,[JBak])
 
 myLoop :: Renderer -> [Font] -> [Texture] -> S.StateT State IO ()
@@ -34,7 +36,7 @@ myLoop re fonts itexs = do
   when (inp==EXE) $ mapM_ exeCode (cod bst)  
   cst <- S.get
   let  msgSt = msg cst
-  when (not (null msgSt) && last msgSt=="codeExe") $ mapM_ exeCode (cod cst) 
+  when (isLastElem msgSt "codeExe") $ mapM_ exeCode (cod cst) 
   cst' <- S.get
 --  when (not (null msgSt) && last msgSt=="codeExe") $ print (dfn cst') 
   let isUpdateText = tex st /= tex cst' || icr st /= icr cst' || isUpdateTps 
@@ -46,12 +48,22 @@ myLoop re fonts itexs = do
       natr = if null textData then atr cst' else getAtr textData
       nscr = if inp==NFL || inp==LFL || inp==JMP then V2 0 0 else scr natr
       (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps cst')
+      isLoadTgt = isLastElem msgSt "loadFile"
+      tFjp = if isLoadTgt then read (last (init msgSt)) else 0
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw cst')
-  (ntex,nfps,ntps,ndts,niup,njbk) <- case inp of
-        NFL -> newFile fpsSt jbkAt cst' 
-        LFL -> loadFile fpsSt jbkAt cst' 
-        JMP -> jumpFile nfjp jbkAt nsjn fpsSt cst' 
-        JBK -> jumpBackFile jbkAt fpsSt cst'
+  let fc
+       | inp==NFL = NewFile
+       | inp==LFL = LoadNextFile
+       | isLoadTgt = LoadFile
+       | inp==JMP = JumpFile
+       | inp==JBK = JumpBackFile
+       | otherwise = DoNothing
+  (ntex,nfps,ntps,ndts,niup,njbk) <- case fc of
+        NewFile -> newFile fpsSt jbkAt cst' 
+        LoadNextFile -> loadNextFile fpsSt jbkAt cst' 
+        LoadFile -> loadFile fpsSt tFjp jbkAt cst'
+        JumpFile -> jumpFile nfjp jbkAt nsjn fpsSt cst' 
+        JumpBackFile -> jumpBackFile jbkAt fpsSt cst'
         _ -> return (tex cst',fpsSt,tps cst',dts cst',False,jbkAt)
   let nst = afterDraw cst'{tex=ntex,dts=ndts,msg=[],atr=(atr cst'){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},fps=nfps,tps=ntps,iup=niup}
   delay delayTime
@@ -69,10 +81,17 @@ newFile fpsSt jbkAt st = do
     nextFileNum <- nextNewFileNum (fpsSt + 1)
     return (T.empty,nextFileNum,0,[],True,jbkAt)
 
-loadFile :: (MonadIO m) => Int -> [JBak] -> State -> m ChangeFile
-loadFile fpsSt jbkAt st = do
+loadNextFile :: (MonadIO m) => Int -> [JBak] -> State -> m ChangeFile
+loadNextFile fpsSt jbkAt st = do
     fileWriteR fpsSt st
     loadFileNum <- loadExistFileNum (fpsSt + 1)
+    (loadText, dots) <- fileReadR loadFileNum
+    return (loadText,loadFileNum,0,dots,True,jbkAt)
+
+loadFile :: (MonadIO m) => Int -> Int -> [JBak] -> State -> m ChangeFile
+loadFile fpsSt tFps jbkAt st = do
+    fileWriteR fpsSt st
+    loadFileNum <- loadExistFileNum tFps 
     (loadText, dots) <- fileReadR loadFileNum
     return (loadText,loadFileNum,0,dots,True,jbkAt)
 
