@@ -79,7 +79,7 @@ searchFromDef' :: String -> [Definition] -> Maybe Definition
 searchFromDef' _ [] = Nothing 
 searchFromDef' nm (df:xs) =
   if name==nm then Just df else searchFromDef' nm xs
-    where name = getName (fst (fst df))
+    where name = getName ((fst.fst) df)
 
 defForest :: DefList -> Forest Mn -> Maybe Df 
 defForest dfl fm = let mnList = map getManaFromTree fm
@@ -247,7 +247,8 @@ forMath = T.replace "+" " " . T.replace "-" " -"
 getName :: String -> String
 getName def = let ws = words def
                   searchNameList = filter (`notElem` usedForArgs) ws
-               in if null searchNameList then "" else head searchNameList
+               in if null searchNameList then if null ws then "" else head ws 
+                                         else head searchNameList
 
 usedForArgs :: [String]
 usedForArgs = ["a","b","c","d","e","f","g","h"]
