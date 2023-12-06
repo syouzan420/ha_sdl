@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp
+module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
               ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
               ,title,windowSize,initState,initAttr,dotSize,imageNames

@@ -13,8 +13,8 @@ clear
 ```
 run
 OK.
-OK.
 2 oneBlock
+OK.
 OK.
 OK.
 OK.
@@ -23,11 +23,6 @@ abc :: k = 3
 OK.
 a :: k = 4
 OK.
-a
-a
-abc
-1 abc
-4
 a otherClear ::k i = clear 2 color
 OK.
 3 otherClear
