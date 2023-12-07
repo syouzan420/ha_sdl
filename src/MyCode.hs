@@ -136,5 +136,5 @@ ha [a,b] = do
 ha _ = return () 
 
 gessYos :: [String] -> T.Text -> [Yo]
-gessYos lfs rt = undefined
+gessYos lfs rt = [] 
 
