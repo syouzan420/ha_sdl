@@ -8,10 +8,4 @@ OK.
 5 grid
 OK.
 18 load
-aaaaあいうえ
-aaaJaあいえ
-横aieaaあいえ
-aあいえお
-あい
-いああいあいうえお
-aaaaあ愛愛iあ愛
+

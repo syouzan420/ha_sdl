@@ -56,7 +56,8 @@ myInput = do
                      _ -> False 
                      
       (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
-      (itx,ised) = fromMaybe (T.empty,False) $ find (/=(T.empty,False)) (map getItx events) 
+      (itx,ised) = fromMaybe (T.empty,False) $ find (/=(T.empty,False)) $ 
+                                  filter (/=(T.empty,True)) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
       ismc = fromMaybe False $ Just (head (map mmtn events))
       mdres
