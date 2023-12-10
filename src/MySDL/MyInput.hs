@@ -13,7 +13,8 @@ import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),KeyModifier(..)
                           ,getModState)
 import SDL.Input.Keyboard.Codes
 import SDL.Vect(Point(P),V2(..))
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO,liftIO)
+import Control.Monad (when)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TI
 import Data.Maybe(fromMaybe)
@@ -63,16 +64,16 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
--- itx==T.empty then return () else liftIO $ TI.putStrLn ("itx:"<>itx) 
+  when (not (null events)) $ liftIO $ print events 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
 --  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
 --  when skkedit $ putStrLn "SkkEditStart"
---  let kc' 
---       |kc==KeycodeUnknown && itx/=T.empty = case itx of
---                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
---                  "い" -> KeycodeI
---                  _ -> KeycodeUnknown
---       |otherwise = kc
-  return (kc,mdres,itx,mps,ismc,ised) 
+  let kc' 
+       |kc==KeycodeUnknown && itx/=T.empty = case itx of
+                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
+                  "い" -> KeycodeI
+                  _ -> KeycodeUnknown
+       |otherwise = kc
+  return (kc',mdres,itx,mps,ismc,ised) 
  
