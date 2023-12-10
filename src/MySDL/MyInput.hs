@@ -13,15 +13,15 @@ import SDL.Input.Keyboard (Keysym(keysymKeycode,keysymModifier),KeyModifier(..)
                           ,getModState)
 import SDL.Input.Keyboard.Codes
 import SDL.Vect(Point(P),V2(..))
---import Control.Monad (when)
+import Control.Monad.IO.Class (MonadIO)
 import qualified Data.Text as T
---import qualified Data.Text.IO as TI
+import qualified Data.Text.IO as TI
 import Data.Maybe(fromMaybe)
 import Data.List(find)
 import Foreign.C.Types(CInt)
 import MyData(Modif(..))
   
-myInput :: IO (Keycode,Modif,T.Text,V2 CInt,Bool)
+myInput :: (MonadIO m) => m (Keycode,Modif,T.Text,V2 CInt,Bool,Bool)
 myInput = do
   events <- pollEvents
   mds <- getModState
@@ -33,8 +33,10 @@ myInput = do
                              else (KeycodeUnknown,mds)
                        _ -> (KeycodeUnknown,mds)
       getItx event = case eventPayload event of
-                       TextInputEvent textInputEvent -> textInputEventText textInputEvent
-                       _ -> T.empty 
+          TextEditingEvent textEditingEvent 
+                      -> (textEditingEventText textEditingEvent,True)
+          TextInputEvent textInputEvent -> (textInputEventText textInputEvent,False)
+          _ -> (T.empty,False)
       mbtn event = case eventPayload event of
                      MouseButtonEvent mouseButtonEvent ->
                        if mouseButtonEventMotion mouseButtonEvent == Pressed
@@ -53,7 +55,7 @@ myInput = do
                      _ -> False 
                      
       (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
-      itx = fromMaybe T.empty $ find (/=T.empty) (map getItx events) 
+      (itx,ised) = fromMaybe (T.empty,False) $ find (/=(T.empty,False)) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
       ismc = fromMaybe False $ Just (head (map mmtn events))
       mdres
@@ -61,7 +63,7 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
---  if itx==T.empty then return () else TI.putStrLn ("itx:"<>itx) 
+-- itx==T.empty then return () else liftIO $ TI.putStrLn ("itx:"<>itx) 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
 --  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
@@ -72,5 +74,5 @@ myInput = do
 --                  "い" -> KeycodeI
 --                  _ -> KeycodeUnknown
 --       |otherwise = kc
-  return (kc,mdres,itx,mps,ismc) 
+  return (kc,mdres,itx,mps,ismc,ised) 
  

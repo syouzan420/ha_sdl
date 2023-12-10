@@ -4,7 +4,6 @@ module MyEvent (inputEvent) where
 import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
-import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
@@ -15,9 +14,9 @@ import SDL.Input.Keyboard.Codes
 inputEvent :: S.StateT State IO Input
 inputEvent = do
   st <- S.get
-  let (texSt,dtsSt,dfnSt,comSt,atrSt,tpsSt,emdSt,cplSt,ifmSt,iskSt) =
-        (tex st,dts st,dfn st,com st,atr st,tps st,emd st,cpl st,ifm st,isk st)
-  (kc,md,it,mps,isc) <- liftIO myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
+  let (texSt,etxSt,dtsSt,dfnSt,comSt,atrSt,tpsSt,emdSt,cplSt,ifmSt,iskSt) =
+        (tex st,etx st,dts st,dfn st,com st,atr st,tps st,emd st,cpl st,ifm st,isk st)
+  (kc,md,it,mps,isc,ised) <- myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
@@ -69,7 +68,7 @@ inputEvent = do
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
-      nit = if isIns && isRet then "\n" else it
+      nit = if isIns && isRet && it==T.empty then "\n" else it
       centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
       centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
@@ -82,6 +81,10 @@ inputEvent = do
         | isExeCode = "\n"<>(T.pack.show) codeMana 
         | otherwise = T.empty
 
+      netx 
+        | ised = it 
+        | isIns && not ised && it/=T.empty = T.empty
+        | otherwise = etxSt
       ncpl
         | isTglColor = if cplSt==length colorPallet - 1 then 0 else cplSt+1 
         | otherwise = cplSt
@@ -106,7 +109,7 @@ inputEvent = do
         | isRight = if wm==Y then if tpsSt==tLen then tLen else tpsSt+1 else tpsPreLine
         | isCom = tpsSt + T.length comName 
         | isExeCode = lastTps tpsSt texSt + T.length codeResult
-        | isIns && nit/=T.empty = tpsSt + T.length nit 
+        | isIns && nit/=T.empty && not ised = tpsSt + T.length nit 
         | isBS = if tpsSt>0 then tpsSt-1 else tpsSt
         | isDeleteLine = headTps tpsSt texSt
         | otherwise = tpsSt
@@ -120,7 +123,7 @@ inputEvent = do
         | isDeleteLine = deleteCurrentLine tpsSt texSt
         | isCom = textIns comName tpsSt texSt
         | isExeCode = textIns codeResult (lastTps tpsSt texSt) texSt 
-        | isIns = textIns nit tpsSt texSt 
+        | isIns && not ised = textIns nit tpsSt texSt 
         | otherwise = texSt
       ndts 
         | isDrawClear = []
@@ -152,7 +155,7 @@ inputEvent = do
         | isKeyPressed = PKY
         | isMousePressed = PMO
         | otherwise = NON
-      nst = st{tex=ntex,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
+      nst = st{tex=ntex,etx=netx,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   S.put nst
   return ninp
 

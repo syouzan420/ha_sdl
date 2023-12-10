@@ -30,8 +30,9 @@ afterDraw st = st
 
 makeTextData :: State -> TextData 
 makeTextData st =
-  let (texSt,atrSt,fpsSt,tpsSt,ifmSt) = (tex st,atr st,fps st,tps st,ifm st)
-   in makeTexts 0 ifmSt fpsSt tpsSt atrSt texSt
+  let (texSt,etxSt,atrSt,fpsSt,tpsSt,ifmSt) 
+              = (tex st,etx st,atr st,fps st,tps st,ifm st)
+   in makeTexts 0 ifmSt fpsSt tpsSt atrSt (texSt<>etxSt)
 
 makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> TextData 
 makeTexts ind ifmSt fpsSt tpsSt atrSt texSt = 

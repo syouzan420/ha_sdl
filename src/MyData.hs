@@ -49,6 +49,7 @@ data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, rotate, name
 
 -- tex: edit text
+-- etx: editing text for Kanji-Henkan
 -- dts: dots drawing (pixel art)
 -- drw: drawing
 -- img: images 
@@ -68,9 +69,10 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- isk: skk editing
 -- iup: ??
 -- ipr: 'OK' prompt for code execution
-data State = State{tex :: !Text, dts :: ![Dot], drw :: ![Drw], img :: ![Img]
-                  ,cod :: ![Code], dfn :: ![Definition]
-                  ,com :: !String ,msg :: ![String], atr :: !Attr, fps :: !Int, tps :: !Int
+data State = State{tex :: !Text, etx :: !Text, dts :: ![Dot], drw :: ![Drw]
+                  ,img :: ![Img],cod :: ![Code], dfn :: ![Definition]
+                  ,com :: !String ,msg :: ![String], atr :: !Attr
+                  ,fps :: !Int, tps :: !Int
                   ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
 
@@ -167,7 +169,7 @@ initTatePos = V2 (winSizeX-60) 30
 -- INITIALIZE
 
 initState :: State
-initState = State {tex = "", dts = [], drw = [], img = []
+initState = State {tex = T.empty, etx = T.empty, dts = [], drw = [], img = []
                   , cod = [], dfn = [], com = "", msg = [], atr = initAttr
                   ,fps=0, tps=0, crc=cursorTime, emd=Nor, cpl=1, lsz=1
                   ,ifm=False, icr=False, isk=False, iup=False, ipr=True}

@@ -40,7 +40,7 @@ myLoop re fonts itexs = do
   cst' <- S.get
 --  when (not (null msgSt) && last msgSt=="codeExe") $ print (dfn cst') 
   let isUpdateText = tex st /= tex cst' || icr st /= icr cst' || isUpdateTps 
-                                        || inp==PKY || iup cst' 
+                         || inp==PKY || iup cst' || etx st /= etx cst' 
       isUpdateDraw = inp==PMO || inp==EXE || isUpdateText
       isOnlyMouse = inp==PMO && not isUpdateText
       textData = if isUpdateDraw then makeTextData cst' else []
