@@ -6,7 +6,7 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
-import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
+import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
 import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
 import SDL.Input.Keyboard.Codes
@@ -42,6 +42,7 @@ inputEvent = do
       isExit = kc==KeycodeLeftBracket && md==Ctr
       isToNor = isExit && isIns
       isTglOsd = kc==KeycodeO && md==Ctr
+      isTglMin = kc==KeycodeM && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
 
       isExeCode = kc==KeycodeE && md==Ctr
@@ -57,7 +58,7 @@ inputEvent = do
                   _        -> T.empty
       tLen = T.length texSt
       wm = wmd atrSt
-      os = ios atrSt
+      fm = fmd atrSt
       lw = lnw atrSt
       fjpAt = fjp atrSt
       V2 ww wh = wsz atrSt
@@ -97,7 +98,8 @@ inputEvent = do
       natr
         | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y,scr=V2 0 0} 
                               else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
-        | isTglOsd = if os then atrSt{ios=False} else atrSt{ios=True}
+        | isTglOsd = if fm==Ost then atrSt{fmd=Got} else atrSt{fmd=Ost}
+        | isTglMin = if fm==Min then atrSt{fmd=Got} else atrSt{fmd=Min}
         | otherwise = atrSt{scr=nscr,sjn=nsjn}
       ntps
         | ifmSt = tpsSt

@@ -68,4 +68,4 @@ packages:
 #
 nix:
   enable: true
-  packages: [pkg-config,SDL2,SDL2_image,SDL2_ttf,SDL2_gfx,libtiff,harfbuzz,freetype,libwebp,glib,pcre2]
+  packages: [pkg-config,SDL2,SDL2_image,SDL2_ttf,SDL2_gfx,SDL2_mixer,libtiff,harfbuzz,freetype,libwebp,glib,pcre2,libsndfile,libpulseaudio,alsa-lib,jack2]

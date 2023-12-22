@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
-              ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),Input(..)
+              ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),FMode(..),Input(..)
               ,title,windowSize,initState,initAttr,dotSize,imageNames
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
               ,rubiSize,delayTime,cursorTime
@@ -36,6 +36,7 @@ type IsFormat = Bool
 data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
+data FMode = Min | Got | Ost deriving (Eq, Ord, Show) -- font mode
 data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, Show)
 -- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isJump | isJBack | isExeCode | isQuit
 
@@ -90,13 +91,13 @@ data State = State{tex :: !Text, etx :: !Text, dts :: ![Dot], drw :: ![Drw]
 -- sjn: selected jump number
 -- cnm: command name
 -- cid: command index
--- ios: is osite active? (osite mode)
+-- fmd: font mode (default Got(hic) mode)
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
                 ,dta :: [Text] ,rbi :: Rubi, jps :: [Jump], fjp :: [FrJp], jbk :: [JBak], sjn :: Int
                 ,cnm :: Text, cid :: Int
-                ,ios :: Bool, ite :: Bool} deriving (Eq,Show)
+                ,fmd :: FMode, ite :: Bool} deriving (Eq,Show)
 
 -- rps: rubi position
 -- rwi: width for rubi
@@ -123,7 +124,7 @@ jumpNameFile :: FilePath
 jumpNameFile = "./jpnm.txt"
 
 fontFiles :: [FilePath]
-fontFiles = map ("font/"++) ["monaco.ttf","marugo.TTC","oshide.otf"]
+fontFiles = map ("font/"++) ["ipamjm.ttf","marugo.TTC","oshide.otf"]
 
 imageFiles :: [FilePath]
 imageFiles = map (\s -> "images/"++s++".png") imageNames 
@@ -178,7 +179,7 @@ initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
                ,dta = [], rbi = initRubi, jps = [], fjp = [], jbk = [], sjn = -1, cnm = "", cid = 0
-               ,ios = False, ite = False}
+               ,fmd = Got, ite = False}
 
 initRubi :: Rubi
 initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, tsz = rubiSize, tlw = initLetterWidth

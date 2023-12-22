@@ -15,7 +15,7 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
 import General (getIndex)
-import MyData (State(..),Attr(..),WMode(..)
+import MyData (State(..),Attr(..),WMode(..),FMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..),Color
               ,fontSize,cursorColor,backColor,initTatePos,initYokoPos
@@ -105,15 +105,20 @@ statusDraw re font st = do
 textsDraw :: (MonadIO m) => Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> m () 
 textsDraw _ _ _ _ _ [] = return () 
 textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
-  let (scrAt,wmdAt,fszAt,fcoAt,iosAt) = (scr nat,wmd nat,fsz nat,fco nat,ios nat)
+  let (scrAt,wmdAt,fszAt,fcoAt,fmdAt) = (scr nat,wmd nat,fsz nat,fco nat,fmd nat)
       ofs = fromIntegral fontSize
       fs = fromIntegral fszAt
-      fnum = if iosAt then 2 else 1
+      fnum = case fmdAt of Min -> 0; Got -> 1; Ost -> 2
       nscr = if null xs then scrAt else let (_,_,nxtAtr,_) = head xs in scr nxtAtr
       rpText = T.replace "\n" "  " tx
+      rpText2 = T.replace "\n" "　" tx
+
       lPos = snd$last pList
-  when (tx/=T.empty) $ do
+      tx' = if fnum==0 then T.pack $ fst $ unzip $ filter (\(_,((b,_),_)) -> not b) (zip (T.unpack rpText2) pList) else tx
+      pList' = if fnum==0 then filter (\((b,_),_)->not b) pList else pList
+  when (tx'/=T.empty) $ do
         fontS <- case fnum of
+                 0 -> blended (fonts!!fnum) fcoAt tx' 
                  1 -> blended (fonts!!fnum) fcoAt tx 
                  2 -> blended (fonts!!fnum) fcoAt rpText
                  _ -> blended (fonts!!1) fcoAt tx
@@ -124,9 +129,22 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
                           (Just (Rectangle (P (pd+nscr)) (V2 (if b then fs `div` 2 else fs) fs)))
                           (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
           return (ps+V2 sz 0)
-              ) (V2 0 0) pList
+              ) (V2 0 0) pList'
         destroyTexture fontT
         freeSurface fontS
+  when (tx/=T.empty && fnum==0) $ do
+        fontS2 <- blended (fonts!!1) fcoAt tx
+        fontT2 <- createTextureFromSurface re fontS2
+        foldM_ (\ ps ((b,r),pd) -> do
+          let sz = if b then ofs `div` 2 else ofs
+          when b $ do
+            copyEx re fontT2 (Just (Rectangle (P ps) (V2 sz ofs)))
+                             (Just (Rectangle (P (pd+nscr)) (V2 (if b then fs `div` 2 else fs) fs)))
+                             (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
+          return (ps+V2 sz 0)
+              ) (V2 0 0) pList
+        destroyTexture fontT2
+        freeSurface fontS2
   when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdAt fs 
   textsDraw re fonts ifmSt icrSt tpsSt xs
 
