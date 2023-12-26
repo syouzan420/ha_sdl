@@ -27,10 +27,11 @@
 
 とりあへず よしとしやう
 
-2 3 0 "midu" block
-OK.
 clear
+OK.
+2 3 0 "midu" block
 ```a showblock :: k i
 a 3 0 "midu" block
 ```
+run
 1 showblock

@@ -8,7 +8,7 @@ import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
 import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
-import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
+import Mana (evalCode,taiyouMn,Mn(..),Yo(..),Dtype(..),preDef,userDef)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: S.StateT State IO Input
@@ -20,27 +20,38 @@ inputEvent = do
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
-      isNewFile = kc==KeycodeN && md==Ctr
-      isLoadFile = kc==KeycodeL && md==Ctr
-      isJump = ifmSt && isRet && sjn atrSt>=0
-      isJBak = ifmSt && isBS
-
-      isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift && kc/=KeycodeUnknown && md==Shf
-      isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
 
       isNor = emdSt==Nor
       isIns = emdSt==Ins
       isRet = kc==KeycodeReturn
+
+      ----normal mode
+
       isUp = (kc==KeycodeK && isNor) || kc==KeycodeUp
       isDown = (kc==KeycodeJ && isNor) || kc==KeycodeDown
       isLeft = (kc==KeycodeH && isNor) || kc==KeycodeLeft
       isRight = (kc==KeycodeL && isNor) || kc==KeycodeRight
+
+      isToIns = kc==KeycodeI && isNor
+
+      ----normal with shift key
+
       isFarForward = kc==KeycodeF && md==Shf && isNor
       isFarBack = kc==KeycodeB && md==Shf && isNor
 
-      isToIns = kc==KeycodeI && isNor
-      isExit = kc==KeycodeLeftBracket && md==Ctr
+      ----insert mode
+
       isToNor = isExit && isIns
+
+      ----with ctrl key
+
+      isNewFile = kc==KeycodeN && md==Ctr
+      isLoadFile = kc==KeycodeL && md==Ctr
+
+      isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
+
+      isExit = kc==KeycodeLeftBracket && md==Ctr
+
       isTglOsd = kc==KeycodeO && md==Ctr
       isTglMin = kc==KeycodeM && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
@@ -50,50 +61,48 @@ inputEvent = do
 
       isExeCode = kc==KeycodeE && md==Ctr
 
-      isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
-      isDeleteLine = not (null comSt) && last comSt=='d' && kc==KeycodeD 
-      isCom = md==Alt
       isDrawClear = kc==KeycodeD && md==Ctr
       isTglColor = kc==KeycodeC && md==Ctr
 
+
+      isJump = ifmSt && isRet && sjn atrSt>=0
+      isJBak = ifmSt && isBS
+
+      isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift 
+                              && kc/=KeycodeUnknown && md==Shf
+
+      isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
+      isDeleteLine = not (null comSt) && last comSt=='d' && kc==KeycodeD 
+      
+      isCom = md==Alt
       comName = case kc of
                   KeycodeR -> ";rb "
                   _        -> T.empty
+
+      (wm,fm,lw,fjpAt,fszAt,V2 ww wh,V4 mr mt ml mb,scrAt@(V2 sx sy)) =
+         (wmd atrSt,fmd atrSt,lnw atrSt,fjp atrSt,fsz atrSt,wsz atrSt,mgn atrSt,scr atrSt)
       tLen = T.length texSt
-      (wm,fm,lw,fjpAt,fszAt,V2 ww wh,V4 mr mt ml mb) =
-        (wmd atrSt,fmd atrSt,lnw atrSt,fjp atrSt,fsz atrSt,wsz atrSt,mgn atrSt)
---      wm = wmd atrSt
---      fm = fmd atrSt
---      lw = lnw atrSt
---      fjpAt = fjp atrSt
---      V2 ww wh = wsz atrSt
---      V4 mr mt ml mb = mgn atrSt
       seeLines = fromIntegral$if wm==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
-      scrAt@(V2 sx sy) = scr atrSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
       tpsNextLine = tpsForRelativeLine atrSt texSt 1 tpsSt
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
-      nit = if isIns && isRet && it==T.empty then "\n" else it
-      centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
-                               else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
-      centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
-      nsjn = selectNearest centerIndex (map fst fjpAt)
 
-      codeMana = evalCode (preDef++[(User,userDef++dfnSt)]) (takeCurrentLine tpsSt texSt)
+--      scrAt@(V2 sx sy) = scr atrSt
+      codeMana 
+        | isExeCode = evalCode (preDef++[(User,userDef++dfnSt)]) (takeCurrentLine tpsSt texSt)
+        | otherwise = Mn "" Moz
       (ta,yo) = taiyouMn codeMana
       codeResult 
         | isExeCode && yo==Io = T.empty 
         | isExeCode = "\n"<>(T.pack.show) codeMana 
         | otherwise = T.empty
-
-      netx 
-        | ised = it 
-        | isIns && not ised && it/=T.empty = T.empty
-        | otherwise = etxSt
-      ncpl
-        | isTglColor = if cplSt==length colorPallet - 1 then 0 else cplSt+1 
-        | otherwise = cplSt
+      
+      nit = if isIns && isRet && it==T.empty then "\n" else it
+      centerLineNum = if wm==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
+                               else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
+      centerIndex = locToIndex atrSt texSt (fromIntegral centerLineNum,0)
+      nsjn = selectNearest centerIndex (map fst fjpAt)
       nscr
         | ifmSt && wm==T && isLeft = scrAt+V2 lw 0
         | ifmSt && wm==T && isRight = scrAt-V2 lw 0
@@ -110,6 +119,13 @@ inputEvent = do
         | isTglOsd = if fm==Ost then atrSt{fmd=Got} else atrSt{fmd=Ost}
         | isTglMin = if fm==Min then atrSt{fmd=Got} else atrSt{fmd=Min}
         | otherwise = atrSt{scr=nscr,sjn=nsjn,fsz=nfsz}
+      netx 
+        | ised = it 
+        | isIns && not ised && it/=T.empty = T.empty
+        | otherwise = etxSt
+      ncpl
+        | isTglColor = if cplSt==length colorPallet - 1 then 0 else cplSt+1 
+        | otherwise = cplSt
       ntps
         | ifmSt = tpsSt
         | isFarForward = tpsFarForward
