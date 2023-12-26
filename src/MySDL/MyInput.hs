@@ -34,9 +34,9 @@ myInput = do
                              else (KeycodeUnknown,mds)
                        _ -> (KeycodeUnknown,mds)
       getItx event = case eventPayload event of
+          TextInputEvent textInputEvent -> (textInputEventText textInputEvent,False)
           TextEditingEvent textEditingEvent 
                       -> (textEditingEventText textEditingEvent,True)
-          TextInputEvent textInputEvent -> (textInputEventText textInputEvent,False)
           _ -> (T.empty,False)
       mbtn event = case eventPayload event of
                      MouseButtonEvent mouseButtonEvent ->

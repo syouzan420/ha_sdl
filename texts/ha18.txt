@@ -15,6 +15,7 @@ run
 OK.
 2 oneBlock
 OK.
+OK.
 abc :: k = 3
 OK.
 a :: k = 4

@@ -45,6 +45,9 @@ inputEvent = do
       isTglMin = kc==KeycodeM && md==Ctr
       isTglFmt = kc==KeycodeF && md==Ctr
 
+      isFontPlus = kc==KeycodeEquals && md==Ctr
+      isFontMinus = kc==KeycodeMinus && md==Ctr
+
       isExeCode = kc==KeycodeE && md==Ctr
 
       isBS = (kc==KeycodeBackspace && not iskSt) || (isNor && kc==KeycodeX)
@@ -57,12 +60,14 @@ inputEvent = do
                   KeycodeR -> ";rb "
                   _        -> T.empty
       tLen = T.length texSt
-      wm = wmd atrSt
-      fm = fmd atrSt
-      lw = lnw atrSt
-      fjpAt = fjp atrSt
-      V2 ww wh = wsz atrSt
-      V4 mr mt ml mb = mgn atrSt
+      (wm,fm,lw,fjpAt,fszAt,V2 ww wh,V4 mr mt ml mb) =
+        (wmd atrSt,fmd atrSt,lnw atrSt,fjp atrSt,fsz atrSt,wsz atrSt,mgn atrSt)
+--      wm = wmd atrSt
+--      fm = fmd atrSt
+--      lw = lnw atrSt
+--      fjpAt = fjp atrSt
+--      V2 ww wh = wsz atrSt
+--      V4 mr mt ml mb = mgn atrSt
       seeLines = fromIntegral$if wm==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
       scrAt@(V2 sx sy) = scr atrSt
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
@@ -95,12 +100,16 @@ inputEvent = do
         | ifmSt && wm==Y && isUp = scrAt+V2 0 lw
         | ifmSt && wm==Y && isDown = scrAt-V2 0 lw
         | otherwise = scrAt
+      nfsz
+        | isFontPlus = fszAt + 1
+        | isFontMinus = fszAt - 1
+        | otherwise = fszAt
       natr
         | isTglDir = if wm==T then atrSt{gps=initYokoPos,wmd=Y,scr=V2 0 0} 
                               else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
         | isTglOsd = if fm==Ost then atrSt{fmd=Got} else atrSt{fmd=Ost}
         | isTglMin = if fm==Min then atrSt{fmd=Got} else atrSt{fmd=Min}
-        | otherwise = atrSt{scr=nscr,sjn=nsjn}
+        | otherwise = atrSt{scr=nscr,sjn=nsjn,fsz=nfsz}
       ntps
         | ifmSt = tpsSt
         | isFarForward = tpsFarForward
