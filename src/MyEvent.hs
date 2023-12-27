@@ -88,7 +88,6 @@ inputEvent = do
       tpsFarBack = tpsForRelativeLine atrSt texSt (-seeLines) tpsSt
       tpsFarForward = tpsForRelativeLine atrSt texSt seeLines tpsSt
 
---      scrAt@(V2 sx sy) = scr atrSt
       codeMana 
         | isExeCode = evalCode (preDef++[(User,userDef++dfnSt)]) (takeCurrentLine tpsSt texSt)
         | otherwise = Mn "" Moz
