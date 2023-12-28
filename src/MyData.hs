@@ -85,6 +85,7 @@ data State = State{tex :: !Text, etx :: !Text, dts :: ![Dot], drw :: ![Drw]
 -- lnw: line width (行送り)
 -- wsz: window size (width,height)
 -- mgn: margins (right, top, left, bottom)
+-- dta: jump data (?)
 -- rbi: for rubi
 -- jps: jumps (jump target list)
 -- fjp: jump from (jump source list)

@@ -32,10 +32,10 @@ makeTextData :: State -> TextData
 makeTextData st =
   let (texSt,etxSt,atrSt,fpsSt,tpsSt,ifmSt) 
               = (tex st,etx st,atr st,fps st,tps st,ifm st)
-   in makeTexts 0 ifmSt fpsSt tpsSt atrSt (texSt<>etxSt)
+   in makeTexts 0 ifmSt fpsSt tpsSt atrSt etxSt texSt
 
-makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> TextData 
-makeTexts ind ifmSt fpsSt tpsSt atrSt texSt = 
+makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> Text -> TextData 
+makeTexts ind ifmSt fpsSt tpsSt atrSt etxSt texSt = 
   case uncons texSt of
     Nothing -> [] 
     Just (ch,tailTx) ->  
@@ -50,7 +50,7 @@ makeTexts ind ifmSt fpsSt tpsSt atrSt texSt =
           preInc = lnTex - T.length pxs2 + 1
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
-          (tx,xs) = if iCur then (iptx,tptx<>pxs2) else (ptx2,pxs2)
+          (tx,xs) = if iCur then (iptx<>etxSt,tptx<>pxs2) else (ptx2,pxs2)
           (scrAt, wmdAt, fszAt, wszAt, mgnAt) = (scr natr,wmd natr,fsz natr,wsz natr,mgn natr)
           fs = fromIntegral fszAt
           pList = makePList natr tx
@@ -65,7 +65,7 @@ makeTexts ind ifmSt fpsSt tpsSt atrSt texSt =
             | iCur && wmdAt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
             | iCur && wmdAt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
-      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt fpsSt tpsSt natr{gps=lPos,scr=nscr} xs 
+      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt fpsSt tpsSt natr{gps=lPos,scr=nscr} etxSt xs 
 
 makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
 makePList at tx = 
@@ -90,9 +90,10 @@ changeAtr attr tx =
    in (natr , rtx)
 
 exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
-exeAttrCom fpsSt tpsSt 
- (at@(Attr gpsAt _ wmdAt fszAt _ ltwAt _ _ _ dtaAt rbiAt jpsAt fjpAt _ sjnAt cnmAt cidAt _ _),tx) = 
-  let (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
+exeAttrCom fpsSt tpsSt (at,tx) = 
+  let (gpsAt,wmdAt,fszAt,ltwAt,dtaAt,rbiAt,jpsAt,fjpAt,sjnAt,cnmAt,cidAt) =
+        (gps at,wmd at,fsz at,ltw at,dta at,rbi at,jps at,fjp at,sjn at,cnm at,cid at) 
+      (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
       (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx
       tln = fromIntegral (T.length ttx)
