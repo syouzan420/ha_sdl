@@ -1,6 +1,6 @@
 module Block where
 
-import Mana (Mn(..),Yo(..),Df(..),DefList,setDf)
+import Mana.Mana (Mn(..),Yo(..),Df(..),DefList,setDf)
 import General (getIndex, removeIndex, toGrid)
 import Data.Bifunctor (bimap)
 import Data.List (nub)

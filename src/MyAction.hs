@@ -8,7 +8,8 @@ import SDL.Vect (V2(..),V4(..))
 import Data.Maybe(fromMaybe)
 import Data.List(elemIndex)
 import MyLib (breakText,nextPos)
-import MyData (IsFormat,TextPos,TextData,Jump,FrJp,State(..),Attr(..),Rubi(..),WMode(..)
+import MyData (IsFormat,TextPos,TextData,Jump,FrJp
+              ,State(..),Active(..),Attr(..),Rubi(..),WMode(..)
               ,rubiSize,textLengthLimit,linkColor,selectColor,fontColor,cursorTime)
 
 type Index = Int
@@ -19,25 +20,27 @@ myAction st = st
 
 beforeDraw :: State -> State 
 beforeDraw st = 
-  let crcSt = crc st
-      icrSt = icr st
+  let crcSt = (crc.act) st
+      icrSt = (icr.act) st
       ncrc = if crcSt<cursorTime then crcSt+1 else 0
       nicr = if crcSt<cursorTime then icrSt else not icrSt
-   in st{crc=ncrc, icr=nicr}
+   in st{act=(act st){crc=ncrc, icr=nicr}}
 
 afterDraw :: State -> State
 afterDraw st = st
 
 makeTextData :: State -> TextData 
 makeTextData st =
-  let (texSt,etxSt,atrSt,fpsSt,tpsSt,ifmSt) 
-              = (tex st,etx st,atr st,fps st,tps st,ifm st)
+  let ac = act st 
+      (texSt,etxSt,fpsSt,tpsSt,atrSt,ifmSt) 
+              = (tex ac,etx ac,fps ac,tps ac,atr st,ifm st)
    in makeTexts 0 ifmSt fpsSt tpsSt atrSt etxSt texSt
 
 makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> Text -> TextData 
 makeTexts ind ifmSt fpsSt tpsSt atrSt etxSt texSt = 
   case uncons texSt of
-    Nothing -> [] 
+    Nothing -> if texSt=="" && tpsSt==0 
+                  then [(True,etxSt,atrSt,makePList atrSt etxSt)] else []
     Just (ch,tailTx) ->  
       let (natr,(ptx,pxs)) 
             | ifmSt = if ch==';' then exeAttrCom fpsSt ind (changeAtr atrSt{ite=False} tailTx) 
@@ -51,7 +54,7 @@ makeTexts ind ifmSt fpsSt tpsSt atrSt etxSt texSt =
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx<>etxSt,tptx<>pxs2) else (ptx2,pxs2)
-          (scrAt, wmdAt, fszAt, wszAt, mgnAt) = (scr natr,wmd natr,fsz natr,wsz natr,mgn natr)
+          (scrAt,wmdAt,fszAt,wszAt,mgnAt) = (scr natr,wmd natr,fsz natr,wsz natr,mgn natr)
           fs = fromIntegral fszAt
           pList = makePList natr tx
           indInc = lnTex - T.length xs 

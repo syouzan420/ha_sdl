@@ -27,7 +27,8 @@ library
   exposed-modules:
       Block
       General
-      Mana
+      Mana.Mana
+      Mana.MyTree
       MyAction
       MyApp
       MyCode
@@ -42,7 +43,6 @@ library
       MySDL.MyInput
       MySDL.MyLoad
       MySDL.MyLoop
-      MyTree
   other-modules:
       Paths_ha
   hs-source-dirs:

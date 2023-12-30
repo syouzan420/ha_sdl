@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
-              ,Modif(..),State(..),Attr(..),Rubi(..),WMode(..),EMode(..),FMode(..),Input(..)
-              ,title,windowSize,initState,initAttr,dotSize,imageNames
+              ,Modif(..),State(..),Active(..),Attr(..),Coding(..),Rubi(..)
+              ,WMode(..),EMode(..),FMode(..),Input(..)
+              ,title,windowSize,initState,initActive,initAttr,dotSize,imageNames
               ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
               ,rubiSize,delayTime,cursorTime
               ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
@@ -15,7 +16,7 @@ import Foreign.C.Types (CInt)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import Data.Word (Word8,Word32)
-import Mana (Definition)
+import Mana.Mana (Definition)
 
 type TextPos = Int
 type Pos = V2 CInt
@@ -37,8 +38,8 @@ data Modif = Alt | Ctr | Shf | Non deriving (Eq, Show) --modifier
 data WMode = T | Y deriving (Eq,Show) -- writing mode 
 data EMode = Nor | Ins deriving (Eq,Show) -- edit mode --Normal Insert
 data FMode = Min | Got | Ost deriving (Eq, Ord, Show) -- font mode
-data Input = NON | PKY | PMO | NFL | LFL | JMP | JBK | EXE | QIT deriving (Eq, Show)
--- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isJump | isJBack | isExeCode | isQuit
+data Input = NON | PKY | PMO | NFL | LFL | LRF | JMP | JBK | EXE | QIT deriving (Eq, Show)
+-- nothingPressed | isKeyPressed | isMousePressed | isNewFile | isLoadFile | isLoadRecentFile | isJump | isJBack | isExeCode | isQuit
 
 newtype Dt = Dt Pos deriving (Eq,Show)   --Dot: position
 data Li = Li Pos Pos deriving (Eq,Show)  --Line : start_position, end_position
@@ -49,33 +50,39 @@ data Drw = Drw Cnum CInt Shp deriving (Eq,Show)
 
 data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, rotate, name
 
--- tex: edit text
--- etx: editing text for Kanji-Henkan
--- dts: dots drawing (pixel art)
+-- act: active datas
 -- drw: drawing
 -- img: images 
--- cod: executable code
--- dfn: definition of Mana
 -- com: command for normal mode
--- msg: message from executed code
 -- atr: text attribute
--- fps: file position
--- tps: text position
--- crc: cursor count
 -- emd: edit mode (normal or insert) 
 -- cpl: color pallet (color number)
 -- lsz: line size
 -- ifm: view formatted text or not
--- icr: cursor appear
 -- isk: skk editing
--- iup: ??
+-- iup: need text update? (for example: after reading file) 
+
+data State = State{act :: !Active, drw :: ![Drw]
+                  ,img :: ![Img], cdn :: !Coding 
+                  ,com :: !String , atr :: !Attr
+                  ,emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
+                  ,ifm :: !Bool, isk :: !Bool, iup :: !Bool}
+
+-- tex: edit text
+-- etx: editing text for Kanji-Henkan
+-- dts: dots drawing (pixel art)
+-- fps: file position
+-- tps: text position
+-- crc: cursor count
+-- icr: cursor appear
+data Active = Active{tex :: !Text, etx :: !Text, dts :: ![Dot]
+                    ,fps :: !Int, tps :: !Int, crc :: !Int, icr :: !Bool}
+
+-- cod: executable code
+-- dfn: definition of Mana
+-- msg: message from executed code
 -- ipr: 'OK' prompt for code execution
-data State = State{tex :: !Text, etx :: !Text, dts :: ![Dot], drw :: ![Drw]
-                  ,img :: ![Img],cod :: ![Code], dfn :: ![Definition]
-                  ,com :: !String ,msg :: ![String], atr :: !Attr
-                  ,fps :: !Int, tps :: !Int
-                  ,crc :: !Int, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
-                  ,ifm :: !Bool, icr :: !Bool, isk :: !Bool, iup :: !Bool, ipr :: !Bool}
+data Coding = Coding{cod :: ![Code], dfn :: ![Definition], msg :: ![String], ipr :: !Bool} 
 
 -- gps: position (x,y) on graphic pixels
 -- wmd: writing mode (Tate, Yoko)
@@ -96,7 +103,8 @@ data State = State{tex :: !Text, etx :: !Text, dts :: ![Dot], drw :: ![Drw]
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,dta :: [Text] ,rbi :: Rubi, jps :: [Jump], fjp :: [FrJp], jbk :: [JBak], sjn :: Int
+                ,dta :: [Text] ,rbi :: Rubi
+                ,jps :: [Jump], fjp :: [FrJp], jbk :: [JBak], sjn :: Int
                 ,cnm :: Text, cid :: Int
                 ,fmd :: FMode, ite :: Bool} deriving (Eq,Show)
 
@@ -125,7 +133,7 @@ jumpNameFile :: FilePath
 jumpNameFile = "./jpnm.txt"
 
 fontFiles :: [FilePath]
-fontFiles = map ("font/"++) ["ipamjm.ttf","marugo.TTC","oshide.otf"]
+fontFiles = map ("fonts/"++) ["ipamjm.ttf","marugo.TTC","oshide.otf"]
 
 imageFiles :: [FilePath]
 imageFiles = map (\s -> "images/"++s++".png") imageNames 
@@ -171,10 +179,17 @@ initTatePos = V2 (winSizeX-60) 30
 -- INITIALIZE
 
 initState :: State
-initState = State {tex = T.empty, etx = T.empty, dts = [], drw = [], img = []
-                  , cod = [], dfn = [], com = "", msg = [], atr = initAttr
-                  ,fps=0, tps=0, crc=cursorTime, emd=Nor, cpl=1, lsz=1
-                  ,ifm=False, icr=False, isk=False, iup=False, ipr=True}
+initState = State {act = initActive, drw = [], img = []
+                  ,cdn = initCoding, com = "", atr = initAttr
+                  ,emd=Nor, cpl=1, lsz=1
+                  ,ifm=False, isk=False, iup=False}
+
+initActive :: Active
+initActive = Active {tex = T.empty, etx = T.empty, dts = [] 
+                    ,fps = 0, tps = 0, crc = cursorTime, icr = False}
+
+initCoding :: Coding
+initCoding = Coding {cod = [], dfn = [], msg = [], ipr=True}
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor

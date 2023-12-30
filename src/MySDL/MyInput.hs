@@ -65,7 +65,7 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
-  when (not (null events)) $ liftIO $ print events 
+--  when (not (null events)) $ liftIO $ print events 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
 --  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  

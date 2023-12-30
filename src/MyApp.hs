@@ -5,7 +5,7 @@ import MySDL.MyLoad (myLoad)
 import MySDL.MyLoop (myLoop)
 import MySDL.MyInit (withMyInit)
 import MySDL.MyInitVideo (withMyVideo)
-import MyData (initState,initAttr,State(..),Attr(..))
+import MyData (initState,initActive,initAttr,State(..),Active(..),Attr(..))
 
 appMain :: IO ()
 appMain =
@@ -13,5 +13,6 @@ appMain =
     (fonts,sur,text,(fpos,tpos),dots,jumps) <- myLoad
     withMyVideo sur $
       \(renderer,itexs) -> do
-        let newState = initState{tex=text,dts=dots,fps=fpos,tps=tpos,atr=initAttr{jps=jumps}} 
+        let newActive = initActive{tex=text,dts=dots,fps=fpos,tps=tpos}
+            newState = initState{act=newActive,atr=initAttr{jps=jumps}} 
         S.runStateT (myLoop renderer fonts itexs) newState

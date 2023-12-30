@@ -11,7 +11,7 @@ import qualified Data.Text as T
 import System.Directory (doesFileExist)
 import Linear.V2 (V2(..))
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Attr(..),Dot,Input(..),JBak,FrJp,delayTime,textFileName,textPosFile
+import MyData (State(..),Active(..),Attr(..),Coding(..),Dot,Input(..),JBak,FrJp,delayTime,textFileName,textPosFile
               ,dotFileName,jumpNameFile)
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MyLib (textToDots,dotsToText,jumpsToText)
@@ -20,40 +20,44 @@ import MyFile (fileRead,fileWrite)
 import MyCode (exeCode)
 import General (isLastElem)
 
-data FC = NewFile | LoadNextFile | LoadFile | JumpFile | JumpBackFile | DoNothing deriving Eq
+data FC = NewFile | LoadNextFile | LoadRecentFile | LoadFile | JumpFile | JumpBackFile | DoNothing deriving Eq
 type ChangeFile = (T.Text,Int,Int,[Dot],Bool,[JBak])
 
 myLoop :: Renderer -> [Font] -> [Texture] -> S.StateT State IO ()
 myLoop re fonts itexs = do
   st <- S.get
+  let actSt = act st
   inp <- inputEvent 
   st' <- S.get
-  let isUpdateTps = tps st /= tps st'
-      nicr = isUpdateTps || icr st'
-      ncrc = if isUpdateTps then 0 else crc st'
-      bst = beforeDraw st'{crc=ncrc,icr=nicr,ipr=True}
+  let actSt' = act st'
+      isUpdateTps = tps actSt /= tps actSt'
+      nicr = isUpdateTps || icr actSt'
+      ncrc = if isUpdateTps then 0 else crc actSt'
+      bst = beforeDraw st'{act=actSt'{crc=ncrc,icr=nicr},cdn=(cdn st'){ipr=True}}
   S.put bst
-  when (inp==EXE) $ mapM_ exeCode (cod bst)  
+  when (inp==EXE) $ mapM_ exeCode ((cod.cdn) bst)  
   cst <- S.get
-  let  msgSt = msg cst
-  when (isLastElem msgSt "codeExe") $ mapM_ exeCode (cod cst) 
+  let ccdnSt = cdn cst
+      msgSt = msg ccdnSt
+  when (isLastElem msgSt "codeExe") $ mapM_ exeCode (cod ccdnSt) 
   cst' <- S.get
---  when (not (null msgSt) && last msgSt=="codeExe") $ print (dfn cst') 
-  let isUpdateText = tex st /= tex cst' || icr st /= icr cst' || isUpdateTps 
-                         || inp==PKY || iup cst' || etx st /= etx cst' 
+  let cactSt' = act cst'
+      isUpdateText = tex actSt /= tex cactSt' || icr actSt /= icr cactSt' || isUpdateTps 
+                         || inp==PKY || iup cst' || etx actSt /= etx cactSt' 
       isUpdateDraw = inp==PMO || inp==EXE || isUpdateText
       isOnlyMouse = inp==PMO && not isUpdateText
       textData = if isUpdateDraw then makeTextData cst' else []
       getAtr d = let (_,_,gatr,_) = last d in gatr
       natr = if null textData then atr cst' else getAtr textData
       nscr = if inp==NFL || inp==LFL || inp==JMP then V2 0 0 else scr natr
-      (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps cst')
+      (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps cactSt')
       isLoadTgt = isLastElem msgSt "loadFile"
       tFjp = if isLoadTgt then read (last (init msgSt)) else 0
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw cst')
   let fc
        | inp==NFL = NewFile
        | inp==LFL = LoadNextFile
+       | inp==LRF = LoadRecentFile
        | isLoadTgt = LoadFile
        | inp==JMP = JumpFile
        | inp==JBK = JumpBackFile
@@ -61,16 +65,18 @@ myLoop re fonts itexs = do
   (ntex,nfps,ntps,ndts,niup,njbk) <- case fc of
         NewFile -> newFile fpsSt jbkAt cst' 
         LoadNextFile -> loadNextFile fpsSt jbkAt cst' 
+        LoadRecentFile -> lastFileNum >>= \lfn -> loadFile fpsSt lfn jbkAt cst' 
         LoadFile -> loadFile fpsSt tFjp jbkAt cst'
         JumpFile -> jumpFile nfjp jbkAt nsjn fpsSt cst' 
         JumpBackFile -> jumpBackFile jbkAt fpsSt cst'
-        _ -> return (tex cst',fpsSt,tps cst',dts cst',False,jbkAt)
-  let nst = afterDraw cst'{tex=ntex,dts=ndts,msg=[],atr=(atr cst'){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},fps=nfps,tps=ntps,iup=niup}
+        _ -> return ((tex.act) cst',fpsSt,(tps.act) cst',(dts.act) cst',False,jbkAt)
+  let nactSt = cactSt'{tex=ntex,dts=ndts,fps=nfps,tps=ntps}
+  let nst = afterDraw cst'{act=nactSt,cdn=(cdn cst'){msg=[]},atr=(atr cst'){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},iup=niup}
   delay delayTime
   S.put nst 
   if inp==QIT then do 
     fileWriteR fpsSt nst
-    fileWrite textPosFile (T.pack$unwords [show (fps nst),show (tps nst)])
+    fileWrite textPosFile (T.pack$unwords [show ((fps.act) nst),show ((tps.act) nst)])
     fileWrite jumpNameFile (jumpsToText njps)
     return ()
               else myLoop re fonts itexs
@@ -89,9 +95,9 @@ loadNextFile fpsSt jbkAt st = do
     return (loadText,loadFileNum,0,dots,True,jbkAt)
 
 loadFile :: (MonadIO m) => Int -> Int -> [JBak] -> State -> m ChangeFile
-loadFile fpsSt tFps jbkAt st = do
+loadFile fpsSt tFjp jbkAt st = do
     fileWriteR fpsSt st
-    loadFileNum <- loadExistFileNum tFps 
+    loadFileNum <- loadExistFileNum tFjp 
     (loadText, dots) <- fileReadR loadFileNum
     return (loadText,loadFileNum,0,dots,True,jbkAt)
 
@@ -100,18 +106,18 @@ jumpFile fjpAt jbkAt sjnAt fpsSt st = do
       let (loadFileNum,textPos) = snd$fjpAt!!sjnAt
       fileWriteR fpsSt st
       (loadText, dots) <- fileReadR loadFileNum
-      let jb = jbkAt ++ [(fpsSt,tps st)]
+      let jb = jbkAt ++ [(fpsSt,(tps.act) st)]
       return (loadText,loadFileNum,textPos,dots,True,jb)
 
 jumpBackFile :: (MonadIO m) => [JBak] -> Int -> State -> m ChangeFile
 jumpBackFile jbkAt fpsSt st = do
       let canJBack = not (null jbkAt)
-          (loadFileNum,textPos) = if canJBack then last jbkAt else (fpsSt,tps st)
+          (loadFileNum,textPos) = if canJBack then last jbkAt else (fpsSt,(tps.act) st)
           nextFileName = textFileName++show loadFileNum++".txt"
           nextDotFile = dotFileName++show loadFileNum++".txt"
-      loadText <- if canJBack then fileRead nextFileName else return (tex st)
+      loadText <- if canJBack then fileRead nextFileName else return ((tex.act) st)
       loadDotText <- if canJBack then fileRead nextDotFile else return T.empty 
-      let dots = if canJBack then textToDots (T.words loadDotText) else dts st
+      let dots = if canJBack then textToDots (T.words loadDotText) else (dts.act) st
       return (loadText,loadFileNum,textPos,dots,True,if canJBack then init jbkAt else jbkAt)
 
 nextNewFileNum :: (MonadIO m) => Int -> m Int
@@ -126,10 +132,19 @@ loadExistFileNum i = do
   fileExist <- liftIO $ doesFileExist fileName
   if fileExist then return i else loadExistFileNum 0
 
+lastFileNum :: (MonadIO m) => m Int
+lastFileNum = lastFileNum' 0
+
+lastFileNum' :: (MonadIO m) => Int -> m Int
+lastFileNum' i = do
+  let fileName = textFileName++show i++".txt"
+  fileExist <- liftIO $ doesFileExist fileName
+  if fileExist then lastFileNum' (i+1) else return (i-1)
+
 fileWriteR :: (MonadIO m) => Int -> State -> m ()
 fileWriteR fp st = do
-  fileWrite (textFileName++show fp++".txt") (tex st)
-  fileWrite (dotFileName++show fp++".txt") (dotsToText$dts st)
+  fileWrite (textFileName++show fp++".txt") ((tex.act) st)
+  fileWrite (dotFileName++show fp++".txt") ((dotsToText.dts.act) st)
 
 fileReadR :: (MonadIO m) => Int -> m (T.Text, [Dot])
 fileReadR lfn = do

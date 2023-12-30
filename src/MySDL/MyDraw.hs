@@ -15,7 +15,7 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
 import General (getIndex)
-import MyData (State(..),Attr(..),WMode(..),FMode(..)
+import MyData (State(..),Active(..),Attr(..),WMode(..),FMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..),Color
               ,fontSize,cursorColor,backColor,initTatePos,initYokoPos
@@ -25,8 +25,9 @@ type IsCursor = Bool
 
 myDraw :: (MonadIO m) => Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> m () 
 myDraw re fonts itex textData isOnlyMouse st = do
-  let (dtsSt,drwSt,imgSt,atrSt,tpsSt,ifmSt,icrSt) =
-        (dts st,drw st,img st,atr st,tps st,ifm st,icr st)
+  let ac = act st 
+      (dtsSt,drwSt,imgSt,atrSt,tpsSt,ifmSt,icrSt) =
+        (dts ac,drw st,img st,atr st,tps ac,ifm st,icr ac)
       (scrAt,wmdAt) = (scr atrSt,wmd atrSt)
       iniPos = if wmdAt==T then initTatePos else initYokoPos
   initDraw re
@@ -83,8 +84,8 @@ cursorDraw re (V2 x y) wm sz = do
 
 statusDraw :: (MonadIO m) => Renderer -> Font -> State -> m ()
 statusDraw re font st = do
-  let fileNum = pack$show$fps st
-      textPos = pack$show$tps st
+  let fileNum = pack$show$fps$act st
+      textPos = pack$show$tps$act st
       editMode = pack$show$emd st
       scroll = pack$show$scr (atr st)
       fromJump = pack$show$fjp (atr st)

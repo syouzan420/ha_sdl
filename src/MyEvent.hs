@@ -6,16 +6,18 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
-import MyData (State(..),Attr(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
+import MyData (State(..),Active(..),Attr(..),Coding(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
-import Mana (evalCode,taiyouMn,Mn(..),Yo(..),Dtype(..),preDef,userDef)
+import Mana.Mana (evalCode,taiyouMn,Mn(..),Yo(..),Dtype(..),preDef,userDef)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: S.StateT State IO Input
 inputEvent = do
   st <- S.get
-  let (texSt,etxSt,dtsSt,dfnSt,comSt,atrSt,tpsSt,emdSt,cplSt,ifmSt,iskSt) =
-        (tex st,etx st,dts st,dfn st,com st,atr st,tps st,emd st,cpl st,ifm st,isk st)
+  let (actSt,cdnSt) = (act st, cdn st) 
+      (texSt,etxSt,dtsSt,tpsSt,dfnSt,comSt,atrSt,emdSt,cplSt,ifmSt,iskSt) =
+          (tex actSt,etx actSt,dts actSt,tps actSt,dfn cdnSt
+          ,com st,atr st,emd st,cpl st,ifm st,isk st)
   (kc,md,it,mps,isc,ised) <- myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -47,6 +49,7 @@ inputEvent = do
 
       isNewFile = kc==KeycodeN && md==Ctr
       isLoadFile = kc==KeycodeL && md==Ctr
+      isLoadRecentFile = kc==KeycodeR && md==Ctr
 
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
 
@@ -174,6 +177,7 @@ inputEvent = do
       ninp
         | isNewFile = NFL
         | isLoadFile = LFL
+        | isLoadRecentFile = LRF
         | isJump = JMP 
         | isJBak = JBK
         | isExeCode && yo==Io = EXE
@@ -181,7 +185,8 @@ inputEvent = do
         | isKeyPressed = PKY
         | isMousePressed = PMO
         | otherwise = NON
-      nst = st{tex=ntex,etx=netx,dts=ndts,cod=ncod,com=ncom,atr=natr,tps=ntps,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
+      nactSt = actSt{tex=ntex,etx=netx,dts=ndts,tps=ntps}
+      nst = st{act=nactSt,cdn=cdnSt{cod=ncod},com=ncom,atr=natr,emd=nemd,cpl=ncpl,ifm=nifm,isk=nisk}
   S.put nst
   return ninp
 

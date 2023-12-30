@@ -7,8 +7,9 @@ import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
 import Data.List.Split (splitOn)
 import Linear.V2 (V2(..))
-import MyData (State(..),Code,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
-import Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
+import MyData (State(..),Active(..),Coding(..),Code
+              ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..))
+import Mana.Mana (evalCode,taiyouMn,Yo(..),Dtype(..),preDef,userDef)
 import MyLib (textIns,lastTps,takeCodes)
 import General (getIndex,delIndex)
 
@@ -21,16 +22,17 @@ exeCode cd = do
       (arg,funcName) = (init cds, last cds)
   fromMaybe idf (lookup funcName funcs) arg 
   st <- S.get
-  when (ipr st) $ addTex "OK." 
+  when ((ipr.cdn) st) $ addTex "OK." 
 
 addTex :: T.Text -> StateIO
 addTex tx = do 
   st <- S.get
-  let texSt = tex st; tpsSt = tps st
+  let texSt = (tex.act) st; tpsSt = (tps.act) st
       lTps = lastTps tpsSt texSt
       ntex = textIns ("\n"<>tx) lTps texSt
       ntps = lTps + T.length ("\n"<>tx)
-      nst = st{tex = ntex, tps = ntps, ipr = False}
+      nac = (act st){tex=ntex,tps=ntps}
+      nst = st{act=nac, cdn=(cdn st){ipr = False}}
   S.put nst
 
 getMoz :: String -> String
@@ -47,7 +49,8 @@ idf :: [String] -> StateIO
 idf _  = return () 
 
 cls :: [String] -> StateIO
-cls _  = S.get >>= (\st -> return st{tex=T.empty,tps=0,ipr=False}) >>= S.put
+cls _  = S.get >>= 
+    (\st -> return st{act=(act st){tex=T.empty,tps=0},cdn=(cdn st){ipr=False}}) >>= S.put
 
 clear :: [String] -> StateIO
 clear _  = S.get >>= (\st -> return st{drw=[],img=[]}) >>= S.put
@@ -101,18 +104,19 @@ drawImage [a,b,c,d,e,f] = do
 drawImage _  = return () 
 
 load :: [String] -> StateIO
-load [a] = S.get >>= (\st -> return st{msg=[a,"loadFile"],ipr=False}) >>= S.put  
+load [a] = S.get >>= 
+    (\st -> return st{cdn=(cdn st){msg=[a,"loadFile"],ipr=False}}) >>= S.put  
 load _ = return ()
 
 run :: [String] -> StateIO
 run _ = do
   st <- S.get
-  let codes = takeCodes (tex st)
-      dfnSt = dfn st
+  let codes = takeCodes ((tex.act) st)
+      dfnSt = (dfn.cdn) st
       manas = map (taiyouMn.evalCode (preDef++[(User,userDef++dfnSt)])) codes
       ioCodes = map fst $ filter (\(_,y) -> y==Io) manas
       --results = map fst $ filter (\(_,y) -> y/=Io) manas
-  S.put st{cod=ioCodes, msg=["codeExe"]}
+  S.put st{cdn=(cdn st){cod=ioCodes, msg=["codeExe"]}}
 
 strYo :: [(String,Yo)]
 strYo = [("k",Kaz),("m",Moz),("i",Io)]
@@ -127,12 +131,13 @@ ha [a,b] = do
       (tgts,pyos) = break (=="::") lfts
       yos = if null pyos then gessYos tgts (T.pack (unwords rits)) else map readYo (tail pyos)
       tgtStr = unwords tgts
-      dfnSt = dfn st
+      cdnSt = cdn st
+      dfnSt = dfn cdnSt 
       tgtList = if null dfnSt then [] else map (fst.fst) dfnSt
       dfnSt' = if not (null dfnSt) && tgtStr `elem` tgtList 
                   then delIndex (getIndex tgtStr tgtList) dfnSt else dfnSt
       ndfn = ((tgtStr,yos),unwords rits)
-  S.put st{dfn=dfnSt'++[ndfn]} 
+  S.put st{cdn=cdnSt{dfn=dfnSt'++[ndfn]}} 
 ha _ = return () 
 
 gessYos :: [String] -> T.Text -> [Yo]
