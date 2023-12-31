@@ -15,7 +15,7 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
 import General (getIndex)
-import MyData (State(..),Active(..),Attr(..),WMode(..),FMode(..)
+import MyData (State(..),Active(..),Attr(..),Jumping(..),WMode(..),FMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..),Color
               ,fontSize,cursorColor,backColor,initTatePos,initYokoPos
@@ -88,7 +88,7 @@ statusDraw re font st = do
       textPos = pack$show$tps$act st
       editMode = pack$show$emd st
       scroll = pack$show$scr (atr st)
-      fromJump = pack$show$fjp (atr st)
+      fromJump = pack$show$fjp$jmp (atr st)
       statusText = "fNum:"<>fileNum<>" tPos:"<>textPos<>" eMode:"<>editMode <>" scr:"<>scroll
                   <>" fjp:"<>fromJump
       ofs = fromIntegral fontSize

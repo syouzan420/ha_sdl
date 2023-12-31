@@ -9,7 +9,7 @@ import Data.Maybe(fromMaybe)
 import Data.List(elemIndex)
 import MyLib (breakText,nextPos)
 import MyData (IsFormat,TextPos,TextData,Jump,FrJp
-              ,State(..),Active(..),Attr(..),Rubi(..),WMode(..)
+              ,State(..),Active(..),Attr(..),Rubi(..),Jumping(..),WMode(..)
               ,rubiSize,textLengthLimit,linkColor,selectColor,fontColor,cursorTime)
 
 type Index = Int
@@ -94,8 +94,10 @@ changeAtr attr tx =
 
 exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
 exeAttrCom fpsSt tpsSt (at,tx) = 
-  let (gpsAt,wmdAt,fszAt,ltwAt,dtaAt,rbiAt,jpsAt,fjpAt,sjnAt,cnmAt,cidAt) =
-        (gps at,wmd at,fsz at,ltw at,dta at,rbi at,jps at,fjp at,sjn at,cnm at,cid at) 
+  let jmpAt = jmp at 
+      (gpsAt,wmdAt,fszAt,ltwAt,rbiAt,dtaAt,jpsAt,fjpAt,sjnAt,cnmAt,cidAt) =
+        (gps at,wmd at,fsz at,ltw at,rbi at
+        ,dta jmpAt,jps jmpAt,fjp jmpAt,sjn jmpAt,cnm at,cid at) 
       (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
       (ttx,rtx) = if cidAt>0 then breakText tailTx  else T.break (==';') tailTx
@@ -116,11 +118,11 @@ exeAttrCom fpsSt tpsSt (at,tx) =
                           1 -> let jd = textToJumpData fpsSt tpsSt ttx
                                    dataExist = jd `elem` jpsAt
                                    njps = if dataExist then jpsAt else jpsAt ++ [jd]
-                                in at{jps=njps,ite=True}
+                                in at{jmp=(jmp at){jps=njps},ite=True}
                           _ -> at
                "jp" -> case cidAt of
-                         3 -> at{dta=[ttx],ite=True} 
-                         2 -> at{dta=dtaAt++[ttx],ite=True} 
+                         3 -> at{jmp=(jmp at){dta=[ttx]},ite=True} 
+                         2 -> at{jmp=(jmp at){dta=dtaAt++[ttx]},ite=True} 
                          1 -> let tjp = searchJump jpsAt dtaAt tpsSt 
                                   dataExist = tjp `elem` fjpAt
                                   nfjp 
@@ -132,7 +134,7 @@ exeAttrCom fpsSt tpsSt (at,tx) =
                                     |sjnAt==ind = selectColor
                                     |fst tjp/=(-1) = linkColor
                                     |otherwise = fontColor
-                               in at{fjp=nfjp,fco=nfco}
+                               in at{jmp=(jmp at){fjp=nfjp},fco=nfco}
                          0 -> at{fco=fontColor} 
                          _ -> at
                _    -> at{cnm=""}

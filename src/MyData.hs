@@ -1,12 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
-              ,Modif(..),State(..),Active(..),Attr(..),Coding(..),Rubi(..)
+              ,Modif(..),State(..),Active(..),Attr(..),Coding(..),Rubi(..),Jumping(..)
               ,WMode(..),EMode(..),FMode(..),Input(..)
-              ,title,windowSize,initState,initActive,initAttr,dotSize,imageNames
-              ,fontFiles,imageFiles,fontSize,fontColor,backColor,cursorColor,linkColor,selectColor
+              ,title,windowSize,initState,initActive,initAttr,initJumping
+              ,dotSize,imageNames,fontFiles,imageFiles,fontSize
+              ,fontColor,backColor,cursorColor,linkColor,selectColor
               ,rubiSize,delayTime,cursorTime
-              ,initYokoPos,initTatePos,textFileName,textPosFile,colorPallet,statusPos,dotFileName
+              ,initYokoPos,initTatePos,textFileName,textPosFile
+              ,colorPallet,statusPos,dotFileName
               ,textLengthLimit,jumpNameFile) 
   where
 
@@ -92,21 +94,23 @@ data Coding = Coding{cod :: ![Code], dfn :: ![Definition], msg :: ![String], ipr
 -- lnw: line width (行送り)
 -- wsz: window size (width,height)
 -- mgn: margins (right, top, left, bottom)
--- dta: jump data (?)
 -- rbi: for rubi
--- jps: jumps (jump target list)
--- fjp: jump from (jump source list)
--- sjn: selected jump number
 -- cnm: command name
 -- cid: command index
 -- fmd: font mode (default Got(hic) mode)
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
-                ,dta :: [Text] ,rbi :: Rubi
-                ,jps :: [Jump], fjp :: [FrJp], jbk :: [JBak], sjn :: Int
+                ,rbi :: Rubi ,jmp :: Jumping
                 ,cnm :: Text, cid :: Int
                 ,fmd :: FMode, ite :: Bool} deriving (Eq,Show)
+
+-- dta: jump data (?)
+-- jps: jumps (jump target list)
+-- fjp: jump from (jump source list)
+-- sjn: selected jump number
+data Jumping = Jumping{dta :: [Text], jps :: [Jump], fjp :: [FrJp]
+                      ,jbk :: [JBak], sjn :: Int} deriving (Eq,Show)
 
 -- rps: rubi position
 -- rwi: width for rubi
@@ -194,8 +198,11 @@ initCoding = Coding {cod = [], dfn = [], msg = [], ipr=True}
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
-               ,dta = [], rbi = initRubi, jps = [], fjp = [], jbk = [], sjn = -1, cnm = "", cid = 0
+               ,rbi = initRubi, jmp = initJumping, cnm = "", cid = 0
                ,fmd = Got, ite = False}
+
+initJumping :: Jumping
+initJumping = Jumping {dta = [], jps = [], fjp = [], jbk = [], sjn = -1}
 
 initRubi :: Rubi
 initRubi = Rubi{rps = initTatePos, rwd = fromIntegral fontSize, tsz = rubiSize, tlw = initLetterWidth

@@ -11,7 +11,7 @@ import qualified Data.Text as T
 import System.Directory (doesFileExist)
 import Linear.V2 (V2(..))
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Active(..),Attr(..),Coding(..),Dot,Input(..),JBak,FrJp,delayTime,textFileName,textPosFile
+import MyData (State(..),Active(..),Attr(..),Coding(..),Jumping(..),Dot,Input(..),JBak,FrJp,delayTime,textFileName,textPosFile
               ,dotFileName,jumpNameFile)
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MyLib (textToDots,dotsToText,jumpsToText)
@@ -50,7 +50,10 @@ myLoop re fonts itexs = do
       getAtr d = let (_,_,gatr,_) = last d in gatr
       natr = if null textData then atr cst' else getAtr textData
       nscr = if inp==NFL || inp==LFL || inp==JMP then V2 0 0 else scr natr
-      (njps,nfjp,jbkAt,nsjn,fpsSt) = (jps natr, fjp natr, jbk natr, sjn natr, fps cactSt')
+      jmpAt = jmp natr
+      (njps,nfjp,jbkAt,nsjn,fpsSt) = 
+          (jps jmpAt, fjp jmpAt, jbk jmpAt, sjn jmpAt, fps cactSt')
+
       isLoadTgt = isLastElem msgSt "loadFile"
       tFjp = if isLoadTgt then read (last (init msgSt)) else 0
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw cst')
@@ -71,7 +74,8 @@ myLoop re fonts itexs = do
         JumpBackFile -> jumpBackFile jbkAt fpsSt cst'
         _ -> return ((tex.act) cst',fpsSt,(tps.act) cst',(dts.act) cst',False,jbkAt)
   let nactSt = cactSt'{tex=ntex,dts=ndts,fps=nfps,tps=ntps}
-  let nst = afterDraw cst'{act=nactSt,cdn=(cdn cst'){msg=[]},atr=(atr cst'){scr=nscr,jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn},iup=niup}
+  let catrSt' = atr cst'
+  let nst = afterDraw cst'{act=nactSt,cdn=(cdn cst'){msg=[]},atr=catrSt'{scr=nscr,jmp=(jmp catrSt'){jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn}},iup=niup}
   delay delayTime
   S.put nst 
   if inp==QIT then do 

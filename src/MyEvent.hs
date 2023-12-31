@@ -6,7 +6,7 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
-import MyData (State(..),Active(..),Attr(..),Coding(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
+import MyData (State(..),Active(..),Attr(..),Coding(..),Jumping(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
 import Mana.Mana (evalCode,taiyouMn,Mn(..),Yo(..),Dtype(..),preDef,userDef)
 import SDL.Input.Keyboard.Codes
@@ -68,7 +68,7 @@ inputEvent = do
       isTglColor = kc==KeycodeC && md==Ctr
 
 
-      isJump = ifmSt && isRet && sjn atrSt>=0
+      isJump = ifmSt && isRet && (sjn.jmp) atrSt>=0
       isJBak = ifmSt && isBS
 
       isSkkEdit = it==T.empty && kc/=KeycodeRShift && kc/=KeycodeLShift 
@@ -83,7 +83,8 @@ inputEvent = do
                   _        -> T.empty
 
       (wm,fm,lw,fjpAt,fszAt,V2 ww wh,V4 mr mt ml mb,scrAt@(V2 sx sy)) =
-         (wmd atrSt,fmd atrSt,lnw atrSt,fjp atrSt,fsz atrSt,wsz atrSt,mgn atrSt,scr atrSt)
+         (wmd atrSt,fmd atrSt,lnw atrSt,(fjp.jmp) atrSt
+         ,fsz atrSt,wsz atrSt,mgn atrSt,scr atrSt)
       tLen = T.length texSt
       seeLines = fromIntegral$if wm==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
       tpsPreLine = tpsForRelativeLine atrSt texSt (-1) tpsSt
@@ -120,7 +121,7 @@ inputEvent = do
                               else atrSt{gps=initTatePos,wmd=T,scr=V2 0 0} 
         | isTglOsd = if fm==Ost then atrSt{fmd=Got} else atrSt{fmd=Ost}
         | isTglMin = if fm==Min then atrSt{fmd=Got} else atrSt{fmd=Min}
-        | otherwise = atrSt{scr=nscr,sjn=nsjn,fsz=nfsz}
+        | otherwise = atrSt{scr=nscr,jmp=(jmp atrSt){sjn=nsjn},fsz=nfsz}
       netx 
         | ised = it 
         | isIns && not ised && it/=T.empty = T.empty
