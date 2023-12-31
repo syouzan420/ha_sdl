@@ -26,14 +26,14 @@ type IsCursor = Bool
 myDraw :: (MonadIO m) => Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> m () 
 myDraw re fonts itex textData isOnlyMouse st = do
   let ac = act st 
-      (dtsSt,drwSt,imgSt,atrSt,tpsSt,ifmSt,icrSt) =
-        (dts ac,drw st,img st,atr st,tps ac,ifm st,icr ac)
-      (scrAt,wmdAt) = (scr atrSt,wmd atrSt)
-      iniPos = if wmdAt==T then initTatePos else initYokoPos
+      (dtsSt,drwSt,imgSt,atrSt,tpsSt,wmdSt,ifmSt,icrSt) =
+        (dts ac,drw st,img st,atr st,tps ac,wmd st,ifm st,icr ac)
+      scrAt = scr atrSt
+      iniPos = if wmdSt==T then initTatePos else initYokoPos
   initDraw re
   statusDraw re (fonts!!1) st 
-  unless isOnlyMouse $ textsDraw re fonts ifmSt icrSt tpsSt textData
-  when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdAt (fromIntegral fontSize) 
+  unless isOnlyMouse $ textsDraw re fonts wmdSt ifmSt icrSt tpsSt textData
+  when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdSt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
   myDrawing re drwSt
   imageDraw re itex imgSt
@@ -103,10 +103,10 @@ statusDraw re font st = do
   freeSurface fontS
   
 
-textsDraw :: (MonadIO m) => Renderer -> [Font] -> IsFormat -> IsCursor -> TextPos -> TextData -> m () 
-textsDraw _ _ _ _ _ [] = return () 
-textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
-  let (scrAt,wmdAt,fszAt,fcoAt,fmdAt) = (scr nat,wmd nat,fsz nat,fco nat,fmd nat)
+textsDraw :: (MonadIO m) => Renderer -> [Font] -> WMode -> IsFormat -> IsCursor -> TextPos -> TextData -> m () 
+textsDraw _ _ _ _ _ _ [] = return () 
+textsDraw re fonts wmdSt ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
+  let (scrAt,fszAt,fcoAt,fmdAt) = (scr nat,fsz nat,fco nat,fmd nat)
       ofs = fromIntegral fontSize
       fs = fromIntegral fszAt
       fnum = case fmdAt of Min -> 0; Got -> 1; Ost -> 2
@@ -128,7 +128,7 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
           let sz = if b then ofs `div` 2 else ofs
           copyEx re fontT (Just (Rectangle (P ps) (V2 sz ofs)))
                           (Just (Rectangle (P (pd+nscr)) (V2 (if b then fs `div` 2 else fs) fs)))
-                          (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
+                          (if wmdSt==T && (b||r) then 90 else 0) Nothing (V2 False False)
           return (ps+V2 sz 0)
               ) (V2 0 0) pList'
         destroyTexture fontT
@@ -141,13 +141,13 @@ textsDraw re fonts ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
           when b $ do
             copyEx re fontT2 (Just (Rectangle (P ps) (V2 sz ofs)))
                              (Just (Rectangle (P (pd+nscr)) (V2 (if b then fs `div` 2 else fs) fs)))
-                             (if wmdAt==T && (b||r) then 90 else 0) Nothing (V2 False False)
+                             (if wmdSt==T && (b||r) then 90 else 0) Nothing (V2 False False)
           return (ps+V2 sz 0)
               ) (V2 0 0) pList
         destroyTexture fontT2
         freeSurface fontS2
-  when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdAt fs 
-  textsDraw re fonts ifmSt icrSt tpsSt xs
+  when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdSt fs 
+  textsDraw re fonts wmdSt ifmSt icrSt tpsSt xs
 
 initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do

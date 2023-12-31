@@ -64,9 +64,8 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- isk: skk editing
 -- iup: need text update? (for example: after reading file) 
 
-data State = State{act :: !Active, drw :: ![Drw]
-                  ,img :: ![Img], cdn :: !Coding 
-                  ,com :: !String , atr :: !Attr
+data State = State{act :: !Active, drw :: ![Drw], img :: ![Img], cdn :: !Coding 
+                  ,com :: !String , atr :: !Attr, wmd :: !WMode
                   ,emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, isk :: !Bool, iup :: !Bool}
 
@@ -99,7 +98,7 @@ data Coding = Coding{cod :: ![Code], dfn :: ![Definition], msg :: ![String], ipr
 -- cid: command index
 -- fmd: font mode (default Got(hic) mode)
 -- ite: is text erase? (don't show text)
-data Attr = Attr{gps :: Pos, scr :: Pos, wmd :: WMode, fsz :: PointSize, fco :: Color
+data Attr = Attr{gps :: Pos, scr :: Pos, fsz :: PointSize, fco :: Color
                 ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
                 ,rbi :: Rubi ,jmp :: Jumping
                 ,cnm :: Text, cid :: Int
@@ -184,7 +183,7 @@ initTatePos = V2 (winSizeX-60) 30
 
 initState :: State
 initState = State {act = initActive, drw = [], img = []
-                  ,cdn = initCoding, com = "", atr = initAttr
+                  ,cdn = initCoding, com = "", atr = initAttr, wmd = T
                   ,emd=Nor, cpl=1, lsz=1
                   ,ifm=False, isk=False, iup=False}
 
@@ -196,7 +195,7 @@ initCoding :: Coding
 initCoding = Coding {cod = [], dfn = [], msg = [], ipr=True}
 
 initAttr :: Attr
-initAttr = Attr{gps = initTatePos, scr = V2 0 0, wmd = T, fsz = fontSize, fco = fontColor
+initAttr = Attr{gps = initTatePos, scr = V2 0 0, fsz = fontSize, fco = fontColor
                ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
                ,rbi = initRubi, jmp = initJumping, cnm = "", cid = 0
                ,fmd = Got, ite = False}

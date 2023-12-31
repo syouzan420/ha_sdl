@@ -32,19 +32,20 @@ afterDraw st = st
 makeTextData :: State -> TextData 
 makeTextData st =
   let ac = act st 
-      (texSt,etxSt,fpsSt,tpsSt,atrSt,ifmSt) 
-              = (tex ac,etx ac,fps ac,tps ac,atr st,ifm st)
-   in makeTexts 0 ifmSt fpsSt tpsSt atrSt etxSt texSt
+      (texSt,etxSt,fpsSt,tpsSt,atrSt,wmdSt,ifmSt) 
+              = (tex ac,etx ac,fps ac,tps ac,atr st,wmd st,ifm st)
+   in makeTexts 0 ifmSt wmdSt fpsSt tpsSt atrSt etxSt texSt
 
-makeTexts :: Index -> IsFormat -> FilePos -> TextPos -> Attr -> Text -> Text -> TextData 
-makeTexts ind ifmSt fpsSt tpsSt atrSt etxSt texSt = 
+makeTexts :: Index -> IsFormat -> WMode -> FilePos -> TextPos
+                                 -> Attr -> Text -> Text -> TextData 
+makeTexts ind ifmSt wmdSt fpsSt tpsSt atrSt etxSt texSt = 
   case uncons texSt of
     Nothing -> if texSt=="" && tpsSt==0 
-                  then [(True,etxSt,atrSt,makePList atrSt etxSt)] else []
+                  then [(True,etxSt,atrSt,makePList wmdSt atrSt etxSt)] else []
     Just (ch,tailTx) ->  
       let (natr,(ptx,pxs)) 
-            | ifmSt = if ch==';' then exeAttrCom fpsSt ind (changeAtr atrSt{ite=False} tailTx) 
-                 else if cnm atrSt/=T.empty then exeAttrCom fpsSt ind (atrSt{ite=False},texSt)
+            | ifmSt = if ch==';' then exeAttrCom wmdSt fpsSt ind (changeAtr atrSt{ite=False} tailTx) 
+                 else if cnm atrSt/=T.empty then exeAttrCom wmdSt fpsSt ind (atrSt{ite=False},texSt)
                                             else (atrSt,T.break (==';') texSt)
             | otherwise = (atrSt,(texSt,T.empty))
           tll = textLengthLimit
@@ -54,32 +55,32 @@ makeTexts ind ifmSt fpsSt tpsSt atrSt etxSt texSt =
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx<>etxSt,tptx<>pxs2) else (ptx2,pxs2)
-          (scrAt,wmdAt,fszAt,wszAt,mgnAt) = (scr natr,wmd natr,fsz natr,wsz natr,mgn natr)
+          (scrAt,fszAt,wszAt,mgnAt) = (scr natr,fsz natr,wsz natr,mgn natr)
           fs = fromIntegral fszAt
-          pList = makePList natr tx
+          pList = makePList wmdSt natr tx
           indInc = lnTex - T.length xs 
           lPos@(V2 lpx lpy) = snd$last pList
           (V2 sx sy) = scrAt
           (V2 ww wh) = wszAt
           (V4 mr mt ml mb) = mgnAt
           nscr
-            | iCur && wmdAt == T && lpx+sx < ml = V2 (ml-lpx) sy 
-            | iCur && wmdAt == T && lpx+sx > ww - mr - fs  = V2 (ww-mr-fs*2-lpx) sy
-            | iCur && wmdAt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
-            | iCur && wmdAt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
+            | iCur && wmdSt == T && lpx+sx < ml = V2 (ml-lpx) sy 
+            | iCur && wmdSt == T && lpx+sx > ww - mr - fs  = V2 (ww-mr-fs*2-lpx) sy
+            | iCur && wmdSt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
+            | iCur && wmdSt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
-      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt fpsSt tpsSt natr{gps=lPos,scr=nscr} etxSt xs 
+      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt wmdSt fpsSt tpsSt natr{gps=lPos,scr=nscr} etxSt xs 
 
-makePList :: Attr -> Text -> [((Bool,Bool),V2 CInt)]
-makePList at tx = 
-  let (ps@(V2 ox oy),wm,tw,nw,ws,mg) = (gps at,wmd at,ltw at,lnw at,wsz at,mgn at)
+makePList :: WMode -> Attr -> Text -> [((Bool,Bool),V2 CInt)]
+makePList wmdSt at tx = 
+  let (ps@(V2 ox oy),tw,nw,ws,mg) = (gps at,ltw at,lnw at,wsz at,mgn at)
    in case uncons tx of
     Nothing -> [((False,False),ps)]
-    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wm ps ws mg (0,0) 
+    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wmdSt ps ws mg (0,0) 
                         qtw = tw `div` 4
-                        ihft = wm==T && ihf
+                        ihft = wmdSt==T && ihf
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
-                          :makePList at{gps=npos} xs
+                          :makePList wmdSt at{gps=npos} xs
 
 changeAtr :: Attr -> Text -> (Attr, Text)
 changeAtr attr tx = 
@@ -92,11 +93,11 @@ changeAtr attr tx =
       natr = attr{cnm=cm, cid=ncid}
    in (natr , rtx)
 
-exeAttrCom :: FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
-exeAttrCom fpsSt tpsSt (at,tx) = 
+exeAttrCom :: WMode -> FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
+exeAttrCom wmdSt fpsSt tpsSt (at,tx) = 
   let jmpAt = jmp at 
-      (gpsAt,wmdAt,fszAt,ltwAt,rbiAt,dtaAt,jpsAt,fjpAt,sjnAt,cnmAt,cidAt) =
-        (gps at,wmd at,fsz at,ltw at,rbi at
+      (gpsAt,fszAt,ltwAt,rbiAt,dtaAt,jpsAt,fjpAt,sjnAt,cnmAt,cidAt) =
+        (gps at,fsz at,ltw at,rbi at
         ,dta jmpAt,jps jmpAt,fjp jmpAt,sjn jmpAt,cnm at,cid at) 
       (Rubi rpsRb rwdRb tszRb tlwRb sprRb) = rbiAt
       tailTx = T.tail tx
@@ -106,12 +107,12 @@ exeAttrCom fpsSt tpsSt (at,tx) =
                "rb" -> case cidAt of
                          2 -> at{rbi=rbiAt{rps=gpsAt,rwd=ltwAt*tln}}
                          1 -> let fs = fromIntegral fszAt
-                                  rbStartPos = if wmdAt==T then rpsRb + V2 (fs+sprRb) 0  
+                                  rbStartPos = if wmdSt==T then rpsRb + V2 (fs+sprRb) 0  
                                                            else rpsRb - V2 0 (fromIntegral rubiSize+sprRb)
                                   rbLetterWidth = rwdRb `div` tln 
                                in at{gps=rbStartPos,fsz=rubiSize,ltw=rbLetterWidth 
                                     ,rbi=rbiAt{tsz=fszAt,tlw=ltwAt}} 
-                         0 -> at{gps=rpsRb+(if wmdAt==T then V2 0 rwdRb else V2 rwdRb 0)
+                         0 -> at{gps=rpsRb+(if wmdSt==T then V2 0 rwdRb else V2 rwdRb 0)
                                   ,fsz=tszRb, ltw=tlwRb}
                          _ -> at
                "jtg" -> case cidAt of
