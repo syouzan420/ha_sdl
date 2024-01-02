@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyAction (myAction,beforeDraw,afterDraw,makePList,changeAtr,exeAttrCom,makeTextData) where
+module MyAction (myAction,beforeDraw,afterDraw,makePList,changeAtr
+                ,exeAttrCom,makeTextData,makeTexts) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
@@ -8,7 +9,7 @@ import SDL.Vect (V2(..),V4(..))
 import Data.Maybe(fromMaybe)
 import Data.List(elemIndex)
 import MyLib (breakText,nextPos)
-import MyData (IsFormat,TextPos,TextData,Jump,FrJp
+import MyData (IsFormat,TextPos,TextData,Jump,FrJp,Mgn,Size
               ,State(..),Active(..),Attr(..),Rubi(..),Jumping(..),WMode(..)
               ,rubiSize,textLengthLimit,linkColor,selectColor,fontColor,cursorTime)
 
@@ -32,16 +33,16 @@ afterDraw st = st
 makeTextData :: State -> TextData 
 makeTextData st =
   let ac = act st 
-      (texSt,etxSt,fpsSt,tpsSt,atrSt,wmdSt,ifmSt) 
-              = (tex ac,etx ac,fps ac,tps ac,atr st,wmd st,ifm st)
-   in makeTexts 0 ifmSt wmdSt fpsSt tpsSt atrSt etxSt texSt
+      (texSt,etxSt,fpsSt,tpsSt,wszSt,mgnSt,atrSt,wmdSt,ifmSt) 
+              = (tex ac,etx ac,fps ac,tps ac,wsz st,mgn st,atr st,wmd st,ifm st)
+   in makeTexts 0 ifmSt wmdSt fpsSt tpsSt wszSt mgnSt atrSt etxSt texSt
 
-makeTexts :: Index -> IsFormat -> WMode -> FilePos -> TextPos
-                                 -> Attr -> Text -> Text -> TextData 
-makeTexts ind ifmSt wmdSt fpsSt tpsSt atrSt etxSt texSt = 
+makeTexts :: Index -> IsFormat -> WMode -> FilePos -> TextPos ->
+                              Size -> Mgn -> Attr -> Text -> Text -> TextData 
+makeTexts ind ifmSt wmdSt fpsSt tpsSt wszSt mgnSt atrSt etxSt texSt = 
   case uncons texSt of
     Nothing -> if texSt=="" && tpsSt==0 
-                  then [(True,etxSt,atrSt,makePList wmdSt atrSt etxSt)] else []
+                  then [(True,etxSt,atrSt,makePList wmdSt wszSt mgnSt atrSt etxSt)] else []
     Just (ch,tailTx) ->  
       let (natr,(ptx,pxs)) 
             | ifmSt = if ch==';' then exeAttrCom wmdSt fpsSt ind (changeAtr atrSt{ite=False} tailTx) 
@@ -55,32 +56,32 @@ makeTexts ind ifmSt wmdSt fpsSt tpsSt atrSt etxSt texSt =
           iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx<>etxSt,tptx<>pxs2) else (ptx2,pxs2)
-          (scrAt,fszAt,wszAt,mgnAt) = (scr natr,fsz natr,wsz natr,mgn natr)
+          (scrAt,fszAt) = (scr natr,fsz natr)
           fs = fromIntegral fszAt
-          pList = makePList wmdSt natr tx
+          pList = makePList wmdSt wszSt mgnSt natr tx
           indInc = lnTex - T.length xs 
           lPos@(V2 lpx lpy) = snd$last pList
           (V2 sx sy) = scrAt
-          (V2 ww wh) = wszAt
-          (V4 mr mt ml mb) = mgnAt
+          (V2 ww wh) = wszSt
+          (V4 mr mt ml mb) = mgnSt
           nscr
             | iCur && wmdSt == T && lpx+sx < ml = V2 (ml-lpx) sy 
             | iCur && wmdSt == T && lpx+sx > ww - mr - fs  = V2 (ww-mr-fs*2-lpx) sy
             | iCur && wmdSt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
             | iCur && wmdSt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)
             | otherwise = scrAt
-      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt wmdSt fpsSt tpsSt natr{gps=lPos,scr=nscr} etxSt xs 
+      in (iCur,tx,natr{gps=lPos,scr=nscr},pList):makeTexts (ind+indInc) ifmSt wmdSt fpsSt tpsSt wszSt mgnSt natr{gps=lPos,scr=nscr} etxSt xs 
 
-makePList :: WMode -> Attr -> Text -> [((Bool,Bool),V2 CInt)]
-makePList wmdSt at tx = 
-  let (ps@(V2 ox oy),tw,nw,ws,mg) = (gps at,ltw at,lnw at,wsz at,mgn at)
+makePList :: WMode -> Size -> Mgn -> Attr -> Text -> [((Bool,Bool),V2 CInt)]
+makePList wm ws mg at tx = 
+  let (ps@(V2 ox oy),tw,nw) = (gps at,ltw at,lnw at)
    in case uncons tx of
     Nothing -> [((False,False),ps)]
-    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wmdSt ps ws mg (0,0) 
+    Just (ch,xs) -> let ((ihf,irt),(npos,_)) = nextPos ch tw nw wm ps ws mg (0,0) 
                         qtw = tw `div` 4
-                        ihft = wmdSt==T && ihf
+                        ihft = wm==T && ihf
                      in ((ihf,irt),V2 (if ihft then ox+qtw else ox) (if ihft then oy-qtw else oy))
-                          :makePList wmdSt at{gps=npos} xs
+                          :makePList wm ws mg at{gps=npos} xs
 
 changeAtr :: Attr -> Text -> (Attr, Text)
 changeAtr attr tx = 

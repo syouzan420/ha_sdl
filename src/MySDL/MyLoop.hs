@@ -11,8 +11,8 @@ import qualified Data.Text as T
 import System.Directory (doesFileExist)
 import Linear.V2 (V2(..))
 import MySDL.MyDraw (myDraw)
-import MyData (State(..),Active(..),Attr(..),Coding(..),Jumping(..),Dot,Input(..),JBak,FrJp,delayTime,textFileName,textPosFile
-              ,dotFileName,jumpNameFile)
+import MyData (State(..),Active(..),Attr(..),Coding(..),Jumping(..),Dot,Input(..)
+              ,JBak,FrJp,delayTime,textFileName,textPosFile,dotFileName,jumpNameFile)
 import MyAction (beforeDraw,afterDraw,makeTextData)
 import MyLib (textToDots,dotsToText,jumpsToText)
 import MyEvent (inputEvent)

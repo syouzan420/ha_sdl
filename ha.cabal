@@ -27,6 +27,7 @@ library
   exposed-modules:
       Block
       Game.WkData
+      Game.WkDraw
       Game.WkEvent
       Game.WkLoop
       Game.WkMain

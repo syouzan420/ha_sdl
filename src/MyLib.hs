@@ -10,7 +10,7 @@ import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import Data.Maybe(fromMaybe)
 import Data.List (nub,elemIndex)
-import MyData (Pos,Dot,Jump,Attr(..),WMode(..),dotSize)
+import MyData (Pos,Dot,Jump,Mgn,Size,Attr(..),WMode(..),dotSize)
 
 type Index = Int
 type Line = Int
@@ -65,39 +65,42 @@ deleteCurrentLine tpsSt texSt =
                          in if null iLine then T.empty else T.unlines iLine
    in textForward <> if texSt == T.empty || dropText == T.empty then T.empty else T.tail dropText
 
-tpsForRelativeLine :: WMode -> Attr -> Text -> Int -> Index -> Index 
-tpsForRelativeLine wmdSt atrSt texSt rdv ind =
-  let (ln,lt) = indexToLoc wmdSt atrSt texSt ind   
-      nind = locToIndex wmdSt atrSt texSt (ln+rdv,lt)
+tpsForRelativeLine :: WMode -> Size -> Mgn -> Attr -> Text -> Int -> Index -> Index 
+tpsForRelativeLine wmdSt wszSt mgnSt atrSt texSt rdv ind =
+  let (ln,lt) = indexToLoc wmdSt wszSt mgnSt atrSt texSt ind   
+      nind = locToIndex wmdSt wszSt mgnSt atrSt texSt (ln+rdv,lt)
    in if nind<0 then ind else nind
 
-indexToLoc :: WMode -> Attr -> Text -> Index -> Location
-indexToLoc wmdSt atrSt texSt ind = indexToLoc' wmdSt atrSt (T.take ind texSt) (0,0)
+indexToLoc :: WMode -> Size -> Mgn -> Attr -> Text -> Index -> Location
+indexToLoc wmdSt wszSt mgnSt atrSt texSt ind = 
+    indexToLoc' wmdSt wszSt mgnSt atrSt (T.take ind texSt) (0,0)
 
-indexToLoc' :: WMode -> Attr -> Text -> Location -> Location
-indexToLoc' wmdSt at tx lc =
-  let (ps,tw,nw,ws,mg) = (gps at,ltw at,lnw at,wsz at,mgn at)
+indexToLoc' :: WMode -> Size -> Mgn -> Attr -> Text -> Location -> Location
+indexToLoc' wm ws mg at tx lc =
+  let (ps,tw,nw) = (gps at,ltw at,lnw at)
    in case uncons tx of
     Nothing -> lc 
-    Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wmdSt ps ws mg lc 
-                     in indexToLoc' wmdSt at{gps=npos} xs (nln,nlt)
+    Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wm ps ws mg lc 
+                     in indexToLoc' wm ws mg at{gps=npos} xs (nln,nlt)
 --
-locToIndex :: WMode -> Attr -> Text -> Location -> Index
-locToIndex wmdSt atrSt texSt tlc = locToIndex' wmdSt atrSt texSt tlc (0,0) 0 
+locToIndex :: WMode -> Size -> Mgn -> Attr -> Text -> Location -> Index
+locToIndex wmdSt wszSt mgnSt atrSt texSt tlc 
+            = locToIndex' wmdSt wszSt mgnSt atrSt texSt tlc (0,0) 0 
 
-locToIndex' :: WMode -> Attr -> Text -> Location -> Location -> Index -> Index
-locToIndex' wmdSt at tx tlc@(tln,tlt) lc@(ln,lt) ind
+locToIndex' :: WMode -> Size -> Mgn -> Attr -> Text 
+                                -> Location -> Location -> Index -> Index
+locToIndex' wm ws mg at tx tlc@(tln,tlt) lc@(ln,lt) ind
   | lc==tlc = ind 
   | ln>tln && tlt > lt = ind-1 
   | otherwise =
       case uncons tx of
         Nothing -> if tlt>lt || tln>ln then ind else (-1) 
-        Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wmdSt ps ws mg lc 
-                         in locToIndex' wmdSt at{gps=npos} xs tlc (nln,nlt) (ind+1)
-  where (ps,tw,nw,ws,mg) = (gps at,ltw at,lnw at,wsz at,mgn at)
+        Just (ch,xs) -> let (_,(npos,(nln,nlt))) = nextPos ch tw nw wm ps ws mg lc 
+                         in locToIndex' wm ws mg at{gps=npos} xs tlc (nln,nlt) (ind+1)
+  where (ps,tw,nw) = (gps at,ltw at,lnw at)
 
-nextPos :: Char -> CInt -> CInt -> WMode -> Pos -> V2 CInt -> V4 CInt -> Location 
-                                                            -> ((Bool,Bool),(Pos,Location))
+nextPos :: Char -> CInt -> CInt -> WMode -> Pos -> Size -> Mgn -> Location 
+                                                    -> ((Bool,Bool),(Pos,Location))
 nextPos ch tw nw wm ps@(V2 ox oy) (V2 ww wh) (V4 mr mt ml mb) (ln,lt) = 
     let cn = fromEnum ch
         htw = tw `div` 2

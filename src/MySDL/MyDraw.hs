@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MySDL.MyDraw (myDraw,wkDraw,initDraw) where
+module MySDL.MyDraw (myDraw,initDraw,textsDraw) where
 
 import SDL.Video (Renderer, Texture)
 import SDL.Video.Renderer (rendererDrawColor,clear,copy,copyEx,Rectangle(..),textureAlphaMod
@@ -15,7 +15,6 @@ import Foreign.C.Types (CInt)
 import qualified Data.Text as T
 import Data.Text (pack)
 import General (getIndex)
-import qualified Game.WkData as W 
 import MyData (State(..),Active(..),Attr(..),Jumping(..),WMode(..),FMode(..)
               ,IsFormat,Dot,Pos,TextPos,TextData
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..),Color
@@ -24,10 +23,8 @@ import MyData (State(..),Active(..),Attr(..),Jumping(..),WMode(..),FMode(..)
 
 type IsCursor = Bool
 
-wkDraw :: (MonadIO m) => Renderer -> [Font] -> TextData -> W.Waka -> m ()
-wkDraw = undefined
-
-myDraw :: (MonadIO m) => Renderer -> [Font] -> [Texture] -> TextData -> Bool -> State -> m () 
+myDraw :: (MonadIO m) => Renderer -> [Font] -> [Texture] 
+                              -> TextData -> Bool -> State -> m () 
 myDraw re fonts itex textData isOnlyMouse st = do
   let ac = act st 
       (dtsSt,drwSt,imgSt,atrSt,tpsSt,wmdSt,ifmSt,icrSt) =

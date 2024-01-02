@@ -15,9 +15,9 @@ inputEvent :: S.StateT State IO Input
 inputEvent = do
   st <- S.get
   let (actSt,cdnSt) = (act st, cdn st) 
-      (texSt,etxSt,dtsSt,tpsSt,dfnSt,comSt,atrSt,emdSt,wmdSt,cplSt,ifmSt,iskSt) =
-          (tex actSt,etx actSt,dts actSt,tps actSt,dfn cdnSt
-          ,com st,atr st,emd st,wmd st,cpl st,ifm st,isk st)
+      (texSt,etxSt,dtsSt,tpsSt,dfnSt,comSt,wszSt,mgnSt,atrSt,emdSt,wmdSt,cplSt,ifmSt,iskSt)
+        = (tex actSt,etx actSt,dts actSt,tps actSt,dfn cdnSt
+          ,com st,wsz st,mgn st,atr st,emd st,wmd st,cpl st,ifm st,isk st)
   (kc,md,it,mps,isc,ised) <- myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
@@ -84,13 +84,13 @@ inputEvent = do
 
       (fm,lw,fjpAt,fszAt,V2 ww wh,V4 mr mt ml mb,scrAt@(V2 sx sy)) =
          (fmd atrSt,lnw atrSt,(fjp.jmp) atrSt
-         ,fsz atrSt,wsz atrSt,mgn atrSt,scr atrSt)
+         ,fsz atrSt,wszSt,mgnSt,scr atrSt)
       tLen = T.length texSt
       seeLines = fromIntegral$if wmdSt==T then (ww-mr-ml) `div` lw else (wh-mt-mb) `div` lw
-      tpsPreLine = tpsForRelativeLine wmdSt atrSt texSt (-1) tpsSt
-      tpsNextLine = tpsForRelativeLine wmdSt atrSt texSt 1 tpsSt
-      tpsFarBack = tpsForRelativeLine wmdSt atrSt texSt (-seeLines) tpsSt
-      tpsFarForward = tpsForRelativeLine wmdSt atrSt texSt seeLines tpsSt
+      tpsPreLine = tpsForRelativeLine wmdSt wszSt mgnSt atrSt texSt (-1) tpsSt
+      tpsNextLine = tpsForRelativeLine wmdSt wszSt mgnSt atrSt texSt 1 tpsSt
+      tpsFarBack = tpsForRelativeLine wmdSt wszSt mgnSt atrSt texSt (-seeLines) tpsSt
+      tpsFarForward = tpsForRelativeLine wmdSt wszSt mgnSt atrSt texSt seeLines tpsSt
 
       codeMana 
         | isExeCode = evalCode (preDef++[(User,userDef++dfnSt)]) (takeCurrentLine tpsSt texSt)
@@ -104,7 +104,7 @@ inputEvent = do
       nit = if isIns && isRet && it==T.empty then "\n" else it
       centerLineNum = if wmdSt==T then (ww-mr-ml) `div` lw `div` 2  + sx `div` lw 
                                else (wh-mt-mb) `div` lw `div` 2 - sy `div` lw
-      centerIndex = locToIndex wmdSt atrSt texSt (fromIntegral centerLineNum,0)
+      centerIndex = locToIndex wmdSt wszSt mgnSt atrSt texSt (fromIntegral centerLineNum,0)
       nsjn = selectNearest centerIndex (map fst fjpAt)
       nscr
         | ifmSt && wmdSt==T && isLeft = scrAt+V2 lw 0

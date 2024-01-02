@@ -16,12 +16,12 @@ type TSet = (Text,Text)
 
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
 
-data Waka = Waka {set :: ![TSet], tex :: !Text, tps :: !Int
+data Waka = Waka {set :: ![TSet], tex :: !Text, tps :: !Int, scr :: !Pos
                  ,rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
                  ,fsz :: !PointSize}
 
 initWaka :: Waka
-initWaka = Waka {set = [], tex = T.empty, tps = 0
+initWaka = Waka {set = [], tex = T.empty, tps = 0, scr = V2 0 0
                 ,rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
                 ,fsz = fontSize} 
 
@@ -33,10 +33,10 @@ windowSize :: V2 CInt
 windowSize = V2 480 640
 
 textRect :: Rect
-textRect = V4 5 320 470 310
+textRect = V4 5 220 470 410
 
 textMgn :: Mgn
-textMgn = V4 5 5 5 5
+textMgn = V4 5 5 5 20 
 
 letterWidth :: CInt
 letterWidth = 26

@@ -1,13 +1,17 @@
-module Game.WkEvent (wkInput,startText) where
+module Game.WkEvent (wkInput,startText,makeWkTextData) where
 
 import qualified Control.Monad.State.Strict as S
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
+import Linear.V2 (V2(..))
+import Linear.V4 (V4(..))
 import qualified Data.Text as T
 import SDL.Input.Keyboard.Codes
 import MySDL.MyInput (myInput)
 import Data.Maybe (fromMaybe)
-import Game.WkData (Waka(..),Input(..))
+import qualified MyData as MD 
+import MyAction (makeTexts)
+import Game.WkData (Waka(..),Input(..),windowSize)
 
 wkInput :: (MonadIO m) => m Input
 wkInput = do
@@ -47,3 +51,17 @@ getText (tx:txs) acc =
   let (ind,ch) = fromMaybe (T.empty,'0') (T.unsnoc tx)
    in if ch==':' then (T.unlines acc,tx:txs) 
                  else getText txs (acc++[tx]) 
+
+makeWkTextData :: Waka -> MD.TextData
+makeWkTextData wk =
+  let (texWk,tpsWk,scrWk,rctWk,mgnWk,ltwWk,lnwWk,fszWk) 
+        = (tex wk,tps wk,scr wk,rct wk,mgn wk,ltw wk,lnw wk,fsz wk)
+      (V2 ww wh) = windowSize
+      (V4 x y w h) = rctWk 
+      (V4 rm tm lm bm) = mgnWk
+      initPos = V2 (x+w-rm-fromIntegral fszWk) (y+tm)
+      mgn' = V4 (ww-(x+w)+rm) (y+tm) (x+lm) (wh-(y+h)+bm)  
+      tex' = T.take tpsWk texWk
+      atr' = MD.initAttr{MD.gps=initPos+scrWk,MD.scr=scrWk, MD.ltw=ltwWk
+               ,MD.lnw=lnwWk,MD.fsz=fszWk}
+   in makeTexts 0 False MD.T 0 tpsWk windowSize mgn' atr' T.empty tex'

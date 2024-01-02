@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module MyData (Pos,Color,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
+module MyData (Pos,Color,Mgn,Size,PList,TextPos,TextData,IsFormat,Dot,Code,Jump,FrJp,JBak
               ,Dt(..),Li(..),Rc(..),Cr(..),Shp(..),Drw(..),Img(..)
               ,Modif(..),State(..),Active(..),Attr(..),Coding(..),Rubi(..),Jumping(..)
               ,WMode(..),EMode(..),FMode(..),Input(..)
@@ -23,6 +23,7 @@ import Mana.Mana (Definition)
 type TextPos = Int
 type Pos = V2 CInt
 type Size = V2 CInt
+type Mgn = V4 CInt
 type PointSize = Int
 type Color = V4 Word8
 type Cnum = Int         -- color number
@@ -57,6 +58,8 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- img: images 
 -- com: command for normal mode
 -- atr: text attribute
+-- mgn: margins (right, top, left, bottom)
+-- wmd: writing mode (Tate, Yoko)
 -- emd: edit mode (normal or insert) 
 -- cpl: color pallet (color number)
 -- lsz: line size
@@ -65,8 +68,8 @@ data Img = Img Pos Size CInt Name deriving (Eq,Show) --Image: position, size, ro
 -- iup: need text update? (for example: after reading file) 
 
 data State = State{act :: !Active, drw :: ![Drw], img :: ![Img], cdn :: !Coding 
-                  ,com :: !String , atr :: !Attr, wmd :: !WMode
-                  ,emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
+                  ,com :: !String, wsz :: !Size, mgn :: !Mgn , atr :: !Attr
+                  ,wmd :: !WMode, emd :: !EMode, cpl :: !Cnum, lsz :: !CInt
                   ,ifm :: !Bool, isk :: !Bool, iup :: !Bool}
 
 -- tex: edit text
@@ -86,20 +89,18 @@ data Active = Active{tex :: !Text, etx :: !Text, dts :: ![Dot]
 data Coding = Coding{cod :: ![Code], dfn :: ![Definition], msg :: ![String], ipr :: !Bool} 
 
 -- gps: position (x,y) on graphic pixels
--- wmd: writing mode (Tate, Yoko)
 -- fsz: font size (appear) (not the original font size)
 -- fco: font color
 -- ltw: letter width (文字送り)
 -- lnw: line width (行送り)
 -- wsz: window size (width,height)
--- mgn: margins (right, top, left, bottom)
 -- rbi: for rubi
 -- cnm: command name
 -- cid: command index
 -- fmd: font mode (default Got(hic) mode)
 -- ite: is text erase? (don't show text)
 data Attr = Attr{gps :: Pos, scr :: Pos, fsz :: PointSize, fco :: Color
-                ,ltw :: CInt, lnw :: CInt, wsz :: V2 CInt, mgn :: V4 CInt
+                ,ltw :: CInt, lnw :: CInt
                 ,rbi :: Rubi ,jmp :: Jumping
                 ,cnm :: Text, cid :: Int
                 ,fmd :: FMode, ite :: Bool} deriving (Eq,Show)
@@ -182,9 +183,9 @@ initTatePos = V2 (winSizeX-60) 30
 -- INITIALIZE
 
 initState :: State
-initState = State {act = initActive, drw = [], img = []
-                  ,cdn = initCoding, com = "", atr = initAttr, wmd = T
-                  ,emd=Nor, cpl=1, lsz=1
+initState = State {act = initActive, drw = [], img = [], cdn = initCoding, com = ""
+                  ,wsz = windowSize, mgn = margins, atr = initAttr
+                  ,wmd = T,emd=Nor, cpl=1, lsz=1
                   ,ifm=False, isk=False, iup=False}
 
 initActive :: Active
@@ -196,7 +197,7 @@ initCoding = Coding {cod = [], dfn = [], msg = [], ipr=True}
 
 initAttr :: Attr
 initAttr = Attr{gps = initTatePos, scr = V2 0 0, fsz = fontSize, fco = fontColor
-               ,ltw = initLetterWidth, lnw = initLineWidth, wsz = windowSize, mgn = margins
+               ,ltw = initLetterWidth, lnw = initLineWidth
                ,rbi = initRubi, jmp = initJumping, cnm = "", cid = 0
                ,fmd = Got, ite = False}
 
