@@ -26,6 +26,11 @@ source-repository head
 library
   exposed-modules:
       Block
+      Game.WkData
+      Game.WkEvent
+      Game.WkLoop
+      Game.WkMain
+      Game.WkVideo
       General
       Mana.Mana
       Mana.MyTree

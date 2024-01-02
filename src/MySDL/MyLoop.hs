@@ -19,27 +19,35 @@ import MyEvent (inputEvent)
 import MyFile (fileRead,fileWrite)
 import MyCode (exeCode)
 import General (isLastElem)
+import Game.WkMain (runWaka)
 
-data FC = NewFile | LoadNextFile | LoadRecentFile | LoadFile | JumpFile | JumpBackFile | DoNothing deriving Eq
+data FC = NewFile | LoadNextFile | LoadRecentFile | LoadFile 
+        | JumpFile | JumpBackFile | RunWaka | DoNothing deriving Eq
 type ChangeFile = (T.Text,Int,Int,[Dot],Bool,[JBak])
 
 myLoop :: Renderer -> [Font] -> [Texture] -> S.StateT State IO ()
 myLoop re fonts itexs = do
   st <- S.get
   let actSt = act st
+
   inp <- inputEvent 
+
   st' <- S.get
   let actSt' = act st'
       isUpdateTps = tps actSt /= tps actSt'
       nicr = isUpdateTps || icr actSt'
       ncrc = if isUpdateTps then 0 else crc actSt'
       bst = beforeDraw st'{act=actSt'{crc=ncrc,icr=nicr},cdn=(cdn st'){ipr=True}}
+      bcdnSt = cdn bst
   S.put bst
-  when (inp==EXE) $ mapM_ exeCode ((cod.cdn) bst)  
+
+  when (inp==EXE) $ mapM_ exeCode (cod bcdnSt) 
+
   cst <- S.get
   let ccdnSt = cdn cst
       msgSt = msg ccdnSt
   when (isLastElem msgSt "codeExe") $ mapM_ exeCode (cod ccdnSt) 
+  
   cst' <- S.get
   let cactSt' = act cst'
       isUpdateText = tex actSt /= tex cactSt' || icr actSt /= icr cactSt' || isUpdateTps 
@@ -56,6 +64,8 @@ myLoop re fonts itexs = do
 
       isLoadTgt = isLastElem msgSt "loadFile"
       tFjp = if isLoadTgt then read (last (init msgSt)) else 0
+      isRunWaka = isLastElem msgSt "runWaka"
+      wkInitFile = if isRunWaka then read (last (init msgSt)) else 0
   when isUpdateDraw $ myDraw re fonts itexs textData isOnlyMouse (beforeDraw cst')
   let fc
        | inp==NFL = NewFile
@@ -64,6 +74,7 @@ myLoop re fonts itexs = do
        | isLoadTgt = LoadFile
        | inp==JMP = JumpFile
        | inp==JBK = JumpBackFile
+       | isRunWaka = RunWaka
        | otherwise = DoNothing
   (ntex,nfps,ntps,ndts,niup,njbk) <- case fc of
         NewFile -> newFile fpsSt jbkAt cst' 
@@ -73,6 +84,7 @@ myLoop re fonts itexs = do
         JumpFile -> jumpFile nfjp jbkAt nsjn fpsSt cst' 
         JumpBackFile -> jumpBackFile jbkAt fpsSt cst'
         _ -> return ((tex.act) cst',fpsSt,(tps.act) cst',(dts.act) cst',False,jbkAt)
+  when (fc==RunWaka) $ runWaka wkInitFile "" fonts
   let nactSt = cactSt'{tex=ntex,dts=ndts,fps=nfps,tps=ntps}
   let catrSt' = atr cst'
   let nst = afterDraw cst'{act=nactSt,cdn=(cdn cst'){msg=[]},atr=catrSt'{scr=nscr,jmp=(jmp catrSt'){jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn}},iup=niup}

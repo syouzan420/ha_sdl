@@ -16,23 +16,25 @@ import General (getIndex,delIndex)
 type StateIO = S.StateT State IO ()
 type Func = [String] -> StateIO
 
-exeCode :: Code -> StateIO
-exeCode cd = do
-  let cds = words cd 
+exeCode :: Code -> StateIO 
+exeCode code = do
+  let cds = words code 
       (arg,funcName) = (init cds, last cds)
-  fromMaybe idf (lookup funcName funcs) arg 
-  st <- S.get
-  when ((ipr.cdn) st) $ addTex "OK." 
+  fromMaybe idf (lookup funcName funcs) arg -- idf is a function to do nothing 
+  iprSt <- S.get >>= return.ipr.cdn
+  when iprSt $ addTex "OK." 
 
 addTex :: T.Text -> StateIO
 addTex tx = do 
   st <- S.get
-  let texSt = (tex.act) st; tpsSt = (tps.act) st
-      lTps = lastTps tpsSt texSt
-      ntex = textIns ("\n"<>tx) lTps texSt
-      ntps = lTps + T.length ("\n"<>tx)
-      nac = (act st){tex=ntex,tps=ntps}
-      nst = st{act=nac, cdn=(cdn st){ipr = False}}
+  let actSt = act st 
+      (texSt,tpsSt) = (tex actSt,tps actSt)
+      insTx = "\n"<>tx                      -- insert text
+      lTps = lastTps tpsSt texSt            -- lastTps <-- MyLib.hs
+      ntex = textIns insTx lTps texSt       -- textIns <-- MyLib.hs
+      ntps = lTps + T.length insTx 
+      nact = actSt{tex=ntex,tps=ntps}
+      nst = st{act=nact, cdn=(cdn st){ipr = False}}
   S.put nst
 
 getMoz :: String -> String
@@ -43,7 +45,7 @@ funcs = [("cls",cls),("clear",clear)
         ,("color",color),("lineSize",lineSize)
         ,("drawRect",drawRect),("drawLine",drawLine)
         ,("drawCircle",drawCircle),("drawDot",drawDot),("drawGrid",drawGrid)
-        ,("drawImage",drawImage),("load",load),("run",run),("ha",ha)]
+        ,("drawImage",drawImage),("load",load),("waka",waka),("run",run),("ha",ha)]
 
 idf :: [String] -> StateIO
 idf _  = return () 
@@ -107,6 +109,10 @@ load :: [String] -> StateIO
 load [a] = S.get >>= 
     (\st -> return st{cdn=(cdn st){msg=[a,"loadFile"],ipr=False}}) >>= S.put  
 load _ = return ()
+
+waka :: [String] -> StateIO
+waka [a] = S.get >>=
+    (\st -> return st{cdn=(cdn st){msg=[a,"runWaka"],ipr=False}}) >>= S.put
 
 run :: [String] -> StateIO
 run _ = do

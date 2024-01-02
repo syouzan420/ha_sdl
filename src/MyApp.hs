@@ -15,5 +15,6 @@ appMain =
     withMyVideo sur $
       \(renderer,itexs) -> do
         let newActive = initActive{tex=text,dts=dots,fps=fpos,tps=tpos}
-            newState = initState{act=newActive,atr=initAttr{jmp=initJumping{jps=jumps}}} 
+            newAttr = initAttr{jmp=initJumping{jps=jumps}}
+            newState = initState{act=newActive,atr=newAttr} 
         S.runStateT (myLoop renderer fonts itexs) newState

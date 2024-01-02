@@ -12,7 +12,9 @@ clear
 0 2 0 "midu" block
 ```
 run
+OK.
 2 oneBlock
+OK.
 abc :: k = 3
 OK.
 a :: k = 4
