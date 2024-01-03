@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Game.WkEvent (wkInput,startText,makeWkTextData) where
 
 import qualified Control.Monad.State.Strict as S
@@ -18,6 +19,7 @@ wkInput = do
     (kc,_,_,_,_,_) <- myInput
     return $ case kc of
       KeycodeEscape -> Es
+      KeycodeSpace -> Sp
       KeycodeK -> Up
       KeycodeUp -> Up
       KeycodeJ -> Dn
@@ -64,4 +66,5 @@ makeWkTextData wk =
       tex' = T.take tpsWk texWk
       atr' = MD.initAttr{MD.gps=initPos+scrWk,MD.scr=scrWk, MD.ltw=ltwWk
                ,MD.lnw=lnwWk,MD.fsz=fszWk}
-   in makeTexts 0 False MD.T 0 tpsWk windowSize mgn' atr' T.empty tex'
+   in makeTexts 0 True MD.T 0 tpsWk windowSize mgn' atr' T.empty tex'
+

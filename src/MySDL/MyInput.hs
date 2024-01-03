@@ -72,9 +72,11 @@ myInput = do
 --  when skkedit $ putStrLn "SkkEditStart"
   let kc' 
        |kc==KeycodeUnknown && itx/=T.empty = case itx of
-                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK; "l" -> KeycodeL
+                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK;
+                  "l" -> KeycodeL; " " -> KeycodeSpace
                   "い" -> KeycodeI
                   _ -> KeycodeUnknown
        |otherwise = kc
+--  when (itx/=T.empty) $ liftIO $ print kc'
   return (kc',mdres,itx,mps,ismc,ised) 
  

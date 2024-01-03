@@ -1,5 +1,7 @@
 module General where
 
+import qualified Data.Text as T 
+
 getIndex :: Eq a => a -> [a] -> Int
 getIndex _ [] = 0
 getIndex t (x:xs) = if t==x then 0 else 1 + getIndex t xs
@@ -20,3 +22,5 @@ isLastElem :: (Eq a) => [a] -> a -> Bool
 isLastElem [] _ = False
 isLastElem lst elm = last lst == elm
 
+getLastChar :: T.Text -> Char
+getLastChar tx = if tx==T.empty then '0' else T.last tx

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Game.WkDraw (wkDraw) where
 
 import Control.Monad.IO.Class (MonadIO)
@@ -11,6 +12,6 @@ import MyData (TextData,WMode(..))
 wkDraw :: (MonadIO m) => Renderer -> [Font] -> TextData -> Waka -> m ()
 wkDraw re fonts textData wk = do
   initDraw re
-  textsDraw re fonts T True False (tps wk) textData
+  textsDraw re fonts T True False (tps wk) ["."] textData
   present re
 

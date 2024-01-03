@@ -36,7 +36,7 @@ textRect :: Rect
 textRect = V4 5 220 470 410
 
 textMgn :: Mgn
-textMgn = V4 5 5 5 20 
+textMgn = V4 15 5 5 20 
 
 letterWidth :: CInt
 letterWidth = 26
@@ -48,4 +48,4 @@ fontSize :: PointSize
 fontSize = 24
 
 delayTime :: Word32
-delayTime = 60
+delayTime = 80 

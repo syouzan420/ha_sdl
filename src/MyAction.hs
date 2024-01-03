@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyAction (myAction,beforeDraw,afterDraw,makePList,changeAtr
-                ,exeAttrCom,makeTextData,makeTexts) where
+                ,exeAttrCom,makeTextData,makeTexts,getCid) where
 
 import Data.Text (Text,uncons)
 import qualified Data.Text as T
@@ -53,7 +53,7 @@ makeTexts ind ifmSt wmdSt fpsSt tpsSt wszSt mgnSt atrSt etxSt texSt =
           (ptx2,pxs2) = if T.length ptx>tll then (T.take tll ptx,T.drop tll ptx<>pxs) else (ptx,pxs)
           lnTex = T.length texSt 
           preInc = lnTex - T.length pxs2 + 1
-          iCur = tpsSt > ind && tpsSt < ind + preInc && not ifmSt
+          iCur = tpsSt > ind && tpsSt < ind + preInc
           (iptx,tptx) = if iCur && tpsSt>0 then T.splitAt (tpsSt-ind) ptx2 else (ptx2,T.empty) 
           (tx,xs) = if iCur then (iptx<>etxSt,tptx<>pxs2) else (ptx2,pxs2)
           (scrAt,fszAt) = (scr natr,fsz natr)
@@ -85,14 +85,20 @@ makePList wm ws mg at tx =
 
 changeAtr :: Attr -> Text -> (Attr, Text)
 changeAtr attr tx = 
+  let (ncid, (cm, rtx)) = getCid tx
+      natr = attr{cnm=cm, cid=ncid}
+   in (natr , rtx)
+
+getCid :: Text -> (Int, (Text,Text))
+getCid tx =
   let (cm,rtx) = T.break (==' ') tx
       ncid = case cm of
                "rb" -> 2 
                "jtg" -> 1
                "jp" -> 3
                _    -> 0
-      natr = attr{cnm=cm, cid=ncid}
-   in (natr , rtx)
+   in (ncid, (cm, rtx))
+
 
 exeAttrCom :: WMode -> FilePos -> TextPos -> (Attr,Text) -> (Attr, (Text, Text))
 exeAttrCom wmdSt fpsSt tpsSt (at,tx) = 
