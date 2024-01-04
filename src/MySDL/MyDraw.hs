@@ -33,7 +33,7 @@ myDraw re fonts itex textData isOnlyMouse st = do
       iniPos = if wmdSt==T then initTatePos else initYokoPos
   initDraw re
   statusDraw re (fonts!!1) st 
-  unless isOnlyMouse $ textsDraw re fonts wmdSt ifmSt icrSt tpsSt [] textData
+  unless isOnlyMouse $ textsDraw re fonts wmdSt ifmSt icrSt tpsSt textData
   when (tpsSt==0 && icrSt && not ifmSt) $ cursorDraw re (iniPos+scrAt) wmdSt (fromIntegral fontSize) 
   dotsDraw re scrAt dtsSt
   myDrawing re drwSt
@@ -105,15 +105,14 @@ statusDraw re font st = do
   
 
 textsDraw :: (MonadIO m) => Renderer -> [Font] -> WMode 
-        -> IsFormat -> IsCursor -> TextPos -> [T.Text] -> TextData -> m () 
-textsDraw _ _ _ _ _ _ _ [] = return () 
-textsDraw re fonts wmdSt ifmSt icrSt tpsSt rpt ((iCur,txt,nat,pList):xs) = do
+        -> IsFormat -> IsCursor -> TextPos -> TextData -> m () 
+textsDraw _ _ _ _ _ _ [] = return () 
+textsDraw re fonts wmdSt ifmSt icrSt tpsSt ((iCur,tx,nat,pList):xs) = do
   let (scrAt,fszAt,fcoAt,fmdAt) = (scr nat,fsz nat,fco nat,fmd nat)
       ofs = fromIntegral fontSize
       fs = fromIntegral fszAt
       fnum = case fmdAt of Min -> 0; Got -> 1; Ost -> 2
       nscr = if null xs then scrAt else let (_,_,nxtAtr,_) = head xs in scr nxtAtr
-      tx = if null rpt then txt else foldl (\acc rp -> T.replace rp " " acc) txt rpt
       rpText = T.replace "\n" "  " tx
       rpText2 = T.replace "\n" "　" tx
 
@@ -150,7 +149,7 @@ textsDraw re fonts wmdSt ifmSt icrSt tpsSt rpt ((iCur,txt,nat,pList):xs) = do
         destroyTexture fontT2
         freeSurface fontS2
   when (iCur && icrSt && not ifmSt) $ cursorDraw re (lPos+nscr) wmdSt fs 
-  textsDraw re fonts wmdSt ifmSt icrSt tpsSt rpt xs
+  textsDraw re fonts wmdSt ifmSt icrSt tpsSt xs
 
 initDraw :: MonadIO m => Renderer -> m ()
 initDraw re = do

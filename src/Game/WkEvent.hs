@@ -56,15 +56,15 @@ getText (tx:txs) acc =
 
 makeWkTextData :: Waka -> MD.TextData
 makeWkTextData wk =
-  let (texWk,tpsWk,scrWk,rctWk,mgnWk,ltwWk,lnwWk,fszWk) 
-        = (tex wk,tps wk,scr wk,rct wk,mgn wk,ltw wk,lnw wk,fsz wk)
+  let (stxWk,scrWk,rctWk,mgnWk,ltwWk,lnwWk,fszWk) 
+        = (stx wk,scr wk,rct wk,mgn wk,ltw wk,lnw wk,fsz wk)
       (V2 ww wh) = windowSize
       (V4 x y w h) = rctWk 
       (V4 rm tm lm bm) = mgnWk
       initPos = V2 (x+w-rm-fromIntegral fszWk) (y+tm)
+      sTps = T.length stxWk - 1
       mgn' = V4 (ww-(x+w)+rm) (y+tm) (x+lm) (wh-(y+h)+bm)  
-      tex' = T.take tpsWk texWk
       atr' = MD.initAttr{MD.gps=initPos+scrWk,MD.scr=scrWk, MD.ltw=ltwWk
                ,MD.lnw=lnwWk,MD.fsz=fszWk}
-   in makeTexts 0 True MD.T 0 tpsWk windowSize mgn' atr' T.empty tex'
+   in makeTexts 0 True MD.T 0 sTps windowSize mgn' atr' T.empty stxWk 
 

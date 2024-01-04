@@ -2,7 +2,7 @@ module Game.WkLoop (wkLoop) where
 
 import qualified Control.Monad.State.Strict as S
 import Control.Monad (unless,when)
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO,liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
@@ -20,29 +20,60 @@ wkLoop :: MonadIO m => Renderer -> [Font] -> S.StateT Waka m ()
 wkLoop re fonts = do 
   inp <- wkInput
   wk <- S.get
-  let (texWk,tpsWk) = (tex wk,tps wk) 
-      textData = makeWkTextData wk
-      (_,ltx,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
-                                      else last textData 
-      lch = getLastChar ltx 
+  let (texWk,stxWk,tpsWk) = (tex wk,stx wk,tps wk) 
+      lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '.'
-      isShowing = tpsWk <= (T.length texWk) && (not isStop)
-  when isShowing $ wkDraw re fonts textData wk
+      isEvent = lch == '\\'
+      isShowing = tpsWk < (T.length texWk) && (not isStop)
+      eventText = if isEvent then getEventText tpsWk texWk else T.empty
+      addTps = if isShowing then calcTps tpsWk texWk else tpsWk
+      addText = case lch of
+                  '.'  -> T.empty
+                  '\\' -> T.empty
+                  ';'  -> T.singleton ';'<>getComText tpsWk texWk
+                  _    -> T.singleton lch
+      nStx = if isShowing then stxWk <> addText else stxWk
+      ntps = if isShowing then tpsWk+addTps else tpsWk
+      nwk = wk{stx=nStx,tps=ntps}
+      textData = makeWkTextData nwk
+  when isShowing $ wkDraw re fonts textData nwk
+  when isEvent $ liftIO $ putStrLn (T.unpack eventText)
+  let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
+                                      else last textData 
   let nscr = MD.scr lAtr
-  let ntps = if isShowing then calcTps (tpsWk+1) texWk else tpsWk
-  let ntps' = if isStop && inp==Sp then ntps+1 else ntps
-  let nwk = wk{tps=ntps', scr=nscr}
-  S.put nwk
+  let ntps' = if isStop && inp==Sp then ntps+1 else ntps 
+  let nwk' = nwk{tps=ntps', scr=nscr}
+  S.put nwk'
   delay delayTime
   unless (inp==Es) $ wkLoop re fonts
   
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =
-  let tmpText = T.take tpsWk texWk
-      ch = getLastChar tmpText 
+  let beforeTpsText = T.take (tpsWk+1) texWk
+      afterTpsText = T.drop (tpsWk+1) texWk
+      ch = getLastChar beforeTpsText 
    in case ch of
-        ';' -> tpsWk + getComLength (T.drop tpsWk texWk)
-        _   -> tpsWk
+        ';' -> 1 + getComLength afterTpsText 
+        '\\' -> getEventLength afterTpsText 
+        _   -> 1 
+
+getEventText :: Int -> Text -> Text
+getEventText tpsWk texWk =
+  let afterTpsText = T.drop (tpsWk+1) texWk
+      eventLength = getEventLength afterTpsText
+   in T.take eventLength afterTpsText 
+
+getEventLength :: Text -> Int
+getEventLength tx =
+  let txs = T.lines tx
+      num = if null txs then 0 else T.length (head txs)
+   in if length txs < 2 then num else num+1
+
+getComText :: Int -> Text -> Text
+getComText tpsWk texWk =
+  let afterTpsText = T.drop (tpsWk+1) texWk
+      comLength = getComLength afterTpsText
+   in T.take comLength afterTpsText 
 
 getComLength :: Text -> Int
 getComLength tx =
