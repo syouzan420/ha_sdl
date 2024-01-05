@@ -67,7 +67,7 @@ makeTexts ind ifmSt wmdSt fpsSt tpsSt wszSt mgnSt atrSt etxSt texSt =
           (V4 mr mt ml mb) = mgnSt
           nscr
             | iCur && wmdSt == T && lpx+sx < ml = V2 (ml-lpx) sy 
-            | iCur && wmdSt == T && lpx+sx > ww - mr - fs  
+            | iCur && wmdSt == T && (cnm natr)/="rb" && lpx+sx > ww - mr - fs  
                                               = V2 (ww-mr-fs*2-lpx) sy
             | iCur && wmdSt == Y && lpy+sy > wh - mb - fs = V2 sx (wh-mb-fs-lpy)
             | iCur && wmdSt == Y && lpy+sy < mt = V2 sx (mt+fs-lpy)

@@ -4,6 +4,7 @@ module Game.WkEvent (exeEvent) where
 import Data.Char (isDigit)
 import Control.Monad (unless)
 import Control.Monad.IO.Class (MonadIO)
+import Linear.V2 (V2(..))
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
 import Game.WkData (Waka(..))
@@ -38,6 +39,6 @@ moveDialog ind = do
   let lu = lookup ind setWk 
   let ntex = case lu of Nothing -> texWk; Just x -> x
   let ntps = case lu of Nothing -> tpsWk; Just _ -> 0
-  let nwk = wk{tex=ntex,tps=ntps}
+  let nwk = wk{tex=ntex,stx=T.empty,tps=ntps,scr=V2 0 0}
   S.put nwk
 
