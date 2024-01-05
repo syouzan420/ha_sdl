@@ -26,9 +26,9 @@ source-repository head
 library
   exposed-modules:
       Block
+      Game.WkAction
       Game.WkData
       Game.WkDraw
-      Game.WkEvent
       Game.WkLoop
       Game.WkMain
       Game.WkVideo

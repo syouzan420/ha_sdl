@@ -13,7 +13,7 @@ import qualified MyData as MD
 import MyAction (getCid)
 import General (getLastChar)
 import Game.WkDraw (wkDraw)
-import Game.WkEvent (wkInput,makeWkTextData)
+import Game.WkAction (wkInput,makeWkTextData)
 import Game.WkData (Waka(..),Input(..),delayTime)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> S.StateT Waka m () 
@@ -22,22 +22,22 @@ wkLoop re fonts = do
   wk <- S.get
   let (texWk,stxWk,tpsWk) = (tex wk,stx wk,tps wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
-      isStop = lch == '.'
+      isStop = lch == '。'
       isEvent = lch == '\\'
       isShowing = tpsWk < (T.length texWk) && (not isStop)
-      eventText = if isEvent then getEventText tpsWk texWk else T.empty
+      eventText = if isEvent then getTargetText getEventLength tpsWk texWk else T.empty
       addTps = if isShowing then calcTps tpsWk texWk else tpsWk
       addText = case lch of
-                  '.'  -> T.empty
+                  '。'  -> T.empty
                   '\\' -> T.empty
-                  ';'  -> T.singleton ';'<>getComText tpsWk texWk
+                  ';'  -> T.singleton ';'<>getTargetText getComLength tpsWk texWk
                   _    -> T.singleton lch
       nStx = if isShowing then stxWk <> addText else stxWk
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
   when isShowing $ wkDraw re fonts textData nwk
-  when isEvent $ liftIO $ putStrLn (T.unpack eventText)
+  when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
   let nscr = MD.scr lAtr
@@ -54,14 +54,14 @@ calcTps tpsWk texWk =
       ch = getLastChar beforeTpsText 
    in case ch of
         ';' -> 1 + getComLength afterTpsText 
-        '\\' -> getEventLength afterTpsText 
+        '\\' -> 1 + getEventLength afterTpsText 
         _   -> 1 
 
-getEventText :: Int -> Text -> Text
-getEventText tpsWk texWk =
+getTargetText :: (Text -> Int) -> Int -> Text -> Text
+getTargetText getLengthF tpsWk texWk =
   let afterTpsText = T.drop (tpsWk+1) texWk
-      eventLength = getEventLength afterTpsText
-   in T.take eventLength afterTpsText 
+      textLength = getLengthF afterTpsText
+   in T.take textLength afterTpsText 
 
 getEventLength :: Text -> Int
 getEventLength tx =
@@ -69,20 +69,14 @@ getEventLength tx =
       num = if null txs then 0 else T.length (head txs)
    in if length txs < 2 then num else num+1
 
-getComText :: Int -> Text -> Text
-getComText tpsWk texWk =
-  let afterTpsText = T.drop (tpsWk+1) texWk
-      comLength = getComLength afterTpsText
-   in T.take comLength afterTpsText 
-
 getComLength :: Text -> Int
 getComLength tx =
   let (cidWk,_) = getCid tx 
-   in toSpace cidWk tx
+   in spaceNum cidWk tx
 
-toSpace :: Int -> Text -> Int
-toSpace (-1) _ = (-1) 
-toSpace i tx =
+spaceNum :: Int -> Text -> Int
+spaceNum (-1) _ = (-1) 
+spaceNum i tx =
   let (ch,txs) = fromMaybe ('0',T.empty) (T.uncons tx)
       ni = if ch==' ' then i-1 else i
-   in if tx==T.empty then 0 else 1 + toSpace ni txs
+   in if tx==T.empty then 0 else 1 + spaceNum ni txs

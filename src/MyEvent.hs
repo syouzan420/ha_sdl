@@ -49,6 +49,7 @@ inputEvent = do
 
       isNewFile = kc==KeycodeN && md==Ctr
       isLoadFile = kc==KeycodeL && md==Ctr
+      isLoadPrevFile = kc==KeycodeP && md==Ctr
       isLoadRecentFile = kc==KeycodeR && md==Ctr
 
       isTglDir = kc==KeycodeT && md==Ctr -- toggle direction (Tate, Yoko)
@@ -181,6 +182,7 @@ inputEvent = do
       ninp
         | isNewFile = NFL
         | isLoadFile = LFL
+        | isLoadPrevFile = LPR
         | isLoadRecentFile = LRF
         | isJump = JMP 
         | isJBak = JBK

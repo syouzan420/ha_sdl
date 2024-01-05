@@ -7,7 +7,7 @@ import SDL.Font (Font)
 import MyData (textFileName)
 import MyFile (fileRead)
 import Game.WkData (Waka(..),Rect,Mgn,initWaka)
-import Game.WkEvent (startText)
+import Game.WkAction (startText)
 import Game.WkVideo (withVideo)
 import Game.WkLoop (wkLoop)
 

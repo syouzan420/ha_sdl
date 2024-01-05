@@ -21,7 +21,7 @@ import MyCode (exeCode)
 import General (isLastElem)
 import Game.WkMain (runWaka)
 
-data FC = NewFile | LoadNextFile | LoadRecentFile | LoadFile 
+data FC = NewFile | LoadNextFile | LoadPrevFile | LoadRecentFile | LoadFile 
         | JumpFile | JumpBackFile | RunWaka | DoNothing deriving Eq
 type ChangeFile = (T.Text,Int,Int,[Dot],Bool,[JBak])
 
@@ -70,6 +70,7 @@ myLoop re fonts itexs = do
   let fc
        | inp==NFL = NewFile
        | inp==LFL = LoadNextFile
+       | inp==LPR = LoadPrevFile
        | inp==LRF = LoadRecentFile
        | isLoadTgt = LoadFile
        | inp==JMP = JumpFile
@@ -79,12 +80,15 @@ myLoop re fonts itexs = do
   (ntex,nfps,ntps,ndts,niup,njbk) <- case fc of
         NewFile -> newFile fpsSt jbkAt cst' 
         LoadNextFile -> loadNextFile fpsSt jbkAt cst' 
+        LoadPrevFile -> lastFileNum >>= \lfn -> do 
+            let prevFileNum = if fpsSt==0 then lfn else fpsSt-1
+            loadFile fpsSt prevFileNum jbkAt cst'
         LoadRecentFile -> lastFileNum >>= \lfn -> loadFile fpsSt lfn jbkAt cst' 
         LoadFile -> loadFile fpsSt tFjp jbkAt cst'
         JumpFile -> jumpFile nfjp jbkAt nsjn fpsSt cst' 
         JumpBackFile -> jumpBackFile jbkAt fpsSt cst'
         _ -> return ((tex.act) cst',fpsSt,(tps.act) cst',(dts.act) cst',False,jbkAt)
-  when (fc==RunWaka) $ runWaka wkInitFile "" fonts
+  when (fc==RunWaka) $ runWaka wkInitFile "initWaka" fonts
   let nactSt = cactSt'{tex=ntex,dts=ndts,fps=nfps,tps=ntps}
   let catrSt' = atr cst'
   let nst = afterDraw cst'{act=nactSt,cdn=(cdn cst'){msg=[]},atr=catrSt'{scr=nscr,jmp=(jmp catrSt'){jps=njps,fjp=nfjp,jbk=njbk,sjn=nsjn}},iup=niup}

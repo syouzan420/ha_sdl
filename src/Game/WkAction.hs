@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Game.WkEvent (wkInput,startText,makeWkTextData) where
+module Game.WkAction (wkInput,startText,makeWkTextData) where
 
 import qualified Control.Monad.State.Strict as S
 import Control.Monad.IO.Class (MonadIO)
@@ -36,9 +36,8 @@ startText sIndex allText wk = do
   let lns = T.lines allText 
       tset = makeIndex lns
       iText = if null tset then allText 
-                           else fromMaybe (fst (head tset)) (lookup sIndex tset)
+                           else fromMaybe (snd (head tset)) (lookup sIndex tset)
    in wk{set=tset,tex=iText}
-      
 
 makeIndex :: [Text] -> [(Text,Text)]  
 makeIndex [] = []
