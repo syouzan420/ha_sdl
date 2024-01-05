@@ -29,6 +29,7 @@ library
       Game.WkAction
       Game.WkData
       Game.WkDraw
+      Game.WkEvent
       Game.WkLoop
       Game.WkMain
       Game.WkVideo

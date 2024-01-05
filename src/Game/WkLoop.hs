@@ -13,6 +13,7 @@ import qualified MyData as MD
 import MyAction (getCid)
 import General (getLastChar)
 import Game.WkDraw (wkDraw)
+import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
 import Game.WkData (Waka(..),Input(..),delayTime)
 
@@ -20,7 +21,7 @@ wkLoop :: MonadIO m => Renderer -> [Font] -> S.StateT Waka m ()
 wkLoop re fonts = do 
   inp <- wkInput
   wk <- S.get
-  let (texWk,stxWk,tpsWk) = (tex wk,stx wk,tps wk) 
+  let (texWk,stxWk,tpsWk,tmdWk) = (tex wk,stx wk,tps wk,tmd wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
@@ -41,9 +42,12 @@ wkLoop re fonts = do
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
   let nscr = MD.scr lAtr
-  let ntps' = if isStop && inp==Sp then ntps+1 else ntps 
-  let nwk' = nwk{tps=ntps', scr=nscr}
+  let isStart = isStop && inp==Sp
+  let nstx' = if isStart && tmdWk==0 then T.empty else nStx
+  let ntps' = if isStart then ntps+1 else ntps 
+  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr}
   S.put nwk'
+  when isEvent $ exeEvent eventText
   delay delayTime
   unless (inp==Es) $ wkLoop re fonts
   
