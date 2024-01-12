@@ -10,6 +10,7 @@ import Data.Word (Word32)
 
 type PointSize = Int
 type Pos = V2 CInt
+type Size = V2 CInt
 type Mgn = V4 CInt
 type Rect = V4 CInt
 type TSet = (Text,Text)
@@ -57,5 +58,23 @@ lineWidth = 36
 fontSize :: PointSize
 fontSize = 24
 
+mapSize0 :: Size
+mapSize0 = V2 5 5
+
 delayTime :: Word32
 delayTime = 80 
+
+mapRoot :: FilePath
+mapRoot = "./images/maps/mp"
+
+charaRoot :: FilePath
+charaRoot = "./images/charas/ch"
+
+objectRoot :: FilePath
+objectRoot = "./images/objects/ob"
+
+enemyRoot :: FilePath
+enemyRoot = "./images/enemies/en"
+
+blockRoot :: FilePath
+blockRoot = "./images/blocks/bl"

@@ -10,12 +10,14 @@ import Game.WkData (Waka(..),Rect,Mgn,initWaka)
 import Game.WkAction (startText)
 import Game.WkVideo (withVideo)
 import Game.WkLoop (wkLoop)
+import Game.WkLoad (wkLoad)
 
 type FileNum = Int
 
 runWaka :: MonadIO m => FileNum -> Text -> [Font] -> m () 
 runWaka fln sIndex fonts = do 
+  surfs <- wkLoad
   allText <- fileRead (textFileName++show fln++".txt")
   withVideo $ \renderer -> do
     let newWaka = startText sIndex allText initWaka
-    S.runStateT (wkLoop renderer fonts) newWaka
+    S.runStateT (wkLoop renderer fonts surfs) newWaka

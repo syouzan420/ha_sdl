@@ -30,6 +30,7 @@ library
       Game.WkData
       Game.WkDraw
       Game.WkEvent
+      Game.WkLoad
       Game.WkLoop
       Game.WkMain
       Game.WkVideo

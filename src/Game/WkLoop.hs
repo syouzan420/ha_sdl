@@ -7,7 +7,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
 import SDL.Font (Font)
-import SDL.Video.Renderer (Renderer)
+import SDL.Video.Renderer (Renderer,Surface)
 import SDL.Time (delay)
 import qualified MyData as MD
 import MyAction (getCid)
@@ -15,10 +15,10 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),delayTime)
+import Game.WkData (Waka(..),Input(..),delayTime,mapSize0)
 
-wkLoop :: MonadIO m => Renderer -> [Font] -> S.StateT Waka m () 
-wkLoop re fonts = do 
+wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m () 
+wkLoop re fonts surfs = do 
   inp <- wkInput
   wk <- S.get
   let (texWk,stxWk,tpsWk,tmdWk) = (tex wk,stx wk,tps wk,tmd wk) 
@@ -37,7 +37,8 @@ wkLoop re fonts = do
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
-  when isShowing $ wkDraw re fonts textData nwk
+      mapSize = mapSize0 
+  wkDraw re fonts textData mapSize isShowing nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
@@ -49,7 +50,7 @@ wkLoop re fonts = do
   S.put nwk'
   when isEvent $ exeEvent eventText
   delay delayTime
-  unless (inp==Es) $ wkLoop re fonts
+  unless (inp==Es) $ wkLoop re fonts surfs
   
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =
