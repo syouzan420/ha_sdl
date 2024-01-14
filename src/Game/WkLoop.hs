@@ -38,7 +38,7 @@ wkLoop re fonts surfs = do
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
       mapSize = mapSize0 
-  wkDraw re fonts textData mapSize isShowing nwk
+  wkDraw re fonts surfs textData mapSize isShowing nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 

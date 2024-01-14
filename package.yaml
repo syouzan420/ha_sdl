@@ -33,6 +33,7 @@ dependencies:
 - containers
 - split
 - mtl
+- vector
 
 ghc-options:
 - -Wall

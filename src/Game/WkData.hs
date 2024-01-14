@@ -14,6 +14,8 @@ type Size = V2 CInt
 type Mgn = V4 CInt
 type Rect = V4 CInt
 type TSet = (Text,Text)
+type OMap = [String]
+type PMap = [String]
 
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
 
@@ -28,14 +30,29 @@ data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
 --ltw: letter width
 --lnw: line width
 --fsz: font size
+--pps: player position
+--omp: object map
+--pmp: property map
+--aco: animation count
 data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
-                 ,fsz :: !PointSize}
+                 ,fsz :: !PointSize, pps :: !Pos, omp :: !OMap, pmp :: !PMap, aco :: !Int}
 
 initWaka :: Waka
 initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
                 ,tmd = 1, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
-                ,fsz = fontSize} 
+                ,fsz = fontSize
+                ,pps = initPlayerPos, omp = initObjectMap, pmp = initPropertyMap
+                ,aco = 0} 
+
+initPlayerPos :: V2 CInt
+initPlayerPos = V2 0 0
+
+initObjectMap :: OMap
+initObjectMap = []
+
+initPropertyMap :: PMap
+initPropertyMap = []
 
 title :: Text
 title = "わかひめ"

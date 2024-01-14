@@ -30,6 +30,7 @@ library
       Game.WkData
       Game.WkDraw
       Game.WkEvent
+      Game.WkLib
       Game.WkLoad
       Game.WkLoop
       Game.WkMain
@@ -70,6 +71,7 @@ library
     , sdl2-ttf
     , split
     , text
+    , vector
   default-language: Haskell2010
 
 executable ha-exe
@@ -94,6 +96,7 @@ executable ha-exe
     , sdl2-ttf
     , split
     , text
+    , vector
   default-language: Haskell2010
 
 test-suite ha-test
@@ -119,4 +122,5 @@ test-suite ha-test
     , sdl2-ttf
     , split
     , text
+    , vector
   default-language: Haskell2010
