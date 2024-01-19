@@ -14,10 +14,15 @@ type Size = V2 CInt
 type Mgn = V4 CInt
 type Rect = V4 CInt
 type TSet = (Text,Text)
+type GMap = [String]
 type OMap = [String]
-type PMap = [String]
+type GMProp = [(Pos,MProp)]
+type OMProp = [(Pos,MProp)]
 
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
+
+-- map property -- Free, Block
+data MProp = Fr | Bl deriving (Eq, Show)
 
 --set: (textIndex,original text)
 --tex: whole file text
@@ -30,29 +35,46 @@ data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
 --ltw: letter width
 --lnw: line width
 --fsz: font size
+--msz: map size
 --pps: player position
+--gmp: ground map
 --omp: object map
---pmp: property map
+--gmr: ground map property 
+--omr: object map property
 --aco: animation count
 data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
-                 ,fsz :: !PointSize, pps :: !Pos, omp :: !OMap, pmp :: !PMap, aco :: !Int}
+                 ,fsz :: !PointSize, msz :: !Size
+                 ,pps :: !Pos
+                 ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
+                 ,aco :: !Int}
 
 initWaka :: Waka
 initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
-                ,tmd = 1, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
-                ,fsz = fontSize
-                ,pps = initPlayerPos, omp = initObjectMap, pmp = initPropertyMap
+                ,tmd = 0, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
+                ,fsz = fontSize, msz = mapSize0
+                ,pps = initPlayerPos
+                ,gmp = initGroundMap, omp = initObjectMap
+                ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0} 
 
 initPlayerPos :: V2 CInt
 initPlayerPos = V2 0 0
 
+initMapPos :: V2 CInt
+initMapPos = V2 100 10
+
+initGroundMap :: GMap
+initGroundMap = ["34133","31334","13301","43423","33205"]
+
 initObjectMap :: OMap
 initObjectMap = []
 
-initPropertyMap :: PMap
-initPropertyMap = []
+initGMapProperty :: GMProp
+initGMapProperty = []
+
+initOMapProperty :: OMProp
+initOMapProperty = [] 
 
 title :: Text
 title = "わかひめ"
@@ -76,7 +98,7 @@ fontSize :: PointSize
 fontSize = 24
 
 mapSize0 :: Size
-mapSize0 = V2 5 5
+mapSize0 = V2 0 0
 
 delayTime :: Word32
 delayTime = 80 

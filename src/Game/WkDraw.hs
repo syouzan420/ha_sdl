@@ -1,11 +1,12 @@
 module Game.WkDraw (wkDraw) where
 
 import Control.Monad (when,unless)
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO,liftIO)
 import SDL.Vect (Point(P),V2(..),V4(..))
 import SDL.Internal.Numbered (fromNumber)
 import SDL.Video (Renderer)
 import SDL.Video.Renderer (Surface,Texture,SurfacePixelFormat(..),PixelFormat(..)
+                          ,Rectangle(..),copy
                           ,present,lockSurface,unlockSurface,surfacePixels
                           ,surfaceFormat,createRGBSurfaceFrom,createTextureFromSurface)
 import SDL.Font (Font)
@@ -17,7 +18,7 @@ import qualified Data.Vector.Storable.Mutable as VM
 import Data.Word (Word8)
 import Data.List (transpose)
 import MySDL.MyDraw (initDraw,textsDraw)
-import Game.WkData (Waka(..),Size,Pos,OMap)
+import Game.WkData (Waka(..),Size,Pos,GMap,initMapPos)
 import Game.WkLib (cosList,shiftList)
 import MyData (TextData,WMode(..))
 
@@ -26,24 +27,47 @@ type EffectNum = Int
 type IsTextShowing = Bool
 
 wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData 
-                            -> MapSize -> IsTextShowing -> Waka -> m ()
-wkDraw re fonts surfs textData msize ish wk = do
+                            -> MapSize -> Waka -> m ()
+wkDraw re fonts surfs textData msize wk = do
   initDraw re
-  when ish $ textsDraw re fonts T True False (tps wk) textData
-  unless (msize==V2 0 0) $ mapDraw re (surfs!!0) (pps wk) (omp wk) (aco wk)
+  unless (msize==V2 0 0) $ mapDraw re (surfs!!0) (gmp wk) (aco wk)
+  textsDraw re fonts T True False (tps wk) textData
   present re
 
-mapDraw :: (MonadIO m) => Renderer -> [Surface] -> Pos -> OMap -> Int -> m ()
-mapDraw re surfs ps omap count = undefined
+mapDraw :: (MonadIO m) => Renderer -> [Surface] -> GMap -> Int -> m ()
+mapDraw re surfs gmap count = do 
+  let enums = repeat 0
+  textures <- createTextures re surfs enums count 
+  texMapDraw re textures gmap initMapPos
 
-createTextures :: Renderer -> [Surface] -> [Texture]
-createTextures = undefined
+texMapDraw :: (MonadIO m) => Renderer -> [Texture] -> GMap -> Pos -> m ()
+texMapDraw _ _ [] _ = return ()
+texMapDraw re tex (ln:xs) pos = do
+  texLineDraw re tex ln pos
+  texMapDraw re tex xs (pos + (V2 0 64))
 
-createTexture :: Renderer -> Surface -> EffectNum -> Int -> IO Texture
+texLineDraw :: (MonadIO m) => Renderer -> [Texture] -> String -> Pos -> m ()
+texLineDraw _ _ [] _ = return ()
+texLineDraw re tex (t:ts) pos = do
+  texDraw re (tex!!(read [t])) pos
+  texLineDraw re tex ts (pos + (V2 64 0))
+
+texDraw :: (MonadIO m) => Renderer -> Texture -> Pos -> m ()
+texDraw re tex pos = copy re tex (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
+                                 (Just (Rectangle (P pos) (V2 64 64)))
+
+createTextures :: (MonadIO m) => Renderer -> [Surface] -> [EffectNum] -> Int -> m [Texture]
+createTextures _ [] _ _ = return []
+createTextures re (s:srs) (e:es) count = do 
+  tex <- createTexture re s e count
+  textures <- createTextures re srs es count 
+  return (tex:textures) 
+
+createTexture :: (MonadIO m) => Renderer -> Surface -> EffectNum -> Int -> m Texture
 createTexture re surf i count = do
   if i==0 then createTextureFromSurface re surf
           else do 
-            nsurf <- createNewSurface surf count
+            nsurf <- liftIO$createNewSurface surf count
             createTextureFromSurface re nsurf 
 
 createNewSurface :: Surface -> Int -> IO Surface

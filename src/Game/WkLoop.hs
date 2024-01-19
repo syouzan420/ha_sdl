@@ -8,6 +8,7 @@ import qualified Data.Text as T
 import Data.Maybe (fromMaybe)
 import SDL.Font (Font)
 import SDL.Video.Renderer (Renderer,Surface)
+import SDL.Vect (V2(..))
 import SDL.Time (delay)
 import qualified MyData as MD
 import MyAction (getCid)
@@ -21,7 +22,7 @@ wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m ()
 wkLoop re fonts surfs = do 
   inp <- wkInput
   wk <- S.get
-  let (texWk,stxWk,tpsWk,tmdWk) = (tex wk,stx wk,tps wk,tmd wk) 
+  let (texWk,stxWk,tpsWk,tmdWk,mszWk) = (tex wk,stx wk,tps wk,tmd wk,msz wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
@@ -37,8 +38,7 @@ wkLoop re fonts surfs = do
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
-      mapSize = mapSize0 
-  wkDraw re fonts surfs textData mapSize isShowing nwk
+  when isShowing $ wkDraw re fonts surfs textData mszWk nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
@@ -46,7 +46,8 @@ wkLoop re fonts surfs = do
   let isStart = isStop && inp==Sp
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
-  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr}
+  let nmsz = if tmdWk==0 then V2 0 0 else V2 5 5
+  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz}
   S.put nwk'
   when isEvent $ exeEvent eventText
   delay delayTime
