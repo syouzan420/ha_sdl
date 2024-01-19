@@ -16,13 +16,13 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),delayTime,mapSize0)
+import Game.WkData (Waka(..),Input(..),delayTime)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m () 
 wkLoop re fonts surfs = do 
   inp <- wkInput
   wk <- S.get
-  let (texWk,stxWk,tpsWk,tmdWk,mszWk) = (tex wk,stx wk,tps wk,tmd wk,msz wk) 
+  let (texWk,stxWk,tpsWk,tmdWk) = (tex wk,stx wk,tps wk,tmd wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
@@ -38,7 +38,7 @@ wkLoop re fonts surfs = do
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
-  when isShowing $ wkDraw re fonts surfs textData mszWk nwk
+  when isShowing $ wkDraw re fonts surfs textData nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 

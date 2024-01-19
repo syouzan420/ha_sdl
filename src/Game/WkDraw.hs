@@ -11,6 +11,7 @@ import SDL.Video.Renderer (Surface,Texture,SurfacePixelFormat(..),PixelFormat(..
                           ,surfaceFormat,createRGBSurfaceFrom,createTextureFromSurface)
 import SDL.Font (Font)
 import qualified SDL.Raw.Types as SDLT
+import Foreign.C.Types (CInt)
 import Foreign.Ptr (castPtr)
 import Foreign.ForeignPtr (newForeignPtr_)
 import Foreign.Storable (peek)
@@ -18,43 +19,57 @@ import qualified Data.Vector.Storable.Mutable as VM
 import Data.Word (Word8)
 import Data.List (transpose)
 import MySDL.MyDraw (initDraw,textsDraw)
-import Game.WkData (Waka(..),Size,Pos,GMap,initMapPos)
+import Game.WkData (Waka(..),Size,Pos,GMap,mapUpLeftPos)
 import Game.WkLib (cosList,shiftList)
 import MyData (TextData,WMode(..))
 
 type MapSize = Size
+type TileSize = CInt
 type EffectNum = Int
 type IsTextShowing = Bool
 
-wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData 
-                            -> MapSize -> Waka -> m ()
-wkDraw re fonts surfs textData msize wk = do
+wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData -> Waka -> m ()
+wkDraw re fonts surfs textData wk = do
   initDraw re
-  unless (msize==V2 0 0) $ mapDraw re (surfs!!0) (gmp wk) (aco wk)
+  unless (tmd wk==0) $ mapDraw re (surfs!!0) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
   textsDraw re fonts T True False (tps wk) textData
   present re
 
-mapDraw :: (MonadIO m) => Renderer -> [Surface] -> GMap -> Int -> m ()
-mapDraw re surfs gmap count = do 
+visibleGmap :: GMap -> MapSize -> Pos -> GMap
+visibleGmap gmap (V2 mw mh) (V2 mx my) = 
+  let mx' = fromIntegral mx
+      my' = fromIntegral my
+      mw' = fromIntegral mw
+      mh' = fromIntegral mh
+      mLines = take mh' $ drop my' gmap 
+   in map (visibleMapLine mw' mx') mLines 
+
+visibleMapLine :: Int -> Int -> String -> String
+visibleMapLine mw mx mLine = take mw $ drop mx mLine
+
+mapDraw :: (MonadIO m) => Renderer -> [Surface]
+                         -> GMap -> MapSize -> TileSize -> Pos -> Int -> m ()
+mapDraw re surfs gmap mSize tSize mPos count = do 
   let enums = repeat 0
+      vGmap = visibleGmap gmap mSize mPos
   textures <- createTextures re surfs enums count 
-  texMapDraw re textures gmap initMapPos
+  texMapDraw re textures vGmap tSize mapUpLeftPos 
 
-texMapDraw :: (MonadIO m) => Renderer -> [Texture] -> GMap -> Pos -> m ()
-texMapDraw _ _ [] _ = return ()
-texMapDraw re tex (ln:xs) pos = do
-  texLineDraw re tex ln pos
-  texMapDraw re tex xs (pos + (V2 0 64))
+texMapDraw :: (MonadIO m) => Renderer -> [Texture] -> GMap -> TileSize -> Pos -> m ()
+texMapDraw _ _ [] _ _ = return ()
+texMapDraw re tex (ln:xs) tSize pos = do
+  texLineDraw re tex ln tSize pos
+  texMapDraw re tex xs tSize (pos + (V2 0 tSize))
 
-texLineDraw :: (MonadIO m) => Renderer -> [Texture] -> String -> Pos -> m ()
-texLineDraw _ _ [] _ = return ()
-texLineDraw re tex (t:ts) pos = do
-  texDraw re (tex!!(read [t])) pos
-  texLineDraw re tex ts (pos + (V2 64 0))
+texLineDraw :: (MonadIO m) => Renderer -> [Texture] -> String -> TileSize -> Pos -> m ()
+texLineDraw _ _ [] _ _ = return ()
+texLineDraw re tex (t:ts) tSize pos = do
+  texDraw re (tex!!(read [t])) tSize pos
+  texLineDraw re tex ts tSize (pos + (V2 tSize 0))
 
-texDraw :: (MonadIO m) => Renderer -> Texture -> Pos -> m ()
-texDraw re tex pos = copy re tex (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
-                                 (Just (Rectangle (P pos) (V2 64 64)))
+texDraw :: (MonadIO m) => Renderer -> Texture -> TileSize -> Pos -> m ()
+texDraw re tex tSize pos = copy re tex (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
+                                       (Just (Rectangle (P pos) (V2 tSize tSize)))
 
 createTextures :: (MonadIO m) => Renderer -> [Surface] -> [EffectNum] -> Int -> m [Texture]
 createTextures _ [] _ _ = return []

@@ -36,7 +36,9 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --lnw: line width
 --fsz: font size
 --msz: map size
+--tsz: tile size
 --pps: player position
+--mps: map position
 --gmp: ground map
 --omp: object map
 --gmr: ground map property 
@@ -44,25 +46,31 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --aco: animation count
 data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
-                 ,fsz :: !PointSize, msz :: !Size
-                 ,pps :: !Pos
+                 ,fsz :: !PointSize, msz :: !Size, tsz :: !CInt
+                 ,pps :: !Pos, mps :: !Pos
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
                  ,aco :: !Int}
 
 initWaka :: Waka
 initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
                 ,tmd = 0, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
-                ,fsz = fontSize, msz = mapSize0
-                ,pps = initPlayerPos
+                ,fsz = fontSize, msz = mapSize0, tsz = initTileSize
+                ,pps = initPlayerPos, mps = initMapPos
                 ,gmp = initGroundMap, omp = initObjectMap
                 ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0} 
+
+mapUpLeftPos :: V2 CInt
+mapUpLeftPos = V2 100 10
 
 initPlayerPos :: V2 CInt
 initPlayerPos = V2 0 0
 
 initMapPos :: V2 CInt
-initMapPos = V2 100 10
+initMapPos = V2 0 0
+
+initTileSize :: CInt
+initTileSize = 32
 
 initGroundMap :: GMap
 initGroundMap = ["34133","31334","13301","43423","33205"]
