@@ -73,7 +73,7 @@ initTileSize :: CInt
 initTileSize = 32
 
 initGroundMap :: GMap
-initGroundMap = ["34133","31334","13301","43423","33205"]
+initGroundMap = ["3413311","3133433","1330100","4342355","3320543"]
 
 initObjectMap :: OMap
 initObjectMap = []

@@ -7,6 +7,7 @@ import Control.Monad.IO.Class (MonadIO)
 import Linear.V2 (V2(..))
 import qualified Control.Monad.State.Strict as S
 import qualified Data.Text as T
+import Data.Maybe (fromMaybe)
 import Game.WkData (Waka(..))
 
 type StateW m = S.StateT Waka m ()
@@ -27,10 +28,20 @@ exeOneEvent evt = do
   unless (null ags) $ case en of
     "md" -> changeMode ((head . T.unpack . head) ags) 
     "mv" -> moveDialog (head ags)
+    "mp" -> setMap (head ags)
     _    -> return ()
     
 changeMode :: (MonadIO m) => Char -> StateW m
 changeMode ch = S.get >>= (\wk -> return wk{tmd=if isDigit ch then read [ch] else 1}) >>= S.put 
+
+setMap :: (MonadIO m) => T.Text -> StateW m
+setMap indf = do
+  wk <- S.get
+  let (setWk,gmpWk) = (set wk,gmp wk)
+      mData = fromMaybe T.empty (lookup ("map" <> indf) setWk) 
+      ngmp = if mData==T.empty then gmpWk else (lines . T.unpack) mData
+      nwk = wk{gmp=ngmp}
+  S.put nwk
 
 moveDialog :: (MonadIO m) => T.Text -> StateW m
 moveDialog ind = do

@@ -26,7 +26,8 @@ wkLoop re fonts surfs = do
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
-      isShowing = tpsWk < (T.length texWk) && (not isStop)
+      isDialog = tpsWk < (T.length texWk)
+      isShowing = isDialog && (not isStop)
       eventText = if isEvent then getTargetText getEventLength tpsWk texWk else T.empty
       addTps = if isShowing then calcTps tpsWk texWk else tpsWk
       addText = case lch of
@@ -46,7 +47,7 @@ wkLoop re fonts surfs = do
   let isStart = isStop && inp==Sp
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
-  let nmsz = if tmdWk==0 then V2 0 0 else V2 5 5
+  let nmsz = if tmdWk==0 then V2 0 0 else V2 7 5
   let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz}
   S.put nwk'
   when isEvent $ exeEvent eventText
