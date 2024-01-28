@@ -22,7 +22,7 @@ wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m ()
 wkLoop re fonts surfs = do 
   inp <- wkInput
   wk <- S.get
-  let (texWk,stxWk,tpsWk,tmdWk) = (tex wk,stx wk,tps wk,tmd wk) 
+  let (texWk,stxWk,tpsWk,tmdWk,pacWk) = (tex wk,stx wk,tps wk,tmd wk,pac wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
@@ -39,7 +39,7 @@ wkLoop re fonts surfs = do
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
-  when isShowing $ wkDraw re fonts surfs textData nwk
+  wkDraw re fonts surfs textData nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
@@ -48,7 +48,8 @@ wkLoop re fonts surfs = do
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
   let nmsz = if tmdWk==0 then V2 0 0 else V2 7 5
-  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz}
+  let npac = if pacWk==10 then 0 else pacWk+1 
+  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac}
   S.put nwk'
   when isEvent $ exeEvent eventText
   delay delayTime

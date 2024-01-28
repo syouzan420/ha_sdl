@@ -20,6 +20,7 @@ type GMProp = [(Pos,MProp)]
 type OMProp = [(Pos,MProp)]
 
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
+data Direction = East | North | West | South deriving (Eq, Show) 
 
 -- map property -- Free, Block
 data MProp = Fr | Bl deriving (Eq, Show)
@@ -44,12 +45,17 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --gmr: ground map property 
 --omr: object map property
 --aco: animation count
+--pln: player's chara number
+--pdr: player's direction
+--pac: player animation count
+--ipl: whether the player exists
 data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
                  ,fsz :: !PointSize, msz :: !Size, tsz :: !CInt
                  ,pps :: !Pos, mps :: !Pos
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
-                 ,aco :: !Int}
+                 ,aco :: !Int
+                 ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool}
 
 initWaka :: Waka
 initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
@@ -58,13 +64,14 @@ initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
                 ,pps = initPlayerPos, mps = initMapPos
                 ,gmp = initGroundMap, omp = initObjectMap
                 ,gmr = initGMapProperty, omr = initOMapProperty
-                ,aco = 0} 
+                ,aco = 0
+                ,pln = 0, pdr = South ,pac = 0, ipl = False} 
 
 mapUpLeftPos :: V2 CInt
 mapUpLeftPos = V2 100 10
 
 initPlayerPos :: V2 CInt
-initPlayerPos = V2 0 0
+initPlayerPos = V2 2 2
 
 initMapPos :: V2 CInt
 initMapPos = V2 0 0

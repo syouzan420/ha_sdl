@@ -30,6 +30,12 @@ exeOneEvent evt = do
     "mv" -> moveDialog (head ags)
     "mp" -> setMap (head ags)
     _    -> return ()
+  case en of
+    "plon" -> playerOn
+    _      -> return ()
+
+playerOn :: (MonadIO m) => StateW m
+playerOn = S.get >>= (\wk -> return wk{ipl=True}) >>= S.put
     
 changeMode :: (MonadIO m) => Char -> StateW m
 changeMode ch = S.get >>= (\wk -> return wk{tmd=if isDigit ch then read [ch] else 1}) >>= S.put 
