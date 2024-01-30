@@ -16,11 +16,21 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),delayTime)
+import Game.WkData (Waka(..),Input(..),IMode(..),delayTime,mapSize1)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m () 
 wkLoop re fonts surfs = do 
   inp <- wkInput
+  wk <- S.get
+  let mdiWk = mdi wk
+  case mdiWk of
+    TXT -> textMode re fonts surfs inp
+    _ -> return ()
+  delay delayTime
+  unless (inp==Es) $ wkLoop re fonts surfs
+
+textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
+textMode re fonts surfs inp = do
   wk <- S.get
   let (texWk,stxWk,tpsWk,tmdWk,pacWk) = (tex wk,stx wk,tps wk,tmd wk,pac wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
@@ -47,14 +57,12 @@ wkLoop re fonts surfs = do
   let isStart = isStop && inp==Sp
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
-  let nmsz = if tmdWk==0 then V2 0 0 else V2 7 5
+  let nmsz = if tmdWk==0 then V2 0 0 else mapSize1 
   let npac = if pacWk==10 then 0 else pacWk+1 
   let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac}
   S.put nwk'
   when isEvent $ exeEvent eventText
-  delay delayTime
-  unless (inp==Es) $ wkLoop re fonts surfs
-  
+
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =
   let beforeTpsText = T.take (tpsWk+1) texWk

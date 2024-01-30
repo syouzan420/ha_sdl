@@ -19,7 +19,7 @@ import qualified Data.Vector.Storable.Mutable as VM
 import Data.Word (Word8)
 import Data.List (transpose)
 import MySDL.MyDraw (initDraw,textsDraw)
-import Game.WkData (Waka(..),Size,Pos,GMap,Direction(..),mapUpLeftPos)
+import Game.WkData (Waka(..),Size,Pos,GMap,Direction(..),mapUpLeftPos,plDelay)
 import Game.WkLib (cosList,shiftList)
 import MyData (TextData,WMode(..))
 
@@ -43,7 +43,7 @@ playerDraw :: (MonadIO m) => Renderer -> [Surface] ->
 playerDraw re surfs tSize pn pd ps pc count = do 
   let enums = repeat 0
       pSurfs = take 8 $ drop (pn*8) surfs
-      chDif = if pc < 5 then 0 else 1
+      chDif = if pc < plDelay then 0 else 1
       chNum = case pd of
                 South -> 0 + chDif 
                 North -> 2 + chDif 

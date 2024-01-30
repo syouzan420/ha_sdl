@@ -22,9 +22,13 @@ type OMProp = [(Pos,MProp)]
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
 data Direction = East | North | West | South deriving (Eq, Show) 
 
+-- input mode -- TXT: text mode, PLY: player on maps, BLK: deel with blocks
+data IMode = TXT | PLY | BLK deriving (Eq,Show)
+
 -- map property -- Free, Block
 data MProp = Fr | Bl deriving (Eq, Show)
 
+--mdi: mode for input
 --set: (textIndex,original text)
 --tex: whole file text
 --stx: showing text (adding with time)
@@ -49,7 +53,8 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --pdr: player's direction
 --pac: player animation count
 --ipl: whether the player exists
-data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
+data Waka = Waka {mdi :: !IMode
+                 ,set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
                  ,fsz :: !PointSize, msz :: !Size, tsz :: !CInt
                  ,pps :: !Pos, mps :: !Pos
@@ -58,7 +63,8 @@ data Waka = Waka {set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :
                  ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool}
 
 initWaka :: Waka
-initWaka = Waka {set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
+initWaka = Waka {mdi = TXT
+                ,set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
                 ,tmd = 0, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
                 ,fsz = fontSize, msz = mapSize0, tsz = initTileSize
                 ,pps = initPlayerPos, mps = initMapPos
@@ -72,6 +78,9 @@ mapUpLeftPos = V2 100 10
 
 initPlayerPos :: V2 CInt
 initPlayerPos = V2 2 2
+
+plDelay :: Int
+plDelay = 5
 
 initMapPos :: V2 CInt
 initMapPos = V2 0 0
@@ -114,6 +123,9 @@ fontSize = 24
 
 mapSize0 :: Size
 mapSize0 = V2 0 0
+
+mapSize1 :: Size
+mapSize1 = V2 7 5
 
 delayTime :: Word32
 delayTime = 80 
