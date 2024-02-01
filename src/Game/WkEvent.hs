@@ -29,6 +29,7 @@ exeOneEvent evt = do
     "md" -> changeMode ((head . T.unpack . head) ags) 
     "mv" -> moveDialog (head ags)
     "mp" -> setMap (head ags)
+    "pm" -> playMusic ((T.unpack . head) ags)
     _    -> return ()
   case en of
     "plon" -> playerOn
@@ -37,6 +38,11 @@ exeOneEvent evt = do
 playerOn :: (MonadIO m) => StateW m
 playerOn = S.get >>= (\wk -> return wk{ipl=True}) >>= S.put
     
+playMusic :: (MonadIO m) => String -> StateW m
+playMusic str = S.get 
+    >>= (\wk -> return wk{mfn=if and (map isDigit str) then read str else 0,ims=True})
+    >>= S.put
+
 changeMode :: (MonadIO m) => Char -> StateW m
 changeMode ch = S.get >>= (\wk -> return wk{tmd=if isDigit ch then read [ch] else 1}) >>= S.put 
 

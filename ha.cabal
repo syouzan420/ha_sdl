@@ -27,6 +27,7 @@ library
   exposed-modules:
       Block
       Game.WkAction
+      Game.WkAudio
       Game.WkData
       Game.WkDraw
       Game.WkEvent

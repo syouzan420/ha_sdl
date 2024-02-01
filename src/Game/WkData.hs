@@ -49,6 +49,9 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --gmr: ground map property 
 --omr: object map property
 --aco: animation count
+--mfn: music file number 
+--ims: is music start?
+--imp: is music playing?
 --pln: player's chara number
 --pdr: player's direction
 --pac: player animation count
@@ -60,6 +63,7 @@ data Waka = Waka {mdi :: !IMode
                  ,pps :: !Pos, mps :: !Pos
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
                  ,aco :: !Int
+                 ,mfn :: !Int, ims :: !Bool, imp :: !Bool
                  ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool}
 
 initWaka :: Waka
@@ -71,6 +75,7 @@ initWaka = Waka {mdi = TXT
                 ,gmp = initGroundMap, omp = initObjectMap
                 ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0
+                ,mfn = 0, ims = False, imp = False
                 ,pln = 0, pdr = South ,pac = 0, ipl = False} 
 
 mapUpLeftPos :: V2 CInt
@@ -144,3 +149,10 @@ enemyRoot = "./images/enemies/en"
 
 blockRoot :: FilePath
 blockRoot = "./images/blocks/bl"
+
+museRoot :: FilePath
+museRoot = "./music/"
+
+museFiles :: [FilePath]
+museFiles = ["nokorizima","encount"]
+

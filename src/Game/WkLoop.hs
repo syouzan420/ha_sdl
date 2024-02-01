@@ -5,6 +5,7 @@ import Control.Monad (unless,when)
 import Control.Monad.IO.Class (MonadIO,liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified SDL.Mixer as M
 import Data.Maybe (fromMaybe)
 import SDL.Font (Font)
 import SDL.Video.Renderer (Renderer,Surface)
@@ -18,16 +19,19 @@ import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
 import Game.WkData (Waka(..),Input(..),IMode(..),delayTime,mapSize1)
 
-wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> S.StateT Waka m () 
-wkLoop re fonts surfs = do 
+wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
+                                      -> [M.Music] -> S.StateT Waka m () 
+wkLoop re fonts surfs muses = do 
   inp <- wkInput
   wk <- S.get
+  when (ims wk) $ M.playMusic M.Forever (muses!!(mfn wk))
+  S.put (wk{ims=False,imp=True})
   let mdiWk = mdi wk
   case mdiWk of
     TXT -> textMode re fonts surfs inp
     _ -> return ()
   delay delayTime
-  unless (inp==Es) $ wkLoop re fonts surfs
+  unless (inp==Es) $ wkLoop re fonts surfs muses
 
 textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 textMode re fonts surfs inp = do

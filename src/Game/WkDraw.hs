@@ -8,7 +8,8 @@ import SDL.Video (Renderer)
 import SDL.Video.Renderer (Surface,Texture,SurfacePixelFormat(..),PixelFormat(..)
                           ,Rectangle(..),copy
                           ,present,lockSurface,unlockSurface,surfacePixels
-                          ,surfaceFormat,createRGBSurfaceFrom,createTextureFromSurface)
+                          ,surfaceFormat,createRGBSurfaceFrom,createTextureFromSurface
+                          ,destroyTexture)
 import SDL.Font (Font)
 import qualified SDL.Raw.Types as SDLT
 import Foreign.C.Types (CInt)
@@ -51,6 +52,7 @@ playerDraw re surfs tSize pn pd ps pc count = do
                 West  -> 6 + chDif 
   texture <- createTexture re (pSurfs!!chNum) 0 count 
   texDraw re texture tSize (mapUpLeftPos+(V2 tSize tSize)*ps) 
+  destroyTexture texture
 
 visibleGmap :: GMap -> MapSize -> Pos -> GMap
 visibleGmap gmap (V2 mw mh) (V2 mx my) = 
@@ -71,6 +73,7 @@ mapDraw re surfs gmap mSize tSize mPos count = do
       vGmap = visibleGmap gmap mSize mPos
   textures <- createTextures re surfs enums count 
   texMapDraw re textures vGmap tSize mapUpLeftPos 
+  mapM_ destroyTexture textures
 
 texMapDraw :: (MonadIO m) => Renderer -> [Texture] -> GMap -> TileSize -> Pos -> m ()
 texMapDraw _ _ [] _ _ = return ()
