@@ -52,6 +52,7 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --mfn: music file number 
 --ims: is music start?
 --imp: is music playing?
+--chs: charas states
 --pln: player's chara number
 --pdr: player's direction
 --pac: player animation count
@@ -65,6 +66,7 @@ data Waka = Waka {mdi :: !IMode
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
                  ,aco :: !Int
                  ,mfn :: !Int, ims :: !Bool, imp :: !Bool
+                 ,chs :: ![Cha]
                  ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool, ipm :: !Bool}
 
 initWaka :: Waka
@@ -77,7 +79,17 @@ initWaka = Waka {mdi = TXT
                 ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0
                 ,mfn = 0, ims = False, imp = False
+                ,chs = [initCha{cps=initPlayerPos}]
                 ,pln = 0, pdr = South ,pac = 0, ipl = False, ipm = False} 
+
+--cps: chara position
+--cdr: chara's direction
+--cac: chara animation count
+--icm: is chara moving?
+data Cha = Cha {cps :: !Pos, cdr :: !Direction, cac :: !Int, icm :: !Bool}
+
+initCha :: Cha
+initCha = Cha {cps = V2 0 0, cdr = South, cac = 0, icm = False}
 
 mapUpLeftPos :: V2 CInt
 mapUpLeftPos = V2 100 10
@@ -87,6 +99,9 @@ initPlayerPos = V2 2 2
 
 plDelay :: Int
 plDelay = 5
+
+chaDelay :: [Int]
+chaDelay = [plDelay]
 
 initMapPos :: V2 CInt
 initMapPos = V2 0 0

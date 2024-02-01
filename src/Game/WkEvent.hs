@@ -33,10 +33,14 @@ exeOneEvent evt = do
     _    -> return ()
   case en of
     "plon" -> playerOn
+    "hm" -> haltMusic
     _      -> return ()
 
 playerOn :: (MonadIO m) => StateW m
 playerOn = S.get >>= (\wk -> return wk{ipl=True}) >>= S.put
+    
+haltMusic :: (MonadIO m) => StateW m
+haltMusic = S.get >>= (\wk -> if imp wk then return wk{ims=True} else return wk) >>= S.put
     
 playMusic :: (MonadIO m) => String -> StateW m
 playMusic str = S.get 

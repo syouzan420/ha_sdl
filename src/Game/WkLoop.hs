@@ -17,15 +17,20 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),delayTime,visibleMapSize)
+import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..)
+                   ,delayTime,visibleMapSize,plDelay,chaDelay)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
                                       -> [M.Music] -> S.StateT Waka m () 
 wkLoop re fonts surfs muses = do 
   inp <- wkInput
   wk <- S.get
-  when (ims wk) $ M.playMusic M.Forever (muses!!(mfn wk))
-  S.put (wk{ims=False,imp=True})
+  let (imsWk,impWk) = (ims wk,imp wk)
+  let isMusicOn = imsWk && (not impWk) 
+  let isMusicOff = imsWk && impWk
+  when isMusicOn $ M.playMusic M.Forever (muses!!(mfn wk))
+  _ <- if isMusicOff then  M.fadeOutMusic 1000 else return False
+  S.put (wk{ims=False,imp=if isMusicOn then True else if isMusicOff then False else impWk})
   let mdiWk = mdi wk
   case mdiWk of
     TXT -> textMode re fonts surfs inp
@@ -65,7 +70,7 @@ textMode re fonts surfs inp = do
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
   let nmsz = if tmdWk==0 then V2 0 0 else visibleMapSize 
-  let npac = if pacWk==10 then 0 else pacWk+1 
+  let npac = if pacWk==plDelay*2 then 0 else pacWk+1 
   let nmdi = if isMap then PLY else TXT 
   let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac, mdi=nmdi}
   S.put nwk'
@@ -74,7 +79,7 @@ textMode re fonts surfs inp = do
 mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 mapMode re fonts surfs inp = do
   wk <- S.get
-  let (ppsWk,mpsWk,gmpWk,pdrWk,pacWk) = (pps wk,mps wk,gmp wk,pdr wk,pac wk) 
+  let (chsWk,ppsWk,mpsWk,gmpWk,pdrWk,pacWk) = (chs wk,pps wk,mps wk,gmp wk,pdr wk,pac wk) 
       textData = makeWkTextData wk
       npdr = case inp of
                 Ri -> East
@@ -82,8 +87,11 @@ mapMode re fonts surfs inp = do
                 Lf -> West
                 Dn -> South
                 _  -> pdrWk
-      npac = if pacWk==10 then 0 else pacWk+1 
-      nwk = wk{pdr=npdr,pac=npac}
+      npac = if pacWk==plDelay*2 then 0 else pacWk+1 
+      nchs = map (\(cr,dl) 
+        -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
+                                                               (zip chsWk chaDelay)
+      nwk = wk{pdr=npdr,pac=npac,chs=nchs}
   wkDraw re fonts surfs textData nwk
   S.put nwk
 
