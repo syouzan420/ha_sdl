@@ -17,7 +17,7 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),IMode(..),delayTime,mapSize1)
+import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),delayTime,mapSize1)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
                                       -> [M.Music] -> S.StateT Waka m () 
@@ -29,6 +29,7 @@ wkLoop re fonts surfs muses = do
   let mdiWk = mdi wk
   case mdiWk of
     TXT -> textMode re fonts surfs inp
+    PLY -> mapMode re fonts surfs inp
     _ -> return ()
   delay delayTime
   unless (inp==Es) $ wkLoop re fonts surfs muses
@@ -40,6 +41,7 @@ textMode re fonts surfs inp = do
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
+      isMap = lch == '~'
       isDialog = tpsWk < (T.length texWk)
       isShowing = isDialog && (not isStop)
       eventText = if isEvent then getTargetText getEventLength tpsWk texWk else T.empty
@@ -47,6 +49,7 @@ textMode re fonts surfs inp = do
       addText = case lch of
                   '。'  -> T.empty
                   '\\' -> T.empty
+                  '~' -> T.empty
                   ';'  -> T.singleton ';'<>getTargetText getComLength tpsWk texWk
                   _    -> T.singleton lch
       nStx = if isShowing then stxWk <> addText else stxWk
@@ -63,9 +66,26 @@ textMode re fonts surfs inp = do
   let ntps' = if isStart then ntps+1 else ntps 
   let nmsz = if tmdWk==0 then V2 0 0 else mapSize1 
   let npac = if pacWk==10 then 0 else pacWk+1 
-  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac}
+  let nmdi = if isMap then PLY else TXT 
+  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac, mdi=nmdi}
   S.put nwk'
   when isEvent $ exeEvent eventText
+
+mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
+mapMode re fonts surfs inp = do
+  wk <- S.get
+  let (pdrWk,pacWk) = (pdr wk,pac wk) 
+      textData = makeWkTextData wk
+      npdr = case inp of
+                Ri -> East
+                Up -> North
+                Lf -> West
+                Dn -> South
+                _  -> pdrWk
+      npac = if pacWk==10 then 0 else pacWk+1 
+      nwk = wk{pdr=npdr,pac=npac}
+  wkDraw re fonts surfs textData nwk
+  S.put nwk
 
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =

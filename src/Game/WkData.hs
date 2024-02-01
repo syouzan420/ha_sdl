@@ -56,6 +56,7 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --pdr: player's direction
 --pac: player animation count
 --ipl: whether the player exists
+--ipm: is player moving?
 data Waka = Waka {mdi :: !IMode
                  ,set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
@@ -64,7 +65,7 @@ data Waka = Waka {mdi :: !IMode
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
                  ,aco :: !Int
                  ,mfn :: !Int, ims :: !Bool, imp :: !Bool
-                 ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool}
+                 ,pln :: !Int, pdr :: !Direction, pac :: !Int, ipl :: !Bool, ipm :: !Bool}
 
 initWaka :: Waka
 initWaka = Waka {mdi = TXT
@@ -76,7 +77,7 @@ initWaka = Waka {mdi = TXT
                 ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0
                 ,mfn = 0, ims = False, imp = False
-                ,pln = 0, pdr = South ,pac = 0, ipl = False} 
+                ,pln = 0, pdr = South ,pac = 0, ipl = False, ipm = False} 
 
 mapUpLeftPos :: V2 CInt
 mapUpLeftPos = V2 100 10
