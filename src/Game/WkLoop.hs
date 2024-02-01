@@ -17,7 +17,7 @@ import General (getLastChar)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),delayTime,mapSize1)
+import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),delayTime,visibleMapSize)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
                                       -> [M.Music] -> S.StateT Waka m () 
@@ -64,7 +64,7 @@ textMode re fonts surfs inp = do
   let isStart = isStop && inp==Sp
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
-  let nmsz = if tmdWk==0 then V2 0 0 else mapSize1 
+  let nmsz = if tmdWk==0 then V2 0 0 else visibleMapSize 
   let npac = if pacWk==10 then 0 else pacWk+1 
   let nmdi = if isMap then PLY else TXT 
   let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac, mdi=nmdi}
@@ -74,7 +74,7 @@ textMode re fonts surfs inp = do
 mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 mapMode re fonts surfs inp = do
   wk <- S.get
-  let (pdrWk,pacWk) = (pdr wk,pac wk) 
+  let (ppsWk,mpsWk,gmpWk,pdrWk,pacWk) = (pps wk,mps wk,gmp wk,pdr wk,pac wk) 
       textData = makeWkTextData wk
       npdr = case inp of
                 Ri -> East

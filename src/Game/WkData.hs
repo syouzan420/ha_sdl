@@ -97,6 +97,9 @@ initTileSize = 32
 initGroundMap :: GMap
 initGroundMap = ["3413311","3133433","1330100","4342355","3320543"]
 
+defaultMapProp :: [MProp]
+defaultMapProp = [Bl,Bl,Bl,Fr,Fr,Fr,Fr,Fr]
+
 initObjectMap :: OMap
 initObjectMap = []
 
@@ -130,8 +133,8 @@ fontSize = 24
 mapSize0 :: Size
 mapSize0 = V2 0 0
 
-mapSize1 :: Size
-mapSize1 = V2 7 5
+visibleMapSize :: Size
+visibleMapSize = V2 8 6
 
 delayTime :: Word32
 delayTime = 80 
