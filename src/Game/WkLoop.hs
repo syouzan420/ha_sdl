@@ -13,12 +13,12 @@ import SDL.Vect (V2(..))
 import SDL.Time (delay)
 import qualified MyData as MD
 import MyAction (getCid)
-import General (getLastChar)
+import General (getLastChar,toList)
 import Game.WkDraw (wkDraw)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
-import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..)
-                   ,delayTime,visibleMapSize,plDelay,chaDelay)
+import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..),Pos,GMap,MProp(..)
+                   ,delayTime,visibleMapSize,plDelay,chaDelay,defaultMapProp)
 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
                                       -> [M.Music] -> S.StateT Waka m () 
@@ -42,7 +42,8 @@ wkLoop re fonts surfs muses = do
 textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 textMode re fonts surfs inp = do
   wk <- S.get
-  let (texWk,stxWk,tpsWk,tmdWk,pacWk) = (tex wk,stx wk,tps wk,tmd wk,pac wk) 
+  let (texWk,stxWk,tpsWk,tmdWk,chsWk) 
+          = (tex wk,stx wk,tps wk,tmd wk,chs wk) 
       lch = getLastChar (T.take (tpsWk+1) texWk)
       isStop = lch == '。'
       isEvent = lch == '\\'
@@ -70,30 +71,79 @@ textMode re fonts surfs inp = do
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
   let nmsz = if tmdWk==0 then V2 0 0 else visibleMapSize 
-  let npac = if pacWk==plDelay*2 then 0 else pacWk+1 
+  let nchs = map (\(cr,dl) 
+        -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
+                                                               (zip chsWk chaDelay)
   let nmdi = if isMap then PLY else TXT 
-  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, pac=npac, mdi=nmdi}
+  let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, mdi=nmdi, chs=nchs}
   S.put nwk'
   when isEvent $ exeEvent eventText
 
 mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 mapMode re fonts surfs inp = do
   wk <- S.get
-  let (chsWk,ppsWk,mpsWk,gmpWk,pdrWk,pacWk) = (chs wk,pps wk,mps wk,gmp wk,pdr wk,pac wk) 
+  let (chsWk,plnWk,mpsWk,gmpWk) 
+            = (chs wk,pln wk,mps wk,gmp wk) 
       textData = makeWkTextData wk
+      chP = chsWk!!plnWk
+      (pdrCh,ppsCh,prpCh,pacCh) = (cdr chP, cps chP, crp chP, cac chP)
       npdr = case inp of
                 Ri -> East
                 Up -> North
                 Lf -> West
                 Dn -> South
-                _  -> pdrWk
-      npac = if pacWk==plDelay*2 then 0 else pacWk+1 
+                _  -> pdrCh
+      iStop = inp/=Ri && inp/=Up && inp /=Lf && inp/=Dn
+      (nmps,(npps,nprp)) = charaMove True iStop gmpWk mpsWk npdr ppsCh prpCh 
+      nchP = chP{cdr=npdr,cps=npps,crp=nprp} 
+      chs' = toList chsWk plnWk nchP
       nchs = map (\(cr,dl) 
         -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
-                                                               (zip chsWk chaDelay)
-      nwk = wk{pdr=npdr,pac=npac,chs=nchs}
+                                                               (zip chs' chaDelay)
+      nwk = wk{chs=nchs}
   wkDraw re fonts surfs textData nwk
   S.put nwk
+
+type MapPos = Pos
+type ChaPos = Pos
+type ChaRPos = Pos
+type IsPlayer = Bool
+
+charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> Direction 
+                    -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos)) 
+charaMove ip ist gm mpos@(V2 x y) dr cpos@(V2 a b) crps@(V2 p q) =  
+  let isFr = isFree gm
+      ts = 32
+      du = 8
+      canMove = not ist && case dr of
+        East -> (p==0 && isFr (V2 (a+1) b) 
+                      && (q==0 || (q>0 && (isFr (V2 (a+1) (b+1)))) 
+                               || (q<0 && (isFr (V2 (a+1) (b-1)))))) || p/=0  
+        North -> (q==0 && isFr (V2 a (b-1))
+                       && (p==0 || (p>0 && (isFr (V2 (a+1) (b-1))))
+                                || (p<0 && (isFr (V2 (a-1) (b-1)))))) || q/=0
+        West -> (p==0 && isFr (V2 (a-1) b)
+                      && (q==0 || (q>0 && (isFr (V2 (a-1) (b+1))))
+                               || (q<0 && (isFr (V2 (a-1) (b-1)))))) || p/=0
+        South -> (q==0 && isFr (V2 a (b+1))
+                       && (p==0 || (p>0 && (isFr (V2 (a+1) (b+1))))
+                                || (p<0 && (isFr (V2 (a-1) (b+1)))))) || q/=0
+      (V2 dx dy) = if canMove then case dr of 
+              East -> V2 du 0; North -> V2 0 (-du); West -> V2 (-du) 0; South -> V2 0 du 
+                              else V2 0 0
+      (V2 np nq) = crps + (V2 dx dy) 
+      ts' = fromIntegral ts
+      da = if (mod np ts' == 0) && np/=0 then div np ts' else 0
+      db = if (mod nq ts' == 0) && nq/=0 then div nq ts' else 0
+      ncpos = cpos + (V2 da db)
+      np' = if (abs np==ts') then 0 else np
+      nq' = if (abs nq==ts') then 0 else nq
+   in (mpos,(ncpos,(V2 np' nq'))) 
+
+isFree :: GMap -> ChaPos -> Bool
+isFree gm (V2 a b) =
+  let mProp = defaultMapProp!!(read [((gm!!fromIntegral b)!!fromIntegral a)])
+   in mProp/=Bl
 
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =

@@ -20,7 +20,7 @@ import qualified Data.Vector.Storable.Mutable as VM
 import Data.Word (Word8)
 import Data.List (transpose)
 import MySDL.MyDraw (initDraw,textsDraw)
-import Game.WkData (Waka(..),Size,Pos,GMap,Direction(..),mapUpLeftPos,plDelay)
+import Game.WkData (Waka(..),Size,Pos,GMap,Direction(..),Cha(..),mapUpLeftPos,plDelay)
 import Game.WkLib (cosList,shiftList)
 import MyData (TextData,WMode(..))
 
@@ -32,17 +32,19 @@ type IsTextShowing = Bool
 
 wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData -> Waka -> m ()
 wkDraw re fonts surfs textData wk = do
+  let plnWk = pln wk  --player chara number
   initDraw re
   unless (tmd wk==0) $ mapDraw re (surfs!!0) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
   when (ipl wk) $ do
-      playerDraw re (surfs!!1) (tsz wk) (pln wk) (pdr wk) (pps wk) (pac wk) (aco wk)
+      playerDraw re (surfs!!1) (tsz wk) plnWk ((chs wk)!!plnWk) (aco wk)
   textsDraw re fonts T True False (tps wk) textData
   present re
 
 playerDraw :: (MonadIO m) => Renderer -> [Surface] -> 
-                        TileSize -> PlayerNum -> Direction -> Pos -> Int -> Int -> m ()
-playerDraw re surfs tSize pn pd ps pc count = do 
-  let enums = repeat 0
+                        TileSize -> PlayerNum -> Cha -> Int -> m ()
+playerDraw re surfs tSize pn chaWk count = do 
+  let (ps,rp,pd,pc) = (cps chaWk, crp chaWk, cdr chaWk,cac chaWk) 
+      enums = repeat 0
       pSurfs = take 8 $ drop (pn*8) surfs
       chDif = if pc < plDelay then 0 else 1
       chNum = case pd of
@@ -51,7 +53,7 @@ playerDraw re surfs tSize pn pd ps pc count = do
                 East  -> 4 + chDif
                 West  -> 6 + chDif 
   texture <- createTexture re (pSurfs!!chNum) 0 count 
-  texDraw re texture tSize (mapUpLeftPos+(V2 tSize tSize)*ps) 
+  texDraw re texture tSize (mapUpLeftPos+(V2 tSize tSize)*ps+rp) 
   destroyTexture texture
 
 visibleGmap :: GMap -> MapSize -> Pos -> GMap
