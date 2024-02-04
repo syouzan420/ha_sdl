@@ -19,7 +19,8 @@ type OMap = [String]
 type GMProp = [(Pos,MProp)]
 type OMProp = [(Pos,MProp)]
 
-data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | No deriving (Eq, Show)
+--Right, Up, Left, Down, Space, Return, Escape, Released, Nothing
+data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | Rl | No deriving (Eq, Show)
 data Direction = East | North | West | South | Mid deriving (Eq, Show) 
 
 -- input mode -- TXT: text mode, PLY: player on maps, BLK: deel with blocks

@@ -5,10 +5,13 @@ import MySDL.MyInput (myInput)
 import Linear.V2 (V2(..))
 import Linear.V4 (V4(..))
 import qualified Control.Monad.State.Strict as S
+import Control.Monad (when)
 import qualified Data.Text as T
 import MyData (State(..),Active(..),Attr(..),Coding(..),Jumping(..),Modif(..),WMode(..),EMode(..),FMode(..),Input(..),initYokoPos,initTatePos,colorPallet)
 import MyLib (tpsForRelativeLine,locToIndex,toDotPos,addMidDots,selectNearest,textIns,lastTps,takeCurrentLine,deleteCurrentLine,headTps)
 import Mana.Mana (evalCode,taiyouMn,Mn(..),Yo(..),Dtype(..),preDef,userDef)
+import SDL.Raw.Types (Rect(..))
+import SDL.Input.Keyboard (startTextInput,stopTextInput)
 import SDL.Input.Keyboard.Codes
 
 inputEvent :: S.StateT State IO Input
@@ -18,7 +21,7 @@ inputEvent = do
       (texSt,etxSt,dtsSt,tpsSt,dfnSt,comSt,wszSt,mgnSt,atrSt,emdSt,wmdSt,cplSt,ifmSt,iskSt)
         = (tex actSt,etx actSt,dts actSt,tps actSt,dfn cdnSt
           ,com st,wsz st,mgn st,atr st,emd st,wmd st,cpl st,ifm st,isk st)
-  (kc,md,it,mps,isc,ised) <- myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
+  (kc,md,it,mps,isc,ised,ir) <- myInput  -- md: keyModifier ('a'-alt, 'c'-control, 's'-shift, ' '-nothing)
   let isKeyPressed = kc/=KeycodeUnknown
       isMousePressed = mps/=V2 (-1) (-1)
       isQuit = kc==KeycodeEscape   -- ESC Key
@@ -170,7 +173,7 @@ inputEvent = do
         | otherwise = [] 
       ncom
         | isExit || texSt /= ntex = "" 
-        | isNor = comSt ++ T.unpack it 
+        | isNor = case kc of KeycodeD -> comSt ++ "d"; _ -> comSt 
         | otherwise = comSt
       nifm
         | isTglFmt = not ifmSt
@@ -194,5 +197,7 @@ inputEvent = do
       nactSt = actSt{tex=ntex,etx=netx,dts=ndts,tps=ntps}
       nst = st{act=nactSt,cdn=cdnSt{cod=ncod},com=ncom,atr=natr,emd=nemd,wmd=nwmd,cpl=ncpl,ifm=nifm,isk=nisk}
   S.put nst
+  when isToIns $ startTextInput (Rect 0 0 50 50)
+  when isToNor $ stopTextInput
   return ninp
 

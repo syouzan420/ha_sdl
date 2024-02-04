@@ -86,16 +86,16 @@ mapMode re fonts surfs inp = do
             = (chs wk,pln wk,mps wk,gmp wk) 
       textData = makeWkTextData wk
       chP = chsWk!!plnWk
-      (pdrCh,ppsCh,prpCh,pacCh) = (cdr chP, cps chP, crp chP, cac chP)
+      (pdrCh,ppsCh,prpCh,pacCh,pimCh) = (cdr chP, cps chP, crp chP, cac chP, icm chP)
       npdr = case inp of
                 Ri -> East
                 Up -> North
                 Lf -> West
                 Dn -> South
                 _  -> pdrCh
-      iStop = inp/=Ri && inp/=Up && inp /=Lf && inp/=Dn
-      (nmps,(npps,nprp)) = charaMove True iStop gmpWk mpsWk npdr ppsCh prpCh 
-      nchP = chP{cdr=npdr,cps=npps,crp=nprp} 
+      npim = inp/=Rl && (inp==Ri || inp==Up || inp==Lf || inp==Dn || pimCh) 
+      (nmps,(npps,nprp)) = charaMove True npim gmpWk mpsWk npdr ppsCh prpCh 
+      nchP = chP{cdr=npdr,cps=npps,crp=nprp,icm=npim} 
       chs' = toList chsWk plnWk nchP
       nchs = map (\(cr,dl) 
         -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
@@ -111,11 +111,11 @@ type IsPlayer = Bool
 
 charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> Direction 
                     -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos)) 
-charaMove ip ist gm mpos@(V2 x y) dr cpos@(V2 a b) crps@(V2 p q) =  
+charaMove ip im gm mpos@(V2 x y) dr cpos@(V2 a b) crps@(V2 p q) =  
   let isFr = isFree gm
       ts = 32
       du = 8
-      canMove = not ist && case dr of
+      canMove = im && case dr of
         East -> (p==0 && isFr (V2 (a+1) b) 
                       && (q==0 || (q>0 && (isFr (V2 (a+1) (b+1)))) 
                                || (q<0 && (isFr (V2 (a+1) (b-1)))))) || p/=0  

@@ -16,8 +16,8 @@ import Game.WkData (Waka(..),Input(..),windowSize)
 
 wkInput :: (MonadIO m) => m Input
 wkInput = do
-    (kc,_,_,_,_,_) <- myInput
-    return $ case kc of
+    (kc,_,_,_,_,_,ir) <- myInput
+    return $ if ir then Rl else case kc of
       KeycodeEscape -> Es
       KeycodeSpace -> Sp
       KeycodeK -> Up

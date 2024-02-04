@@ -4,7 +4,7 @@ module MySDL.MyInput (myInput) where
 import SDL.Event (EventPayload(KeyboardEvent,TextInputEvent,TextEditingEvent
                               ,MouseButtonEvent,MouseMotionEvent,KeymapChangedEvent)
                  ,eventPayload,keyboardEventKeyMotion
-                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents
+                 ,InputMotion(Pressed,Released),keyboardEventKeysym,pollEvents,pumpEvents
                  ,TextInputEventData(textInputEventText),TextEditingEventData(textEditingEventLength,textEditingEventText)
                  ,MouseButtonEventData(mouseButtonEventMotion,mouseButtonEventPos)
                  ,MouseMotionEventData(mouseMotionEventState,mouseMotionEventPos)
@@ -22,17 +22,25 @@ import Data.List(find)
 import Foreign.C.Types(CInt)
 import MyData(Modif(..))
   
-myInput :: (MonadIO m) => m (Keycode,Modif,T.Text,V2 CInt,Bool,Bool)
+myInput :: (MonadIO m) => m (Keycode,Modif,T.Text,V2 CInt,Bool,Bool,Bool)
 myInput = do
   events <- pollEvents
   mds <- getModState
   let kcmd event  =  case eventPayload event of 
                        KeyboardEvent keyboardEvent ->
-                         if keyboardEventKeyMotion keyboardEvent == Pressed
-                             then let kbeSim = keyboardEventKeysym keyboardEvent
-                                   in (keysymKeycode kbeSim,keysymModifier kbeSim)
-                             else (KeycodeUnknown,mds)
-                       _ -> (KeycodeUnknown,mds)
+                         case keyboardEventKeyMotion keyboardEvent of
+                            Pressed -> let kbeSim = keyboardEventKeysym keyboardEvent
+                                        in (keysymKeycode kbeSim,keysymModifier kbeSim,False)
+                            Released -> (KeycodeUnknown,mds,True) 
+                            _        -> (KeycodeUnknown,mds,False)
+                       _ -> (KeycodeUnknown,mds,False)
+--  let kcmd event  =  case eventPayload event of 
+--                       KeyboardEvent keyboardEvent ->
+--                         if keyboardEventKeyMotion keyboardEvent == Pressed
+--                             then let kbeSim = keyboardEventKeysym keyboardEvent
+--                                   in (keysymKeycode kbeSim,keysymModifier kbeSim)
+--                             else (KeycodeUnknown,mds)
+--                       _ -> (KeycodeUnknown,mds)
       getItx event = case eventPayload event of
           TextInputEvent textInputEvent -> (textInputEventText textInputEvent,False)
           TextEditingEvent textEditingEvent 
@@ -55,7 +63,7 @@ myInput = do
                        mouseMotionEventState mouseMotionEvent == [ButtonLeft]
                      _ -> False 
                      
-      (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (map kcmd events) 
+      (kc,md,ir) = fromMaybe (KeycodeUnknown,mds,False) $ find (/=(KeycodeUnknown,mds,False)) (map kcmd events) 
       (itx,ised) = fromMaybe (T.empty,False) $ find (/=(T.empty,False)) $ 
                                   filter (/=(T.empty,True)) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
@@ -78,5 +86,6 @@ myInput = do
                   _ -> KeycodeUnknown
        |otherwise = kc
 --  when (itx/=T.empty) $ liftIO $ print kc'
-  return (kc',mdres,itx,mps,ismc,ised) 
+--  when ir $ liftIO $ print "released"
+  return (kc',mdres,itx,mps,ismc,ised,ir) 
  

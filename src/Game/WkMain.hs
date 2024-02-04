@@ -4,6 +4,7 @@ import qualified Control.Monad.State.Strict as S
 import Control.Monad.IO.Class (MonadIO)
 import Data.Text (Text)
 import SDL.Font (Font)
+import SDL.Input.Keyboard (stopTextInput)
 import MyData (textFileName)
 import MyFile (fileRead)
 import Game.WkData (initWaka)
@@ -17,6 +18,7 @@ type FileNum = Int
 
 runWaka :: (MonadIO m) => FileNum -> Text -> [Font] -> m () 
 runWaka fln sIndex fonts = do 
+  stopTextInput
   surfs <- wkLoad
   allText <- fileRead (textFileName++show fln++".txt")
   withVideo $ \renderer -> do

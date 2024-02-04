@@ -1,6 +1,7 @@
 module MyApp(appMain) where
 
 import qualified Control.Monad.State.Strict as S
+import SDL.Input.Keyboard (stopTextInput)
 import MySDL.MyLoad (myLoad)
 import MySDL.MyLoop (myLoop)
 import MySDL.MyInit (withMyInit)
@@ -17,4 +18,5 @@ appMain =
         let newActive = initActive{tex=text,dts=dots,fps=fpos,tps=tpos}
             newAttr = initAttr{jmp=initJumping{jps=jumps}}
             newState = initState{act=newActive,atr=newAttr} 
+        stopTextInput
         S.runStateT (myLoop renderer fonts itexs) newState
