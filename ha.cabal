@@ -28,6 +28,7 @@ library
       Block
       Game.WkAction
       Game.WkAudio
+      Game.WkAudio2
       Game.WkData
       Game.WkDraw
       Game.WkEvent
@@ -59,7 +60,11 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      ALUT
+    , ObjectName
+    , OpenAL
+    , StateVar
+    , base >=4.7 && <5
     , bytestring
     , containers
     , directory
@@ -83,7 +88,11 @@ executable ha-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      ALUT
+    , ObjectName
+    , OpenAL
+    , StateVar
+    , base >=4.7 && <5
     , bytestring
     , containers
     , directory
@@ -109,7 +118,11 @@ test-suite ha-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      ALUT
+    , ObjectName
+    , OpenAL
+    , StateVar
+    , base >=4.7 && <5
     , bytestring
     , containers
     , directory

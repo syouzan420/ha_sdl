@@ -172,5 +172,5 @@ museRoot :: FilePath
 museRoot = "./music/"
 
 museFiles :: [FilePath]
-museFiles = ["nokorizima","encount"]
+museFiles = ["cooktest3","cooktest3"]
 

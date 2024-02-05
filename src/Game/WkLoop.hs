@@ -6,7 +6,12 @@ import Control.Monad.IO.Class (MonadIO,liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified SDL.Mixer as M
+import Sound.OpenAL.AL.Buffer (Buffer)
+import Sound.OpenAL.AL.Source (Source,loopingMode,LoopingMode(..),queueBuffers,play,stop)
+import Data.ObjectName (genObjectName)
+import Data.StateVar (($=))
 import Data.Maybe (fromMaybe)
+import Foreign.C.Types (CInt)
 import SDL.Font (Font)
 import SDL.Video.Renderer (Renderer,Surface)
 import SDL.Vect (V2(..))
@@ -20,16 +25,23 @@ import Game.WkAction (wkInput,makeWkTextData)
 import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..),Pos,GMap,MProp(..)
                    ,delayTime,visibleMapSize,plDelay,chaDelay,defaultMapProp)
 
+--wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
+--                                      -> [M.Music] -> S.StateT Waka m () 
 wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
-                                      -> [M.Music] -> S.StateT Waka m () 
-wkLoop re fonts surfs muses = do 
+                                      -> [Buffer] -> Source -> S.StateT Waka m () 
+wkLoop re fonts surfs muses source = do 
   inp <- wkInput
   wk <- S.get
   let (imsWk,impWk) = (ims wk,imp wk)
   let isMusicOn = imsWk && (not impWk) 
   let isMusicOff = imsWk && impWk
-  when isMusicOn $ M.playMusic M.Forever (muses!!(mfn wk))
-  _ <- if isMusicOff then  M.fadeOutMusic 1000 else return False
+  when isMusicOn $ do
+    loopingMode source $= Looping
+    queueBuffers source [muses!!(mfn wk)]
+    play [source]
+     --M.playMusic M.Forever (muses!!(mfn wk))
+  when isMusicOff $ stop [source]
+  --_ <- if isMusicOff then  M.fadeOutMusic 1000 else return False
   S.put (wk{ims=False,imp=if isMusicOn then True else if isMusicOff then False else impWk})
   let mdiWk = mdi wk
   case mdiWk of
@@ -37,7 +49,7 @@ wkLoop re fonts surfs muses = do
     PLY -> mapMode re fonts surfs inp
     _ -> return ()
   delay delayTime
-  unless (inp==Es) $ wkLoop re fonts surfs muses
+  unless (inp==Es) $ wkLoop re fonts surfs muses source
 
 textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 textMode re fonts surfs inp = do
@@ -82,8 +94,8 @@ textMode re fonts surfs inp = do
 mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
 mapMode re fonts surfs inp = do
   wk <- S.get
-  let (chsWk,plnWk,mpsWk,gmpWk) 
-            = (chs wk,pln wk,mps wk,gmp wk) 
+  let (chsWk,plnWk,mpsWk,gmpWk,tszWk) 
+            = (chs wk,pln wk,mps wk,gmp wk,tsz wk) 
       textData = makeWkTextData wk
       chP = chsWk!!plnWk
       (pdrCh,ppsCh,prpCh,pacCh,pimCh) = (cdr chP, cps chP, crp chP, cac chP, icm chP)
@@ -94,7 +106,7 @@ mapMode re fonts surfs inp = do
                 Dn -> South
                 _  -> pdrCh
       npim = inp/=Rl && (inp==Ri || inp==Up || inp==Lf || inp==Dn || pimCh) 
-      (nmps,(npps,nprp)) = charaMove True npim gmpWk mpsWk npdr ppsCh prpCh 
+      (nmps,(npps,nprp)) = charaMove True npim gmpWk mpsWk tszWk npdr ppsCh prpCh 
       nchP = chP{cdr=npdr,cps=npps,crp=nprp,icm=npim} 
       chs' = toList chsWk plnWk nchP
       nchs = map (\(cr,dl) 
@@ -107,14 +119,14 @@ mapMode re fonts surfs inp = do
 type MapPos = Pos
 type ChaPos = Pos
 type ChaRPos = Pos
+type TileSize = CInt
 type IsPlayer = Bool
 
-charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> Direction 
+charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> TileSize -> Direction 
                     -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos)) 
-charaMove ip im gm mpos@(V2 x y) dr cpos@(V2 a b) crps@(V2 p q) =  
+charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =  
   let isFr = isFree gm
-      ts = 32
-      du = 8
+      du = div ts 4 
       canMove = im && case dr of
         East -> (p==0 && isFr (V2 (a+1) b) 
                       && (q==0 || (q>0 && (isFr (V2 (a+1) (b+1)))) 
@@ -132,12 +144,11 @@ charaMove ip im gm mpos@(V2 x y) dr cpos@(V2 a b) crps@(V2 p q) =
               East -> V2 du 0; North -> V2 0 (-du); West -> V2 (-du) 0; South -> V2 0 du 
                               else V2 0 0
       (V2 np nq) = crps + (V2 dx dy) 
-      ts' = fromIntegral ts
-      da = if (mod np ts' == 0) && np/=0 then div np ts' else 0
-      db = if (mod nq ts' == 0) && nq/=0 then div nq ts' else 0
+      da = if (mod np ts == 0) && np/=0 then div np ts else 0
+      db = if (mod nq ts == 0) && nq/=0 then div nq ts else 0
       ncpos = cpos + (V2 da db)
-      np' = if (abs np==ts') then 0 else np
-      nq' = if (abs nq==ts') then 0 else nq
+      np' = if (abs np==ts) then 0 else np
+      nq' = if (abs nq==ts) then 0 else nq
    in (mpos,(ncpos,(V2 np' nq'))) 
 
 isFree :: GMap -> ChaPos -> Bool
