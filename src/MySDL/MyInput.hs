@@ -30,10 +30,15 @@ myInput = do
                        KeyboardEvent keyboardEvent ->
                          case keyboardEventKeyMotion keyboardEvent of
                             Pressed -> let kbeSim = keyboardEventKeysym keyboardEvent
-                                        in (keysymKeycode kbeSim,keysymModifier kbeSim,False)
-                            Released -> (KeycodeUnknown,mds,True) 
-                            _        -> (KeycodeUnknown,mds,False)
-                       _ -> (KeycodeUnknown,mds,False)
+                                        in (keysymKeycode kbeSim,keysymModifier kbeSim)
+                            _        -> (KeycodeUnknown,mds)
+                       _ -> (KeycodeUnknown,mds)
+      kir event = case eventPayload event of
+                    KeyboardEvent keyboardEvent ->
+                      case keyboardEventKeyMotion keyboardEvent of
+                        Released -> True
+                        _ -> False
+                    _ -> False
 --  let kcmd event  =  case eventPayload event of 
 --                       KeyboardEvent keyboardEvent ->
 --                         if keyboardEventKeyMotion keyboardEvent == Pressed
@@ -63,7 +68,8 @@ myInput = do
                        mouseMotionEventState mouseMotionEvent == [ButtonLeft]
                      _ -> False 
                      
-      (kc,md,ir) = fromMaybe (KeycodeUnknown,mds,False) $ find (/=(KeycodeUnknown,mds,False)) (map kcmd events) 
+      ir = if (not (null events)) then last (map kir events) else False
+      (kc,md) = fromMaybe (KeycodeUnknown,mds) $ find (/=(KeycodeUnknown,mds)) (reverse (map kcmd events)) 
       (itx,ised) = fromMaybe (T.empty,False) $ find (/=(T.empty,False)) $ 
                                   filter (/=(T.empty,True)) (map getItx events) 
       cPos = fromMaybe (P (V2 (-1) (-1))) $ find (/=P (V2 (-1) (-1))) (map mbtn events)
@@ -73,7 +79,7 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
---  when (not (null events)) $ liftIO $ print events 
+  --when (not (null events)) $ liftIO $ print events 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
 --  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
