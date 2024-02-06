@@ -127,6 +127,7 @@ charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> TileSize -> Direction
 charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =  
   let isFr = isFree gm
       du = div ts 4 
+      (V2 mpr mpd) = mpos + visibleMapSize - (V2 1 1) --map pos right, map pos down
       canMove = im && case dr of
         East -> (p==0 && isFr (V2 (a+1) b) 
                       && (q==0 || (q>0 && (isFr (V2 (a+1) (b+1)))) 
@@ -143,18 +144,27 @@ charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =
       (V2 dx dy) = if canMove then case dr of 
               East -> V2 du 0; North -> V2 0 (-du); West -> V2 (-du) 0; South -> V2 0 du 
                               else V2 0 0
-      (V2 np nq) = crps + (V2 dx dy) 
-      da = if (mod np ts == 0) && np/=0 then div np ts else 0
-      db = if (mod nq ts == 0) && nq/=0 then div nq ts else 0
-      ncpos = cpos + (V2 da db)
-      np' = if (abs np==ts) then 0 else np
-      nq' = if (abs nq==ts) then 0 else nq
-   in (mpos,(ncpos,(V2 np' nq'))) 
+      (V2 tp tq) = crps + (V2 dx dy) 
+      da = if (mod tp ts == 0) && tp/=0 then div tp ts else 0
+      db = if (mod tq ts == 0) && tq/=0 then div tq ts else 0
+      (V2 ta tb) = cpos + (V2 da db)
+      ntp = if (abs tp==ts) then 0 else tp
+      ntq = if (abs tq==ts) then 0 else tq
+      isInRect = case dr of 
+                  East -> ta < mpr || (ta==mpr && ntp==0) 
+                  North -> tb > y || (tb==y && ntq==0)
+                  West -> ta > x || (ta==x && ntp==0)
+                  South -> tb < mpd || (tb==mpd && ntq==0)
+      ncpos = if ((not ip) || isInRect) then V2 ta tb else cpos              
+      ncrps = if ((not ip) || isInRect) then V2 ntp ntq else crps
+   in (mpos,(ncpos,ncrps)) 
 
 isFree :: GMap -> ChaPos -> Bool
 isFree gm (V2 a b) =
-  let mProp = defaultMapProp!!(read [((gm!!fromIntegral b)!!fromIntegral a)])
-   in mProp/=Bl
+  if (a>=0 && b>=0) 
+    then let mProp = defaultMapProp!!(read [((gm!!fromIntegral b)!!fromIntegral a)])
+          in mProp/=Bl
+    else False      
 
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =

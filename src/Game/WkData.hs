@@ -21,7 +21,7 @@ type OMProp = [(Pos,MProp)]
 
 --Right, Up, Left, Down, Space, Return, Escape, Released, Nothing
 data Input = Ri | Up | Lf | Dn | Sp | Rt | Es | Rl | No deriving (Eq, Show)
-data Direction = East | North | West | South | Mid deriving (Eq, Show) 
+data Direction = East | North | West | South deriving (Eq, Show) 
 
 -- input mode -- TXT: text mode, PLY: player on maps, BLK: deel with blocks
 data IMode = TXT | PLY | BLK deriving (Eq,Show)
