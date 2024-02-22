@@ -5,21 +5,22 @@ import Control.Monad (unless,when)
 import Control.Monad.IO.Class (MonadIO,liftIO)
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified SDL.Mixer as M
+--import qualified SDL.Mixer as M
 import Sound.OpenAL.AL.Buffer (Buffer)
 import Sound.OpenAL.AL.Source (Source,loopingMode,LoopingMode(..),queueBuffers,play,stop)
-import Data.ObjectName (genObjectName)
+--import Data.ObjectName (genObjectName)
 import Data.StateVar (($=))
 import Data.Maybe (fromMaybe)
 import Foreign.C.Types (CInt)
 import SDL.Font (Font)
-import SDL.Video.Renderer (Renderer,Surface)
-import SDL.Vect (V2(..))
+import SDL.Video.Renderer (Renderer,Surface,Rectangle(..),createTextureFromSurface,copy,present)
+import SDL.Vect (V2(..),Point(P))
 import SDL.Time (delay)
 import qualified MyData as MD
 import MyAction (getCid)
 import General (getLastChar,toList)
 import Game.WkDraw (wkDraw)
+import Game.WkMap (createMapS)
 import Game.WkEvent (exeEvent)
 import Game.WkAction (wkInput,makeWkTextData)
 import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..),Pos,GMap,MProp(..)
@@ -32,17 +33,26 @@ wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
 wkLoop re fonts surfs muses source = do 
   inp <- wkInput
   wk <- S.get
-  let (imsWk,impWk) = (ims wk,imp wk)
-  let isMusicOn = imsWk && (not impWk) 
+  let (imsWk,impWk,imuWk) = (ims wk,imp wk,imu wk)
+  let isMusicOn = imsWk && not impWk 
   let isMusicOff = imsWk && impWk
   when isMusicOn $ do
     loopingMode source $= Looping
-    queueBuffers source [muses!!(mfn wk)]
+    queueBuffers source [muses!!mfn wk]
     play [source]
      --M.playMusic M.Forever (muses!!(mfn wk))
   when isMusicOff $ stop [source]
   --_ <- if isMusicOff then  M.fadeOutMusic 1000 else return False
-  S.put (wk{ims=False,imp=if isMusicOn then True else if isMusicOff then False else impWk})
+  -- for test --
+  when imuWk $ do
+    sf <- createMapS (head surfs) (gmp wk)
+    tx <- createTextureFromSurface re sf
+    copy re tx (Just (Rectangle (P (V2 0 0)) (V2 200 200)))
+               (Just (Rectangle (P (V2 20 100)) (V2 200 200)))
+    present re
+    delay 2000
+  -- --
+  S.put (wk{ims=False,imp= isMusicOn || (not isMusicOff && impWk),imu=False})
   let mdiWk = mdi wk
   case mdiWk of
     TXT -> textMode re fonts surfs inp
@@ -60,8 +70,8 @@ textMode re fonts surfs inp = do
       isStop = lch == '。'
       isEvent = lch == '\\'
       isMap = lch == '~'
-      isDialog = tpsWk < (T.length texWk)
-      isShowing = isDialog && (not isStop)
+      isDialog = tpsWk < T.length texWk
+      isShowing = isDialog && not isStop
       eventText = if isEvent then getTargetText getEventLength tpsWk texWk else T.empty
       addTps = if isShowing then calcTps tpsWk texWk else tpsWk
       addText = case lch of
@@ -83,9 +93,9 @@ textMode re fonts surfs inp = do
   let nstx' = if isStart && tmdWk==0 then T.empty else nStx
   let ntps' = if isStart then ntps+1 else ntps 
   let nmsz = if tmdWk==0 then V2 0 0 else visibleMapSize 
-  let nchs = map (\(cr,dl) 
+  let nchs = zipWith (\cr dl 
         -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
-                                                               (zip chsWk chaDelay)
+                                                                    chsWk chaDelay
   let nmdi = if isMap then PLY else TXT 
   let nwk' = nwk{stx=nstx', tps=ntps', scr=nscr, msz=nmsz, mdi=nmdi, chs=nchs}
   S.put nwk'
@@ -106,14 +116,15 @@ mapMode re fonts surfs inp = do
                 Dn -> South
                 _  -> pdrCh
       npim = inp/=Rl && (inp==Ri || inp==Up || inp==Lf || inp==Dn || pimCh) 
-      (nmps,(npps,nprp)) = charaMove True npim gmpWk mpsWk tszWk npdr ppsCh prpCh 
+      (nmps,(npps,nprp),iss) = charaMove True npim gmpWk mpsWk tszWk npdr ppsCh prpCh 
       nchP = chP{cdr=npdr,cps=npps,crp=nprp,icm=npim} 
       chs' = toList chsWk plnWk nchP
-      nchs = map (\(cr,dl) 
+      nchs = zipWith (\cr dl 
         -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
-                                                               (zip chs' chaDelay)
+                                                                    chs' chaDelay
       nwk = wk{chs=nchs}
   wkDraw re fonts surfs textData nwk
+  when iss $ liftIO $ print nprp
   S.put nwk
 
 type MapPos = Pos
@@ -123,41 +134,48 @@ type TileSize = CInt
 type IsPlayer = Bool
 
 charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> TileSize -> Direction 
-                    -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos)) 
+                    -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos),Bool) 
 charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =  
   let isFr = isFree gm
       du = div ts 4 
-      (V2 mpr mpd) = mpos + visibleMapSize - (V2 1 1) --map pos right, map pos down
+      (V2 msx msy) = V2 (fromIntegral (length (head gm))) (fromIntegral (length gm))
+      (V2 vmsx vmsy) = visibleMapSize
+      (V2 mpr mpd) = mpos + visibleMapSize - V2 1 1 --map pos right, map pos down
       canMove = im && case dr of
         East -> (p==0 && isFr (V2 (a+1) b) 
-                      && (q==0 || (q>0 && (isFr (V2 (a+1) (b+1)))) 
-                               || (q<0 && (isFr (V2 (a+1) (b-1)))))) || p/=0  
+                      && (q==0 || (q>0 && isFr (V2 (a+1) (b+1))) 
+                               || (q<0 && isFr (V2 (a+1) (b-1))))) || p/=0  
         North -> (q==0 && isFr (V2 a (b-1))
-                       && (p==0 || (p>0 && (isFr (V2 (a+1) (b-1))))
-                                || (p<0 && (isFr (V2 (a-1) (b-1)))))) || q/=0
+                       && (p==0 || (p>0 && isFr (V2 (a+1) (b-1)))
+                                || (p<0 && isFr (V2 (a-1) (b-1))))) || q/=0
         West -> (p==0 && isFr (V2 (a-1) b)
-                      && (q==0 || (q>0 && (isFr (V2 (a-1) (b+1))))
-                               || (q<0 && (isFr (V2 (a-1) (b-1)))))) || p/=0
+                      && (q==0 || (q>0 && isFr (V2 (a-1) (b+1)))
+                               || (q<0 && isFr (V2 (a-1) (b-1))))) || p/=0
         South -> (q==0 && isFr (V2 a (b+1))
-                       && (p==0 || (p>0 && (isFr (V2 (a+1) (b+1))))
-                                || (p<0 && (isFr (V2 (a-1) (b+1)))))) || q/=0
+                       && (p==0 || (p>0 && isFr (V2 (a+1) (b+1)))
+                                || (p<0 && isFr (V2 (a-1) (b+1))))) || q/=0
       (V2 dx dy) = if canMove then case dr of 
               East -> V2 du 0; North -> V2 0 (-du); West -> V2 (-du) 0; South -> V2 0 du 
                               else V2 0 0
-      (V2 tp tq) = crps + (V2 dx dy) 
+      (V2 tp tq) = crps + V2 dx dy
       da = if (mod tp ts == 0) && tp/=0 then div tp ts else 0
       db = if (mod tq ts == 0) && tq/=0 then div tq ts else 0
-      (V2 ta tb) = cpos + (V2 da db)
-      ntp = if (abs tp==ts) then 0 else tp
-      ntq = if (abs tq==ts) then 0 else tq
+      (V2 ta tb) = cpos + V2 da db
+      ntp = if abs tp==ts then 0 else tp
+      ntq = if abs tq==ts then 0 else tq
       isInRect = case dr of 
                   East -> ta < mpr || (ta==mpr && ntp==0) 
                   North -> tb > y || (tb==y && ntq==0)
                   West -> ta > x || (ta==x && ntp==0)
                   South -> tb < mpd || (tb==mpd && ntq==0)
-      ncpos = if ((not ip) || isInRect) then V2 ta tb else cpos              
-      ncrps = if ((not ip) || isInRect) then V2 ntp ntq else crps
-   in (mpos,(ncpos,ncrps)) 
+      isScroll = ip && case dr of
+                  East -> (x+vmsx < msx) && ta==x+vmsx-2 && ntp>0
+                  North -> (y > 0) && tb==y+1 && ntq<0
+                  West -> (x > 0) && ta==x+1 && ntp<0
+                  South -> (y+vmsy < msy) && tb==y+vmsy-2 && ntq>0
+      ncpos = if not ip || isInRect then V2 ta tb else cpos              
+      ncrps = if not ip || isInRect then V2 ntp ntq else crps
+   in (mpos,(ncpos,ncrps),isScroll) 
 
 isFree :: GMap -> ChaPos -> Bool
 isFree gm (V2 a b) =
@@ -194,7 +212,7 @@ getComLength tx =
    in spaceNum cidWk tx
 
 spaceNum :: Int -> Text -> Int
-spaceNum (-1) _ = (-1) 
+spaceNum (-1) _ = -1
 spaceNum i tx =
   let (ch,txs) = fromMaybe ('0',T.empty) (T.uncons tx)
       ni = if ch==' ' then i-1 else i

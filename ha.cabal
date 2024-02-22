@@ -36,6 +36,7 @@ library
       Game.WkLoad
       Game.WkLoop
       Game.WkMain
+      Game.WkMap
       Game.WkVideo
       General
       Mana.Mana

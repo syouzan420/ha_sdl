@@ -56,6 +56,7 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --pln: player's chara number
 --ipl: whether the player exists
 --ipm: is player moving?
+--imu: is map update?
 data Waka = Waka {mdi :: !IMode
                  ,set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
@@ -65,7 +66,7 @@ data Waka = Waka {mdi :: !IMode
                  ,aco :: !Int
                  ,mfn :: !Int, ims :: !Bool, imp :: !Bool
                  ,chs :: ![Cha]
-                 ,pln :: !Int, ipl :: !Bool, ipm :: !Bool}
+                 ,pln :: !Int, ipl :: !Bool, ipm :: !Bool, imu :: !Bool}
 
 initWaka :: Waka
 initWaka = Waka {mdi = TXT
@@ -78,7 +79,7 @@ initWaka = Waka {mdi = TXT
                 ,aco = 0
                 ,mfn = 0, ims = False, imp = False
                 ,chs = [initCha{cps=initPlayerPos}]
-                ,pln = 0, ipl = False, ipm = False} 
+                ,pln = 0, ipl = False, ipm = False, imu = True} 
 
 --cps: chara position (in map's grid)
 --crp: chara relative position (pixels)

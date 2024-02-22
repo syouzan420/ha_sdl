@@ -44,7 +44,7 @@ haltMusic = S.get >>= (\wk -> if imp wk then return wk{ims=True} else return wk)
     
 playMusic :: (MonadIO m) => String -> StateW m
 playMusic str = S.get 
-    >>= (\wk -> return wk{mfn=if and (map isDigit str) then read str else 0,ims=True})
+    >>= (\wk -> return wk{mfn=if all isDigit str then read str else 0,ims=True})
     >>= S.put
 
 changeMode :: (MonadIO m) => Char -> StateW m
@@ -64,7 +64,7 @@ moveDialog ind = do
   wk <- S.get
   let (setWk,texWk,tpsWk) = (set wk,tex wk,tps wk)
   let lu = lookup ind setWk 
-  let ntex = case lu of Nothing -> texWk; Just x -> x
+  let ntex = fromMaybe texWk lu
   let ntps = case lu of Nothing -> tpsWk; Just _ -> 0
   let nwk = wk{tex=ntex,stx=T.empty,tps=ntps,scr=V2 0 0}
   S.put nwk

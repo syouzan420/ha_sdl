@@ -28,15 +28,14 @@ type MapSize = Size
 type TileSize = CInt
 type PlayerNum = Int
 type EffectNum = Int
-type IsTextShowing = Bool
 
 wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData -> Waka -> m ()
 wkDraw re fonts surfs textData wk = do
   let plnWk = pln wk  --player chara number
   initDraw re
-  unless (tmd wk==0) $ mapDraw re (surfs!!0) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
+  unless (tmd wk==0) $ mapDraw re (head surfs) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
   when (ipl wk) $ do
-      playerDraw re (surfs!!1) (tsz wk) plnWk ((chs wk)!!plnWk) (aco wk)
+      playerDraw re (surfs!!1) (tsz wk) plnWk (chs wk!!plnWk) (aco wk)
   textsDraw re fonts T True False (tps wk) textData
   present re
 
@@ -44,7 +43,7 @@ playerDraw :: (MonadIO m) => Renderer -> [Surface] ->
                         TileSize -> PlayerNum -> Cha -> Int -> m ()
 playerDraw re surfs tSize pn chaWk count = do 
   let (ps,rp,pd,pc) = (cps chaWk, crp chaWk, cdr chaWk,cac chaWk) 
-      enums = repeat 0
+      enums = repeat (0 :: Int)
       pSurfs = take 8 $ drop (pn*8) surfs
       chDif = if pc < plDelay then 0 else 1
       chNum = case pd of
@@ -53,7 +52,7 @@ playerDraw re surfs tSize pn chaWk count = do
                 East  -> 4 + chDif
                 West  -> 6 + chDif 
   texture <- createTexture re (pSurfs!!chNum) 0 count 
-  texDraw re texture tSize (mapUpLeftPos+(V2 tSize tSize)*ps+rp) 
+  texDraw re texture tSize (mapUpLeftPos+V2 tSize tSize*ps+rp) 
   destroyTexture texture
 
 visibleGmap :: GMap -> MapSize -> Pos -> GMap
@@ -79,26 +78,28 @@ mapDraw re surfs gmap mSize tSize mPos count = do
 
 texMapDraw :: (MonadIO m) => Renderer -> [Texture] -> GMap -> TileSize -> Pos -> m ()
 texMapDraw _ _ [] _ _ = return ()
-texMapDraw re tex (ln:xs) tSize pos = do
-  texLineDraw re tex ln tSize pos
-  texMapDraw re tex xs tSize (pos + (V2 0 tSize))
+texMapDraw re tx (ln:xs) tSize pos = do
+  texLineDraw re tx ln tSize pos
+  texMapDraw re tx xs tSize (pos + V2 0 tSize)
 
 texLineDraw :: (MonadIO m) => Renderer -> [Texture] -> String -> TileSize -> Pos -> m ()
 texLineDraw _ _ [] _ _ = return ()
-texLineDraw re tex (t:ts) tSize pos = do
-  texDraw re (tex!!(read [t])) tSize pos
-  texLineDraw re tex ts tSize (pos + (V2 tSize 0))
+texLineDraw re tx (t:ts) tSize pos = do
+  texDraw re (tx!!read [t]) tSize pos
+  texLineDraw re tx ts tSize (pos + V2 tSize 0)
 
 texDraw :: (MonadIO m) => Renderer -> Texture -> TileSize -> Pos -> m ()
-texDraw re tex tSize pos = copy re tex (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
-                                       (Just (Rectangle (P pos) (V2 tSize tSize)))
+texDraw re tx tSize pos = copy re tx (Just (Rectangle (P (V2 0 0)) (V2 64 64)))
+                                     (Just (Rectangle (P pos) (V2 tSize tSize)))
 
 createTextures :: (MonadIO m) => Renderer -> [Surface] -> [EffectNum] -> Int -> m [Texture]
+createTextures _ [] [] _ = return []
+createTextures _ _ [] _ = return []
 createTextures _ [] _ _ = return []
 createTextures re (s:srs) (e:es) count = do 
-  tex <- createTexture re s e count
+  tx <- createTexture re s e count
   textures <- createTextures re srs es count 
-  return (tex:textures) 
+  return (tx:textures) 
 
 createTexture :: (MonadIO m) => Renderer -> Surface -> EffectNum -> Int -> m Texture
 createTexture re surf i count = do
