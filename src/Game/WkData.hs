@@ -44,6 +44,7 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --msz: map size
 --tsz: tile size
 --mps: map position
+--mrp: map relative position
 --gmp: ground map
 --omp: object map
 --gmr: ground map property 
@@ -57,29 +58,30 @@ data MProp = Fr | Bl deriving (Eq, Show)
 --ipl: whether the player exists
 --ipm: is player moving?
 --imu: is map update?
+--isc: is scroll?
 data Waka = Waka {mdi :: !IMode
                  ,set :: ![TSet], tex :: !Text, stx :: !Text, tps :: !Int, scr :: !Pos
                  ,tmd :: !Int, rct :: !Rect, mgn :: !Rect, ltw :: !CInt, lnw :: !CInt
                  ,fsz :: !PointSize, msz :: !Size, tsz :: !CInt
-                 ,mps :: !Pos
+                 ,mps :: !Pos, mrp :: !Pos
                  ,gmp :: !GMap, omp :: !OMap, gmr :: !GMProp, omr :: !OMProp
                  ,aco :: !Int
                  ,mfn :: !Int, ims :: !Bool, imp :: !Bool
                  ,chs :: ![Cha]
-                 ,pln :: !Int, ipl :: !Bool, ipm :: !Bool, imu :: !Bool}
+                 ,pln :: !Int, ipl :: !Bool, ipm :: !Bool, imu :: !Bool, isc :: !Bool}
 
 initWaka :: Waka
 initWaka = Waka {mdi = TXT
                 ,set = [], tex = T.empty, stx = T.empty, tps = 0, scr = V2 0 0
                 ,tmd = 0, rct = textRect, mgn = textMgn, ltw = letterWidth, lnw = lineWidth
                 ,fsz = fontSize, msz = mapSize0, tsz = initTileSize
-                ,mps = initMapPos
+                ,mps = initMapPos, mrp = V2 0 0
                 ,gmp = initGroundMap, omp = initObjectMap
                 ,gmr = initGMapProperty, omr = initOMapProperty
                 ,aco = 0
                 ,mfn = 0, ims = False, imp = False
                 ,chs = [initCha{cps=initPlayerPos}]
-                ,pln = 0, ipl = False, ipm = False, imu = True} 
+                ,pln = 0, ipl = False, ipm = False, imu = True, isc = False} 
 
 --cps: chara position (in map's grid)
 --crp: chara relative position (pixels)

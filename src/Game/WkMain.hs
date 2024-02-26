@@ -22,8 +22,8 @@ runWaka fln sIndex fonts = do
   stopTextInput
   surfs <- wkLoad
   allText <- fileRead (textFileName++show fln++".txt")
-  withVideo $ \renderer -> do
+  withVideo $ \(renderer,texture) -> do
     let newWaka = startText sIndex allText initWaka
     withWkAudio $ \muses -> do
       source <- genObjectName
-      S.runStateT (wkLoop renderer fonts surfs muses source) newWaka
+      S.runStateT (wkLoop renderer fonts surfs texture muses source) newWaka

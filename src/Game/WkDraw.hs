@@ -28,22 +28,28 @@ type MapSize = Size
 type TileSize = CInt
 type PlayerNum = Int
 type EffectNum = Int
+type MapPos = Pos
+type MapRPos = Pos
 
-wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> TextData -> Waka -> m ()
-wkDraw re fonts surfs textData wk = do
+wkDraw :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Texture 
+                                                    -> TextData -> Waka -> m ()
+wkDraw re fonts surfs texture textData wk = do
   let plnWk = pln wk  --player chara number
+  let plyWk = chs wk!!plnWk
+  let (mszWk,tszWk,mpsWk,mrpWk,acoWk,iscWk) = (msz wk,tsz wk,mps wk,mrp wk,aco wk,isc wk)
   initDraw re
-  unless (tmd wk==0) $ mapDraw re (head surfs) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
+  unless (tmd wk==0) $ mapDraw2 re texture mszWk tszWk mpsWk mrpWk
+  --unless (tmd wk==0) $ mapDraw re (head surfs) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
   when (ipl wk) $ do
-      playerDraw re (surfs!!1) (tsz wk) plnWk (chs wk!!plnWk) (aco wk)
+      playerDraw re (surfs!!1) (tsz wk) plnWk plyWk mpsWk mrpWk iscWk acoWk
   textsDraw re fonts T True False (tps wk) textData
   present re
 
 playerDraw :: (MonadIO m) => Renderer -> [Surface] -> 
-                        TileSize -> PlayerNum -> Cha -> Int -> m ()
-playerDraw re surfs tSize pn chaWk count = do 
+                  TileSize -> PlayerNum -> Cha -> MapPos -> MapRPos ->Bool -> Int -> m ()
+playerDraw re surfs tSize pn chaWk mpos mrps iss count = do 
   let (ps,rp,pd,pc) = (cps chaWk, crp chaWk, cdr chaWk,cac chaWk) 
-      enums = repeat (0 :: Int)
+      --enums = repeat (0 :: Int)
       pSurfs = take 8 $ drop (pn*8) surfs
       chDif = if pc < plDelay then 0 else 1
       chNum = case pd of
@@ -51,8 +57,11 @@ playerDraw re surfs tSize pn chaWk count = do
                 North -> 2 + chDif 
                 East  -> 4 + chDif
                 West  -> 6 + chDif 
+      playerWindowPosition = mapUpLeftPos + V2 tSize tSize * (ps-mpos)
+                                          + (if iss then V2 0 0 else rp)
+                                          - (if iss then V2 0 0 else mrps)
   texture <- createTexture re (pSurfs!!chNum) 0 count 
-  texDraw re texture tSize (mapUpLeftPos+V2 tSize tSize*ps+rp) 
+  texDraw re texture tSize playerWindowPosition 
   destroyTexture texture
 
 visibleGmap :: GMap -> MapSize -> Pos -> GMap
@@ -66,6 +75,15 @@ visibleGmap gmap (V2 mw mh) (V2 mx my) =
 
 visibleMapLine :: Int -> Int -> String -> String
 visibleMapLine mw mx mLine = take mw $ drop mx mLine
+
+mapDraw2 :: MonadIO m => Renderer -> Texture -> MapSize -> TileSize 
+                                              -> MapPos -> MapRPos -> m ()
+mapDraw2 re tx mSize tSize mPos mRPos = do
+  let source = mPos * V2 tSize tSize + mRPos
+      width = mSize * V2 tSize tSize
+  copy re tx (Just (Rectangle (P source) width))
+             (Just (Rectangle (P mapUpLeftPos) width))
+
 
 mapDraw :: (MonadIO m) => Renderer -> [Surface]
                          -> GMap -> MapSize -> TileSize -> Pos -> Int -> m ()

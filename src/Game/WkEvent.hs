@@ -56,7 +56,7 @@ setMap indf = do
   let (setWk,gmpWk) = (set wk,gmp wk)
       mData = fromMaybe T.empty (lookup ("map" <> indf) setWk) 
       ngmp = if mData==T.empty then gmpWk else (lines . T.unpack) mData
-      nwk = wk{gmp=ngmp}
+      nwk = wk{gmp=ngmp,imu=True}
   S.put nwk
 
 moveDialog :: (MonadIO m) => T.Text -> StateW m

@@ -13,8 +13,9 @@ import Data.StateVar (($=))
 import Data.Maybe (fromMaybe)
 import Foreign.C.Types (CInt)
 import SDL.Font (Font)
-import SDL.Video.Renderer (Renderer,Surface,Rectangle(..),createTextureFromSurface,copy,present)
-import SDL.Vect (V2(..),Point(P))
+import SDL.Video.Renderer (Renderer,Texture,Surface
+                          ,createTextureFromSurface,destroyTexture)
+import SDL.Vect (V2(..))
 import SDL.Time (delay)
 import qualified MyData as MD
 import MyAction (getCid)
@@ -28,9 +29,9 @@ import Game.WkData (Waka(..),Input(..),IMode(..),Direction(..),Cha(..),Pos,GMap,
 
 --wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
 --                                      -> [M.Music] -> S.StateT Waka m () 
-wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]]
+wkLoop :: MonadIO m => Renderer -> [Font] -> [[Surface]] -> Texture
                                       -> [Buffer] -> Source -> S.StateT Waka m () 
-wkLoop re fonts surfs muses source = do 
+wkLoop re fonts surfs mapTex muses source = do 
   inp <- wkInput
   wk <- S.get
   let (imsWk,impWk,imuWk) = (ims wk,imp wk,imu wk)
@@ -43,26 +44,26 @@ wkLoop re fonts surfs muses source = do
      --M.playMusic M.Forever (muses!!(mfn wk))
   when isMusicOff $ stop [source]
   --_ <- if isMusicOff then  M.fadeOutMusic 1000 else return False
-  -- for test --
-  when imuWk $ do
+
+  newMapTex <- if imuWk then do
+    destroyTexture mapTex
     sf <- createMapS (head surfs) (gmp wk)
-    tx <- createTextureFromSurface re sf
-    copy re tx (Just (Rectangle (P (V2 0 0)) (V2 200 200)))
-               (Just (Rectangle (P (V2 20 100)) (V2 200 200)))
-    present re
-    delay 2000
-  -- --
-  S.put (wk{ims=False,imp= isMusicOn || (not isMusicOff && impWk),imu=False})
+    S.put (wk{imu=False})
+    createTextureFromSurface re sf
+                        else return mapTex
+
+  S.put (wk{ims=False,imp= isMusicOn || (not isMusicOff && impWk)})
   let mdiWk = mdi wk
   case mdiWk of
-    TXT -> textMode re fonts surfs inp
-    PLY -> mapMode re fonts surfs inp
+    TXT -> textMode re fonts surfs newMapTex inp
+    PLY -> mapMode re fonts surfs newMapTex inp
     _ -> return ()
   delay delayTime
-  unless (inp==Es) $ wkLoop re fonts surfs muses source
+  unless (inp==Es) $ wkLoop re fonts surfs newMapTex muses source
 
-textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
-textMode re fonts surfs inp = do
+textMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Texture 
+                                            -> Input -> S.StateT Waka m ()
+textMode re fonts surfs mapTex inp = do
   wk <- S.get
   let (texWk,stxWk,tpsWk,tmdWk,chsWk) 
           = (tex wk,stx wk,tps wk,tmd wk,chs wk) 
@@ -84,7 +85,7 @@ textMode re fonts surfs inp = do
       ntps = if isShowing then tpsWk+addTps else tpsWk
       nwk = wk{stx=nStx,tps=ntps}
       textData = makeWkTextData nwk
-  wkDraw re fonts surfs textData nwk
+  wkDraw re fonts surfs mapTex textData nwk
   when isEvent $ liftIO $ print eventText
   let (_,_,lAtr,_) = if null textData then (False,T.empty,MD.initAttr,[]) 
                                       else last textData 
@@ -101,11 +102,12 @@ textMode re fonts surfs inp = do
   S.put nwk'
   when isEvent $ exeEvent eventText
 
-mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Input -> S.StateT Waka m ()
-mapMode re fonts surfs inp = do
+mapMode :: (MonadIO m) => Renderer -> [Font] -> [[Surface]] -> Texture
+                                                 -> Input -> S.StateT Waka m ()
+mapMode re fonts surfs mapTex inp = do
   wk <- S.get
-  let (chsWk,plnWk,mpsWk,gmpWk,tszWk) 
-            = (chs wk,pln wk,mps wk,gmp wk,tsz wk) 
+  let (chsWk,plnWk,mpsWk,mrpWk,gmpWk,tszWk) 
+            = (chs wk,pln wk,mps wk,mrp wk,gmp wk,tsz wk) 
       textData = makeWkTextData wk
       chP = chsWk!!plnWk
       (pdrCh,ppsCh,prpCh,pacCh,pimCh) = (cdr chP, cps chP, crp chP, cac chP, icm chP)
@@ -116,26 +118,29 @@ mapMode re fonts surfs inp = do
                 Dn -> South
                 _  -> pdrCh
       npim = inp/=Rl && (inp==Ri || inp==Up || inp==Lf || inp==Dn || pimCh) 
-      (nmps,(npps,nprp),iss) = charaMove True npim gmpWk mpsWk tszWk npdr ppsCh prpCh 
+      (nmps,(npps,nprp),iss) =
+               charaMove True npim gmpWk mpsWk mrpWk tszWk npdr ppsCh prpCh 
       nchP = chP{cdr=npdr,cps=npps,crp=nprp,icm=npim} 
       chs' = toList chsWk plnWk nchP
       nchs = zipWith (\cr dl 
         -> cr{cac = let cacCr = cac cr in if cacCr==dl*2 then 0 else cacCr+1})
                                                                     chs' chaDelay
-      nwk = wk{chs=nchs}
-  wkDraw re fonts surfs textData nwk
-  when iss $ liftIO $ print nprp
+      nmrp = if iss then nprp else mrpWk
+      nwk = wk{mps=nmps,mrp=nmrp,chs=nchs,isc=iss}
+  wkDraw re fonts surfs mapTex textData nwk
+  when iss $ liftIO $ putStrLn (show nmps ++ " " ++ show npps ++ " " ++show nprp)
   S.put nwk
 
 type MapPos = Pos
+type MapRPos = Pos
 type ChaPos = Pos
 type ChaRPos = Pos
 type TileSize = CInt
 type IsPlayer = Bool
 
-charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> TileSize -> Direction 
+charaMove :: IsPlayer -> Bool -> GMap -> MapPos -> MapRPos -> TileSize -> Direction 
                     -> ChaPos -> ChaRPos -> (MapPos,(ChaPos,ChaRPos),Bool) 
-charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =  
+charaMove ip im gm mpos@(V2 x y) (V2 rx ry) ts dr cpos@(V2 a b) crps@(V2 p q) =  
   let isFr = isFree gm
       du = div ts 4 
       (V2 msx msy) = V2 (fromIntegral (length (head gm))) (fromIntegral (length gm))
@@ -169,20 +174,19 @@ charaMove ip im gm mpos@(V2 x y) ts dr cpos@(V2 a b) crps@(V2 p q) =
                   West -> ta > x || (ta==x && ntp==0)
                   South -> tb < mpd || (tb==mpd && ntq==0)
       isScroll = ip && case dr of
-                  East -> (x+vmsx < msx) && ta==x+vmsx-2 && ntp>0
-                  North -> (y > 0) && tb==y+1 && ntq<0
-                  West -> (x > 0) && ta==x+1 && ntp<0
-                  South -> (y+vmsy < msy) && tb==y+vmsy-2 && ntq>0
+                  East -> (x+vmsx < msx) && ((ta==x+vmsx-2 && ntp>0) || ta==x+vmsx-1)
+                  North -> (y > 0) && ((tb==y+1 && ntq<0) || tb==y)
+                  West -> (x > 0) && ((ta==x+1 && ntp<0) || ta==x)
+                  South -> (y+vmsy < msy) && ((tb==y+vmsy-2 && ntq>0) || tb==y+vmsy-1)
       ncpos = if not ip || isInRect then V2 ta tb else cpos              
       ncrps = if not ip || isInRect then V2 ntp ntq else crps
-   in (mpos,(ncpos,ncrps),isScroll) 
+      nmpos = if isInRect && isScroll then mpos + V2 da db else mpos
+   in (nmpos,(ncpos,ncrps),isScroll) 
 
 isFree :: GMap -> ChaPos -> Bool
-isFree gm (V2 a b) =
-  if (a>=0 && b>=0) 
-    then let mProp = defaultMapProp!!(read [((gm!!fromIntegral b)!!fromIntegral a)])
-          in mProp/=Bl
-    else False      
+isFree gm (V2 a b) = (a>=0 && b>=0) &&
+    (let mProp = defaultMapProp!!read [(gm!!fromIntegral b)!!fromIntegral a]
+      in mProp/=Bl)
 
 calcTps :: Int -> Text -> Int 
 calcTps tpsWk texWk =

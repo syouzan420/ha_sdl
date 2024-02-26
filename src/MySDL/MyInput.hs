@@ -39,13 +39,6 @@ myInput = do
                         Released -> True
                         _ -> False
                     _ -> False
---  let kcmd event  =  case eventPayload event of 
---                       KeyboardEvent keyboardEvent ->
---                         if keyboardEventKeyMotion keyboardEvent == Pressed
---                             then let kbeSim = keyboardEventKeysym keyboardEvent
---                                   in (keysymKeycode kbeSim,keysymModifier kbeSim)
---                             else (KeycodeUnknown,mds)
---                       _ -> (KeycodeUnknown,mds)
       getItx event = case eventPayload event of
           TextInputEvent textInputEvent -> (textInputEventText textInputEvent,False)
           TextEditingEvent textEditingEvent 
@@ -79,19 +72,19 @@ myInput = do
         | keyModifierLeftCtrl md || keyModifierRightCtrl md = Ctr 
         | keyModifierLeftAlt md || keyModifierRightAlt md = Alt 
         | otherwise = Non 
-  --when (not (null events)) $ liftIO $ print events 
+--  when (not (null events)) $ liftIO $ print events 
   let mps = let (P (V2 px py)) = cPos in V2 (fromIntegral px) (fromIntegral py)
 --  if mps==V2 (-1) (-1) then return () else print mps >> print ismc
 --  let skkedit = itx==T.empty && kc/=KeycodeUnknown && kc/=KeycodeLShift && kc/=KeycodeRShift && mdres == Shf  
 --  when skkedit $ putStrLn "SkkEditStart"
-  let kc' 
-       |kc==KeycodeUnknown && itx/=T.empty = case itx of
-                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK;
-                  "l" -> KeycodeL; " " -> KeycodeSpace
-                  "い" -> KeycodeI
-                  _ -> KeycodeUnknown
-       |otherwise = kc
+--  let kc' 
+--       |kc==KeycodeUnknown && itx/=T.empty = case itx of
+--                  "i" -> KeycodeI; "h" -> KeycodeH; "j" -> KeycodeJ; "k" -> KeycodeK;
+--                  "l" -> KeycodeL; " " -> KeycodeSpace
+--                  "い" -> KeycodeI
+--                  _ -> KeycodeUnknown
+--       |otherwise = kc
 --  when (itx/=T.empty) $ liftIO $ print kc'
 --  when ir $ liftIO $ print "released"
-  return (kc',mdres,itx,mps,ismc,ised,ir) 
+  return (kc,mdres,itx,mps,ismc,ised,ir) 
  
