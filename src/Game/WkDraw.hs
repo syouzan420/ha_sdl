@@ -38,8 +38,8 @@ wkDraw re fonts surfs texture textData wk = do
   let plyWk = chs wk!!plnWk
   let (mszWk,tszWk,mpsWk,mrpWk,acoWk,iscWk) = (msz wk,tsz wk,mps wk,mrp wk,aco wk,isc wk)
   initDraw re
-  unless (tmd wk==0) $ mapDraw2 re texture mszWk tszWk mpsWk mrpWk
-  --unless (tmd wk==0) $ mapDraw re (head surfs) (gmp wk) (msz wk) (tsz wk) (mps wk) (aco wk)
+  --unless (tmd wk==0) $ mapDraw2 re texture mszWk tszWk mpsWk mrpWk
+  unless (tmd wk==0) $ mapDraw re (head surfs) (gmp wk) mszWk tszWk mpsWk acoWk
   when (ipl wk) $ do
       playerDraw re (surfs!!1) (tsz wk) plnWk plyWk mpsWk mrpWk iscWk acoWk
   textsDraw re fonts T True False (tps wk) textData
